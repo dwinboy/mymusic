@@ -36,13 +36,9 @@ railway add --repo <your-github-user>/mymusic --service web
 
 Railway auto-detects Next.js and builds with `npm run build` (`prisma generate` runs automatically via the `postinstall` script, since the generated Prisma client is gitignored on purpose — it contains a platform-specific binary that would break if committed from a dev machine).
 
-**Migrations run at start, not at build.** `railway.json` sets the start command to:
+**Migrations run at start, not at build.** `package.json` has a `prestart` script (`prisma migrate deploy`), which npm runs automatically before `start`.
 
-```
-npx prisma migrate deploy && npm run start
-```
-
-This matters: Railway's private network only resolves at *runtime*, so a build-time `migrate deploy` could not reach `postgres.railway.internal`. `migrate deploy` is idempotent, so re-running it on every container start is safe and costs a second or two.
+This matters: Railway's private network only resolves at *runtime*, so a build-time `migrate deploy` could not reach `postgres.railway.internal`. Using npm's `prestart` hook rather than a `railway.json` start command keeps it working regardless of which start command the platform chooses. `migrate deploy` is idempotent, so re-running it on every container start is safe and costs a second or two.
 
 Relatedly, the build must not require a database at all. The three routes that read the catalogue during render (`/`, `/artists`, `/sitemap.xml`) are marked `export const dynamic = "force-dynamic"` — correct on its own merits, since a statically baked catalogue would never show newly published tracks.
 

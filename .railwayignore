@@ -1,0 +1,18 @@
+# Never ship local secrets or build artifacts in the deploy upload.
+.env
+.env.*
+!.env.example
+
+node_modules/
+.next/
+out/
+build/
+
+# Demo/seed media and scratch output — production media lives in R2/Cloudinary.
+public/uploads/
+.seed-tmp/
+minio-data/
+
+.git/
+*.log
+.DS_Store

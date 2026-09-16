@@ -1,0 +1,58 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files — actual secrets are never committed, but .env.example (a
+# template with no real values) is meant to be, so it's explicitly un-ignored.
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# uploaded media (local storage driver)
+/public/uploads/
+
+# scratch files from prisma/seed.ts (ffmpeg intermediates)
+/.seed-tmp/
+
+# prisma
+/prisma/dev.db*
+
+# Prisma's generated client (custom output path — see prisma/schema.prisma).
+# Contains a platform-specific compiled query engine binary, so it must be
+# regenerated on whatever machine runs the app (see package.json's
+# "postinstall" script) rather than committed from a dev machine.
+/lib/generated/

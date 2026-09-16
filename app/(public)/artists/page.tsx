@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   description: "Every artist publishing music on Lumen.",
 };
 
+// Rendered per request so newly added artists appear without a redeploy.
+export const dynamic = "force-dynamic";
+
 export default async function ArtistsPage() {
   const artists = await db.artist.findMany({
     orderBy: { name: "asc" },

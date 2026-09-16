@@ -3,6 +3,10 @@ import { db } from "@/lib/db";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
+// Built at request time, not deploy time: the catalogue changes whenever an
+// admin publishes, and the build environment has no database connection.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [tracks, albums, artists, playlists] = await Promise.all([
     db.track.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),

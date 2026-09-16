@@ -9,8 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "migrate:media": "tsx scripts/migrate-to-r2-cloudinary.ts",
-    "vercel-build": "prisma migrate deploy && next build"
+    "migrate:media": "tsx scripts/migrate-to-r2-cloudinary.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

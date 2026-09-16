@@ -62,7 +62,7 @@ Production deployments actively refuse local-storage uploads (verified directly:
 
 ## Deployment
 
-**[DEPLOYMENT.md](./DEPLOYMENT.md)** — Vercel (the whole Next.js app) + Railway (Postgres only; there's no separate backend service to split out, since API routes and admin logic are part of the same Next.js app that talks to Postgres directly).
+**[DEPLOYMENT.md](./DEPLOYMENT.md)** — Railway, as two services in one project: the whole Next.js app plus a Postgres database it reaches over Railway's private network. There's no separate backend service to split out, since API routes and admin logic are part of the same Next.js app that talks to Postgres directly.
 
 ## What's built vs. what's next
 

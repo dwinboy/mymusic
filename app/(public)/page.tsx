@@ -11,6 +11,9 @@ import { RailSkeleton, TrackRowSkeleton } from "@/components/states/skeletons";
 import { EmptyState } from "@/components/states/empty-state";
 import { Music2 } from "lucide-react";
 
+// Rendered per request so newly published tracks appear without a redeploy.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const heroTrack = await db.track.findFirst({
     where: { isPublished: true, isFeatured: true },

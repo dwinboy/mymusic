@@ -24,7 +24,7 @@ const LINKS = [
   { href: "/admin/albums", label: "Albums", icon: Disc3 },
   { href: "/admin/artists", label: "Artists", icon: Mic2 },
   { href: "/admin/playlists", label: "Playlists", icon: ListMusic },
-  { href: "/admin/genres", label: "Genres", icon: Tags },
+  { href: "/admin/taxonomy", label: "Taxonomy", icon: Tags },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/storage", label: "Storage", icon: HardDrive },
   { href: "/admin/settings", label: "Settings", icon: Settings },

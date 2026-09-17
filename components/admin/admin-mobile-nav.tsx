@@ -11,7 +11,7 @@ const LINKS = [
   { href: "/admin/albums", label: "Albums" },
   { href: "/admin/artists", label: "Artists" },
   { href: "/admin/playlists", label: "Playlists" },
-  { href: "/admin/genres", label: "Genres" },
+  { href: "/admin/taxonomy", label: "Taxonomy" },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/storage", label: "Storage" },
   { href: "/admin/settings", label: "Settings" },

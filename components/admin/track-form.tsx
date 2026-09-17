@@ -109,9 +109,10 @@ export function TrackForm({
     fetch("/api/admin/artists")
       .then((r) => r.json())
       .then((d) => setArtists(d.artists ?? []));
-    fetch("/api/admin/genres")
+    // Genres are taxonomy terms; top-level ones are what tracks are tagged with here.
+    fetch("/api/admin/taxonomy?kind=GENRE")
       .then((r) => r.json())
-      .then((d) => setGenres(d.genres ?? []));
+      .then((d) => setGenres((d.terms ?? []).filter((t: { parentId: string | null; isActive: boolean }) => !t.parentId && t.isActive)));
   }, []);
 
   useEffect(() => {

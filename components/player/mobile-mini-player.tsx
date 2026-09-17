@@ -4,7 +4,7 @@ import { Pause, Play } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { Progress } from "@/components/ui/progress";
 import { usePlayerStore } from "@/lib/stores/player-store";
-import { cn } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 
 export function MobileMiniPlayer() {
   const track = usePlayerStore((s) => s.currentTrack());
@@ -30,7 +30,15 @@ export function MobileMiniPlayer() {
       <TrackArt src={track.coverUrl} alt={track.title} className="h-11 w-11" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{track.title}</p>
-        <p className="truncate text-xs text-foreground-muted">{track.artistName}</p>
+        <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
+          <span className="truncate">{track.artistName}</span>
+          <span className="shrink-0 text-foreground-subtle" aria-hidden>
+            ·
+          </span>
+          <span className="tabular shrink-0 text-foreground-subtle">
+            {formatDuration(currentTime)} / {formatDuration(duration)}
+          </span>
+        </p>
       </div>
       <span
         onClick={(e) => {

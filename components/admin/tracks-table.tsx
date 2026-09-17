@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Pencil, Eye, Star, StarOff, EyeOff, Trash2, Music2 } from "lucide-react";
+import { Search, Pencil, Eye, Star, StarOff, EyeOff, Trash2, Music2, Loader2, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +23,8 @@ interface AdminTrack {
   isPublished: boolean;
   isFeatured: boolean;
   createdAt: string;
+  processingStatus: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+  processingError: string | null;
   artist: { name: string };
   album: { title: string } | null;
 }
@@ -30,7 +32,7 @@ interface AdminTrack {
 export function TracksTable() {
   const [tracks, setTracks] = useState<AdminTrack[] | null>(null);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "published" | "draft">("all");
+  const [filter, setFilter] = useState<"all" | "published" | "draft" | "attention">("all");
   const debouncedQuery = useDebounce(query, 250);
   const { toast } = useToast();
 
@@ -44,6 +46,9 @@ export function TracksTable() {
       .then((r) => r.json())
       .then((d) => setTracks(d.tracks ?? []));
   }, [debouncedQuery, filter]);
+
+  const visibleTracks =
+    filter === "attention" ? tracks?.filter((t) => t.processingStatus !== "READY") ?? null : tracks;
 
   useEffect(() => {
     load();
@@ -78,16 +83,17 @@ export function TracksTable() {
           <Input placeholder="Search tracks..." className="pl-9" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="flex gap-1">
-          {(["all", "published", "draft"] as const).map((f) => (
+          {(["all", "published", "draft", "attention"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                filter === f ? "bg-surface text-foreground" : "text-foreground-muted hover:text-foreground"
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                filter === f ? "bg-surface text-foreground" : "text-foreground-muted hover:text-foreground",
+                f === "attention" && filter !== f && "text-danger/80 hover:text-danger"
               )}
             >
-              {f}
+              {f === "attention" ? "Needs attention" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
@@ -101,11 +107,19 @@ export function TracksTable() {
         </div>
       )}
 
-      {tracks?.length === 0 && (
-        <EmptyState icon={Music2} title="No tracks found" description="Try a different search or upload a new track." />
+      {visibleTracks?.length === 0 && (
+        <EmptyState
+          icon={Music2}
+          title={filter === "attention" ? "Nothing needs attention" : "No tracks found"}
+          description={
+            filter === "attention"
+              ? "Every track has finished processing successfully."
+              : "Try a different search or upload a new track."
+          }
+        />
       )}
 
-      {tracks && tracks.length > 0 && (
+      {visibleTracks && visibleTracks.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
@@ -120,7 +134,7 @@ export function TracksTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {tracks.map((track) => (
+              {visibleTracks.map((track) => (
                 <tr key={track.id} className="transition-colors hover:bg-surface/60">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -139,9 +153,19 @@ export function TracksTable() {
                   <td className="px-4 py-3 text-foreground-muted">{formatCompactNumber(track.downloadCount)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <Badge variant={track.isPublished ? "success" : "default"}>
-                        {track.isPublished ? "Published" : "Draft"}
-                      </Badge>
+                      {track.processingStatus === "FAILED" ? (
+                        <Badge variant="danger" title={track.processingError ?? "Processing failed"}>
+                          <AlertTriangle className="h-3 w-3" /> Failed
+                        </Badge>
+                      ) : track.processingStatus === "PROCESSING" || track.processingStatus === "UPLOADING" ? (
+                        <Badge variant="default">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Processing
+                        </Badge>
+                      ) : (
+                        <Badge variant={track.isPublished ? "success" : "default"}>
+                          {track.isPublished ? "Published" : "Draft"}
+                        </Badge>
+                      )}
                       {track.isFeatured && <Badge variant="accent">Featured</Badge>}
                     </div>
                   </td>

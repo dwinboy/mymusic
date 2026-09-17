@@ -95,6 +95,19 @@ export function NewTrackFlow({
         const processData = await processRes.json();
 
         if (!processRes.ok) {
+          // Processing failed, but the draft track already exists in the
+          // database (now marked FAILED) — hand off to the edit form
+          // instead of discarding it, since that form already has a
+          // proper retry flow built in. Losing track of a failed draft
+          // here would mean the only way back to it is hunting through
+          // the tracks list.
+          const trackRes = await fetch(`/api/admin/tracks/${draftData.track.id}`);
+          const trackData = await trackRes.json();
+          if (trackRes.ok && trackData.track) {
+            setTrack(toFormInitial(trackData.track));
+            setPhase("ready");
+            return;
+          }
           setError(processData.detail ?? processData.error ?? "Audio processing failed.");
           setPhase("select");
           return;

@@ -5,7 +5,9 @@
 //   2. Cache a small app-shell so the site still opens offline.
 // Bump CACHE_VERSION whenever the shell list below changes.
 
-const CACHE_VERSION = "v1";
+// v2: v1 cached every same-origin GET, including page data and API responses;
+// bumping the version makes activate delete that cache on installed clients.
+const CACHE_VERSION = "v2";
 const SHELL_CACHE = `vibebanger-shell-${CACHE_VERSION}`;
 const AUDIO_CACHE = "vibebanger-audio-v1";
 const OFFLINE_URL = "/offline.html";
@@ -69,6 +71,15 @@ async function serveCachedAudio(request, cached) {
   });
 }
 
+function isStaticAsset(url) {
+  if (url.search.includes("_rsc=")) return false;
+  return (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    (SHELL_ASSETS.includes(url.pathname) && url.pathname !== "/")
+  );
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -107,7 +118,16 @@ async function handleFetch(event, request) {
     }
   }
 
-  // Everything else same-origin (static assets): stale-while-revalidate.
+  // Only immutable build output and the shell's own files are cached. Page
+  // data (?_rsc=) and API responses must always come from the network:
+  // serving them from cache makes router.refresh() show the previous render,
+  // and would keep one account's data in a cache the next user of the same
+  // browser can be served from.
+  if (!isStaticAsset(url)) {
+    return fetch(request);
+  }
+
+  // Static assets: stale-while-revalidate.
   const cache = await caches.open(SHELL_CACHE);
   const cached = await cache.match(request);
   const networkFetch = fetch(request)

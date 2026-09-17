@@ -1,76 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { IosInstallSteps } from "@/components/pwa/ios-install-steps";
+import { dismissInstall, isInstallDismissed, useInstallAvailability } from "@/hooks/use-install-availability";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-const DISMISSED_KEY = "vibebanger:install-prompt-dismissed";
-
+/** The install card in Library: a permanent, low-key place to find it. */
 export function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [visible, setVisible] = useState(false);
+  const { method, promptInstall } = useInstallAvailability();
+  const [dismissed, setDismissed] = useState(() => typeof window !== "undefined" && isInstallDismissed());
 
-  useEffect(() => {
-    let dismissed = false;
-    try {
-      dismissed = window.localStorage.getItem(DISMISSED_KEY) === "true";
-    } catch {
-      // Storage unavailable — fall back to showing the prompt if eligible.
-    }
-    if (dismissed) return;
-
-    function handler(event: Event) {
-      event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setVisible(true);
-    }
-
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  if (!method || dismissed) return null;
 
   function dismiss() {
-    setVisible(false);
-    try {
-      window.localStorage.setItem(DISMISSED_KEY, "true");
-    } catch {
-      // Non-critical preference — ignore if storage is unavailable.
-    }
+    dismissInstall();
+    setDismissed(true);
   }
-
-  async function install() {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-    dismiss();
-  }
-
-  if (!visible || !deferredPrompt) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+    <div className="flex items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
         <Download className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">Install Vibe Banger</p>
-        <p className="text-xs text-foreground-muted">Add it to your home screen for the full app experience.</p>
+        <p className="text-xs text-foreground-muted">Full-screen app, lock-screen controls and offline downloads.</p>
+        {method === "ios" && (
+          <div className="mt-3">
+            <IosInstallSteps />
+          </div>
+        )}
       </div>
-      <Button size="sm" onClick={install}>
-        Install
-      </Button>
+      {method === "prompt" && (
+        <Button
+          size="sm"
+          onClick={async () => {
+            await promptInstall();
+            dismiss();
+          }}
+        >
+          Install
+        </Button>
+      )}
       <button
         onClick={dismiss}
         aria-label="Dismiss"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground-subtle hover:bg-surface-hover hover:text-foreground"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground-subtle hover:bg-surface-hover hover:text-foreground"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" />
       </button>
     </div>
   );

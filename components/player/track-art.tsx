@@ -19,17 +19,22 @@ export function TrackArt({
   rounded?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
+  // Remembered per source, so a new track's artwork gets its own attempt.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   return (
     <div className={cn("relative shrink-0 overflow-hidden bg-surface-active", rounded, className)}>
-      {src ? (
+      {src && failedSrc !== src ? (
         <Image
           src={src}
           alt={alt}
           fill
           sizes={sizes}
+          // Artwork saved on the device for offline use is already local.
+          unoptimized={src.startsWith("blob:") || src.startsWith("data:")}
           className={cn("object-cover transition-opacity duration-500 ease-out", loaded ? "opacity-100" : "opacity-0")}
           onLoad={() => setLoaded(true)}
+          onError={() => setFailedSrc(src)}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-foreground-subtle">

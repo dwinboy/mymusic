@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { getAllOfflineTracks, clearAllOfflineTracks, type OfflineTrackRecord } from "@/lib/offline/db";
 import { removeOfflineDownload } from "@/lib/offline/manager";
+import { offlinePlayerTrack } from "@/lib/offline/covers";
 import { clearAudioCache } from "@/lib/offline/audio-cache";
 import { formatDuration, formatFileSize } from "@/lib/utils";
 
@@ -58,7 +59,7 @@ export function OfflineDownloadsList() {
   }
 
   const totalBytes = records.reduce((sum, r) => sum + r.byteSize, 0);
-  const queue = records.map((r) => r.track);
+  const queue = records.map(offlinePlayerTrack);
 
   return (
     <div>
@@ -71,9 +72,9 @@ export function OfflineDownloadsList() {
         </Button>
       </div>
       <div className="flex flex-col divide-y divide-border">
-        {records.map((record) => (
+        {records.map((record, index) => (
           <div key={record.track.id} className="flex items-center gap-3 py-3">
-            <TrackArt src={record.track.coverUrl} alt={record.track.title} className="h-12 w-12" />
+            <TrackArt src={queue[index].coverUrl} alt={record.track.title} className="h-12 w-12" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">{record.track.title}</p>
               <p className="truncate text-xs text-foreground-muted">{record.track.artistName}</p>
@@ -82,7 +83,7 @@ export function OfflineDownloadsList() {
               {formatDuration(record.track.duration)}
             </span>
             <span className="hidden text-xs text-foreground-subtle sm:inline">{formatFileSize(record.byteSize)}</span>
-            <PlayButton track={record.track} queue={queue} size="sm" />
+            <PlayButton track={queue[index]} queue={queue} size="sm" />
             <button
               onClick={() => removeOne(record)}
               aria-label={`Remove ${record.track.title} from offline downloads`}

@@ -5,6 +5,8 @@ export interface OfflineTrackRecord {
   track: PlayerTrack;
   byteSize: number;
   downloadedAt: number;
+  /** The artwork, kept so downloads don't show blank covers without a connection. */
+  coverBlob?: Blob;
 }
 
 interface VibeBangerOfflineDB extends DBSchema {

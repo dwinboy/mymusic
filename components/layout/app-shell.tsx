@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { PlayerShell } from "@/components/player/player-shell";
+import { InstallNudge } from "@/components/pwa/install-nudge";
 import { cn } from "@/lib/utils";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <BottomNav />
       <PlayerShell />
+      <InstallNudge />
     </div>
   );
 }

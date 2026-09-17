@@ -1,6 +1,7 @@
 import type { PlayerTrack } from "@/lib/types";
 import { putOfflineTrack, removeOfflineTrack, getOfflineTrack } from "./db";
 import { cacheAudioResponse, removeCachedAudio } from "./audio-cache";
+import { warmOfflinePages } from "./warm";
 
 export type DownloadStatus = "idle" | "downloading" | "downloaded" | "failed";
 
@@ -47,9 +48,22 @@ export async function downloadTrackForOffline(
   });
 
   await cacheAudioResponse(track.audioUrl, cachedResponse);
-  await putOfflineTrack({ track, byteSize: blob.size, downloadedAt: Date.now() });
+  await putOfflineTrack({ track, byteSize: blob.size, downloadedAt: Date.now(), coverBlob: await fetchCover(track.coverUrl) });
+  // Make sure there's a page to play it from when the connection is gone.
+  void warmOfflinePages({ force: true }).catch(() => {});
 
   onProgress?.(100);
+}
+
+/** Best effort: a download without artwork still plays. */
+async function fetchCover(url: string | null): Promise<Blob | undefined> {
+  if (!url) return undefined;
+  try {
+    const response = await fetch(url);
+    return response.ok ? await response.blob() : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function removeOfflineDownload(track: Pick<PlayerTrack, "id" | "audioUrl">): Promise<void> {

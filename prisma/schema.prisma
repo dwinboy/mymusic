@@ -273,6 +273,8 @@ model Track {
   /// URLs here; MediaService derives an access URL from the key on demand.
   originalStorageKey  String?
   streamingStorageKey String?
+  /// Loudness peaks (0–1) for drawing the track's waveform. Empty until computed.
+  waveform            Float[]   @default([])
   downloadStorageKey  String?
   originalFormat      String?
   streamingFormat     String?

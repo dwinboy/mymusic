@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/states/empty-state";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { formatDuration } from "@/lib/utils";
+import { CrossfadeSetting } from "@/components/player/crossfade-setting";
 
 export function QueuePanel() {
   const track = usePlayerStore((s) => s.currentTrack());
@@ -17,6 +18,7 @@ export function QueuePanel() {
   const tracks = usePlayerStore((s) => s.tracks);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
   const upcoming = useMemo(() => tracks.slice(currentIndex + 1), [tracks, currentIndex]);
+  const radio = usePlayerStore((s) => s.radio);
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const reorderQueue = usePlayerStore((s) => s.reorderQueue);
   const clearQueue = usePlayerStore((s) => s.clearQueue);
@@ -42,7 +44,7 @@ export function QueuePanel() {
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wide text-foreground-subtle">
-            Next up {upcoming.length > 0 && `(${upcoming.length})`}
+            {radio ? `Radio · songs like ${radio.seedTitle}` : "Next up"} {upcoming.length > 0 && `(${upcoming.length})`}
           </p>
           {upcoming.length > 0 && (
             <Button variant="ghost" size="sm" onClick={clearQueue} className="h-7 px-2 text-xs">
@@ -96,6 +98,8 @@ export function QueuePanel() {
           </div>
         )}
       </div>
+
+      <CrossfadeSetting />
     </div>
   );
 }

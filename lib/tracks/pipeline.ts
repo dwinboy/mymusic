@@ -6,6 +6,7 @@ import { getStorageDriver } from "@/lib/storage";
 import { getAudioProcessingService } from "@/lib/media/processing-service";
 import { productionLocalStorageWarning } from "@/lib/media/production-guard";
 import { getObjectBuffer, putObject } from "@/lib/media/r2-client";
+import { computeWaveform } from "@/lib/media/waveform";
 
 /**
  * The audio upload pipeline, shared by admin and creator routes so there is
@@ -106,6 +107,8 @@ export async function startTrackUpload(input: {
       sourceExtension: ext,
       createDownloadVersion: true,
     });
+    // Decorative, so a failure here never fails the upload.
+    const waveform = await computeWaveform(processed.streamingBuffer, "mp3").catch(() => []);
     const streamStored = await storage.put({
       folder: "audio",
       filename: `${buildStreamingKey(track.id).split("/").pop()}`,
@@ -136,6 +139,7 @@ export async function startTrackUpload(input: {
         downloadFormat: downloadStored ? "mp3" : null,
         originalSize: originalStored.size,
         originalFormat: ext,
+        waveform,
         processingStatus: "READY",
         processingError: null,
       },
@@ -173,11 +177,14 @@ export async function processTrackAudio(trackId: string) {
       downloadKey = buildDownloadKey(track.id, processed.downloadFormat);
       await putObject(downloadKey, processed.downloadBuffer, "audio/mpeg");
     }
+    // Decorative, so a failure here never fails processing.
+    const waveform = await computeWaveform(processed.streamingBuffer, "mp3").catch(() => []);
 
     return await db.track.update({
       where: { id: trackId },
       data: {
         duration: metadata.durationSeconds,
+        waveform,
         streamingStorageKey: streamingKey,
         streamingFormat: processed.streamingFormat,
         streamingSize: processed.streamingBuffer.byteLength,

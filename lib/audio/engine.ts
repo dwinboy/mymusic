@@ -7,18 +7,43 @@ import {
 } from "./media-session";
 import { PlayTracker } from "./play-tracker";
 
+const SLEEP_FADE_MS = 8000;
+const CROSSFADE_TICK_MS = 50;
+
 /**
- * Owns a single HTMLAudioElement created outside the React tree so playback
- * is never interrupted by component unmount/remount during navigation.
+ * iPhone and iPad ignore an audio element's volume, so a fade can't be done:
+ * two tracks would simply overlap at full volume.
+ */
+export function volumeIsControllable() {
+  if (typeof navigator === "undefined") return true;
+  const iOS = /iphone|ipod|ipad/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return !iOS;
+}
+
+interface Crossfade {
+  outgoing: HTMLAudioElement;
+  startedAt: number;
+  /** When the incoming track actually started sounding; its fade-in runs from here. */
+  inStartedAt: number | null;
+  durationMs: number;
+  timer: ReturnType<typeof setInterval>;
+}
+
+/**
+ * Owns the audio elements, created outside the React tree so playback is
+ * never interrupted by component unmount/remount during navigation.
  * The Zustand player store is the single source of truth for *intent*
  * (which track, playing or not, volume, seek target); this class reconciles
  * the real <audio> element against that intent, and pushes real playback
  * facts (buffering, actual position, errors) back into the store.
+ *
+ * One element plays at a time. The second exists only for crossfading: the
+ * next track starts on it while the current one fades out, and the two swap
+ * roles. Events from whichever element isn't current are ignored.
  */
-const SLEEP_FADE_MS = 8000;
-
 class AudioEngine {
   private audio: HTMLAudioElement | null = null;
+  private standby: HTMLAudioElement | null = null;
   private lastTrackId: string | null = null;
   private tracker = new PlayTracker();
   /**
@@ -34,65 +59,33 @@ class AudioEngine {
   private fade = 1;
   private sleepTicker: ReturnType<typeof setInterval> | null = null;
   private lastPersistedVolume = 1;
+  private crossfade: Crossfade | null = null;
+  /** Set while the engine itself is moving the queue on for a crossfade. */
+  private advancingForCrossfade = false;
+  private canFade = true;
 
   init() {
     if (this.initialized || typeof window === "undefined") return;
     this.initialized = true;
+    this.canFade = volumeIsControllable();
 
-    const audio = new Audio();
-    audio.preload = "metadata";
-    audio.crossOrigin = "anonymous";
-    this.audio = audio;
+    this.audio = this.createElement();
+    this.standby = this.createElement();
 
     try {
       const savedVolume = window.localStorage.getItem("vibebanger:volume");
-      if (savedVolume !== null) {
-        usePlayerStore.setState({ volume: Math.min(1, Math.max(0, Number(savedVolume))) });
-      }
+      const savedCrossfade = window.localStorage.getItem("vibebanger:crossfade");
+      usePlayerStore.setState({
+        ...(savedVolume !== null ? { volume: Math.min(1, Math.max(0, Number(savedVolume))) } : {}),
+        ...(savedCrossfade !== null ? { crossfadeSeconds: Math.min(12, Math.max(0, Number(savedCrossfade) || 0)) } : {}),
+      });
     } catch {
-      // Storage unavailable (private mode, disabled cookies) — fall back to default volume.
+      // Storage unavailable (private mode, disabled cookies) — fall back to defaults.
     }
-
-    audio.addEventListener("timeupdate", () => {
-      usePlayerStore.getState()._setCurrentTime(audio.currentTime);
-      setMediaSessionPosition(audio.duration, audio.currentTime);
-      this.tracker.onTimeUpdate(audio.currentTime, !audio.paused);
-    });
-    audio.addEventListener("loadedmetadata", () => {
-      usePlayerStore.getState()._setDuration(audio.duration || 0);
-    });
-    audio.addEventListener("waiting", () => usePlayerStore.getState()._setLoading(true));
-    audio.addEventListener("canplay", () => usePlayerStore.getState()._setLoading(false));
-    audio.addEventListener("playing", () => {
-      usePlayerStore.getState()._setLoading(false);
-      usePlayerStore.getState()._setPlaying(true);
-      setMediaSessionPlaybackState("playing");
-    });
-    audio.addEventListener("pause", () => {
-      usePlayerStore.getState()._setPlaying(false);
-      setMediaSessionPlaybackState("paused");
-    });
-    audio.addEventListener("ended", () => {
-      this.tracker.onEnded();
-      this.replayPending = true;
-      const store = usePlayerStore.getState();
-      // "Stop at the end of this song": stay on it, paused, instead of moving on.
-      if (store.sleepTimer.endOfTrack) {
-        store.setSleepTimer(null);
-        store.pause();
-        return;
-      }
-      store._onEnded();
-    });
 
     // Closing the tab or backgrounding the app on mobile is the last chance to
     // report how much of the current track was heard.
     window.addEventListener("pagehide", () => this.tracker.flush(true));
-    audio.addEventListener("error", () => {
-      if (!audio.src) return;
-      usePlayerStore.getState()._setError("This track couldn't be played.");
-      usePlayerStore.getState()._setLoading(false);
-    });
 
     registerMediaSessionHandlers({
       play: () => usePlayerStore.getState().resume(),
@@ -115,6 +108,63 @@ class AudioEngine {
     this.reconcile(usePlayerStore.getState());
   }
 
+  private createElement() {
+    const el = new Audio();
+    el.preload = "metadata";
+    el.crossOrigin = "anonymous";
+    // Every handler speaks for the current element only; the other one is
+    // either idle or fading out.
+    const current = () => el === this.audio;
+
+    el.addEventListener("timeupdate", () => {
+      if (!current()) return;
+      usePlayerStore.getState()._setCurrentTime(el.currentTime);
+      setMediaSessionPosition(el.duration, el.currentTime);
+      this.tracker.onTimeUpdate(el.currentTime, !el.paused);
+      this.maybeStartCrossfade(el);
+    });
+    el.addEventListener("loadedmetadata", () => {
+      if (current()) usePlayerStore.getState()._setDuration(el.duration || 0);
+    });
+    el.addEventListener("waiting", () => {
+      if (current()) usePlayerStore.getState()._setLoading(true);
+    });
+    el.addEventListener("canplay", () => {
+      if (current()) usePlayerStore.getState()._setLoading(false);
+    });
+    el.addEventListener("playing", () => {
+      if (!current()) return;
+      if (this.crossfade && this.crossfade.inStartedAt === null) this.crossfade.inStartedAt = Date.now();
+      usePlayerStore.getState()._setLoading(false);
+      usePlayerStore.getState()._setPlaying(true);
+      setMediaSessionPlaybackState("playing");
+    });
+    el.addEventListener("pause", () => {
+      if (!current()) return;
+      usePlayerStore.getState()._setPlaying(false);
+      setMediaSessionPlaybackState("paused");
+    });
+    el.addEventListener("ended", () => {
+      if (!current()) return;
+      this.tracker.onEnded();
+      this.replayPending = true;
+      const store = usePlayerStore.getState();
+      // "Stop at the end of this song": stay on it, paused, instead of moving on.
+      if (store.sleepTimer.endOfTrack) {
+        store.setSleepTimer(null);
+        store.pause();
+        return;
+      }
+      store._onEnded();
+    });
+    el.addEventListener("error", () => {
+      if (!current() || !el.src) return;
+      usePlayerStore.getState()._setError("This track couldn't be played.");
+      usePlayerStore.getState()._setLoading(false);
+    });
+    return el;
+  }
+
   private reconcile(state: ReturnType<typeof usePlayerStore.getState>) {
     const audio = this.audio;
     if (!audio) return;
@@ -125,7 +175,14 @@ class AudioEngine {
     const playRequested = state.isPlaying && !this.wasPlaying;
     this.wasPlaying = state.isPlaying;
 
+    // Pausing mid-crossfade stops both tracks, not just the incoming one.
+    if (this.crossfade && !state.isPlaying) this.finishCrossfade();
+
     if (track?.id !== this.lastTrackId) {
+      // Skipping or starting something else mid-crossfade cuts the old track.
+      if (this.crossfade && !this.advancingForCrossfade) this.finishCrossfade();
+      this.advancingForCrossfade = false;
+
       this.lastTrackId = track?.id ?? null;
       this.replayPending = false;
       if (track) {
@@ -145,6 +202,7 @@ class AudioEngine {
           );
         }
         audio.load();
+        this.applyVolume(state);
         updateMediaSessionMetadata(track);
         if (state.isPlaying) this.play(audio);
         // Records the play (and listening history for signed-in users).
@@ -185,10 +243,7 @@ class AudioEngine {
       audio.pause();
     }
 
-    const targetVolume = (state.isMuted ? 0 : state.volume) * this.fade;
-    if (Math.abs(audio.volume - targetVolume) > 0.001) {
-      audio.volume = targetVolume;
-    }
+    this.applyVolume(state);
     if (Math.abs(this.lastPersistedVolume - state.volume) > 0.001) {
       this.lastPersistedVolume = state.volume;
       try {
@@ -198,6 +253,93 @@ class AudioEngine {
       }
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Volume: the listener's setting, times the sleep timer fade, times any
+  // crossfade ramp.
+  // ---------------------------------------------------------------------------
+
+  private baseVolume(state = usePlayerStore.getState()) {
+    return (state.isMuted ? 0 : state.volume) * this.fade;
+  }
+
+  private applyVolume(state = usePlayerStore.getState()) {
+    if (!this.audio) return;
+    const target = this.baseVolume(state) * (this.crossfade ? this.crossfadeLevels().incoming : 1);
+    if (Math.abs(this.audio.volume - target) > 0.001) this.audio.volume = target;
+    if (this.crossfade) this.crossfade.outgoing.volume = this.baseVolume(state) * this.crossfadeLevels().outgoing;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Crossfade
+  // ---------------------------------------------------------------------------
+
+  private maybeStartCrossfade(el: HTMLAudioElement) {
+    const state = usePlayerStore.getState();
+    const seconds = state.crossfadeSeconds;
+    if (!this.canFade || seconds <= 0 || this.crossfade || !state.isPlaying || el.paused) return;
+    if (!Number.isFinite(el.duration) || el.duration < seconds * 3) return;
+    if (el.duration - el.currentTime > seconds) return;
+    // Nothing to fade into, or the listener asked for this track again or to stop after it.
+    if (state.repeatMode === "one" || state.sleepTimer.endOfTrack) return;
+    const hasNext = state.currentIndex < state.tracks.length - 1 || (state.repeatMode === "all" && state.tracks.length > 1);
+    if (!hasNext || !this.standby) return;
+
+    // The remaining seconds of this track count as heard.
+    this.tracker.onEnded();
+
+    const outgoing = el;
+    this.audio = this.standby;
+    this.standby = outgoing;
+    this.crossfade = {
+      outgoing,
+      startedAt: Date.now(),
+      inStartedAt: null,
+      durationMs: Math.max(1, (outgoing.duration - outgoing.currentTime) * 1000),
+      timer: setInterval(() => this.crossfadeTick(), CROSSFADE_TICK_MS),
+    };
+    this.advancingForCrossfade = true;
+    state.next();
+  }
+
+  /** Equal-power curve: the combined loudness stays even through the blend. */
+  private crossfadeLevels() {
+    const cf = this.crossfade;
+    if (!cf) return { incoming: 1, outgoing: 0 };
+    const now = Date.now();
+    const out = Math.min(1, (now - cf.startedAt) / cf.durationMs);
+    const inProgress = cf.inStartedAt === null ? 0 : Math.min(1, (now - cf.inStartedAt) / cf.durationMs);
+    return { incoming: Math.sin((inProgress * Math.PI) / 2), outgoing: Math.cos((out * Math.PI) / 2) };
+  }
+
+  private crossfadeTick() {
+    const cf = this.crossfade;
+    if (!cf) return;
+    const { incoming } = this.crossfadeLevels();
+    const outgoingDone = cf.outgoing.ended || cf.outgoing.paused || Date.now() - cf.startedAt >= cf.durationMs;
+    if (outgoingDone && incoming >= 0.999) {
+      this.finishCrossfade();
+      return;
+    }
+    if (outgoingDone && !cf.outgoing.paused) cf.outgoing.pause();
+    this.applyVolume();
+  }
+
+  /** Ends a crossfade now: silences the outgoing track and restores full volume to the current one. */
+  private finishCrossfade() {
+    const cf = this.crossfade;
+    if (!cf) return;
+    clearInterval(cf.timer);
+    this.crossfade = null;
+    cf.outgoing.pause();
+    cf.outgoing.removeAttribute("src");
+    cf.outgoing.load();
+    this.applyVolume();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sleep timer
+  // ---------------------------------------------------------------------------
 
   private syncSleepTicker(state: ReturnType<typeof usePlayerStore.getState>) {
     const active = state.sleepTimer.endsAt !== null || state.sleepTimer.endOfTrack;
@@ -237,8 +379,7 @@ class AudioEngine {
   private setFade(fade: number) {
     if (Math.abs(this.fade - fade) < 0.01) return;
     this.fade = fade;
-    const state = usePlayerStore.getState();
-    if (this.audio) this.audio.volume = (state.isMuted ? 0 : state.volume) * fade;
+    this.applyVolume();
   }
 
   private play(audio: HTMLAudioElement) {

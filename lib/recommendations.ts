@@ -8,7 +8,7 @@ import { TRACK_WITH_RELATIONS } from "@/lib/taxonomy";
  * touching any page that shows "You May Also Like".
  */
 export interface RecommendationService {
-  similarTracks(trackId: string, opts?: { limit?: number; excludeArtistId?: string }): Promise<RecommendedTrack[]>;
+  similarTracks(trackId: string, opts?: SimilarTracksOptions): Promise<RecommendedTrack[]>;
   /**
    * "Because you listen to Ambient": the listener's dominant genre from recent
    * history, with tracks from it they haven't heard. Null when there isn't
@@ -18,6 +18,13 @@ export interface RecommendationService {
 }
 
 export type RecommendedTrack = Prisma.TrackGetPayload<{ include: typeof TRACK_WITH_RELATIONS }>;
+
+export interface SimilarTracksOptions {
+  limit?: number;
+  excludeArtistId?: string;
+  /** Tracks to leave out, e.g. what a radio station has just played. */
+  excludeIds?: string[];
+}
 
 /**
  * How much a shared term of each kind says about two tracks being alike.
@@ -37,8 +44,9 @@ const KIND_WEIGHT = {
 const ENERGY_ORDER = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
 
 class MetadataRecommendationService implements RecommendationService {
-  async similarTracks(trackId: string, opts: { limit?: number; excludeArtistId?: string } = {}) {
+  async similarTracks(trackId: string, opts: SimilarTracksOptions = {}) {
     const limit = opts.limit ?? 12;
+    const excluded = [trackId, ...(opts.excludeIds ?? [])];
     const source = await db.track.findUnique({
       where: { id: trackId },
       select: { energy: true, terms: { select: { termId: true } } },
@@ -75,7 +83,7 @@ class MetadataRecommendationService implements RecommendationService {
         JOIN taxonomy_terms term ON term.id = tt."termId"
         JOIN tracks t ON t.id = tt."trackId"
         WHERE tt."termId" IN (${Prisma.join(termIds)})
-          AND tt."trackId" <> ${trackId}
+          AND tt."trackId" NOT IN (${Prisma.join(excluded)})
           AND t."isPublished" = true
           AND t."processingStatus" = 'READY'
           ${opts.excludeArtistId ? Prisma.sql`AND t."artistId" <> ${opts.excludeArtistId}` : Prisma.empty}
@@ -93,7 +101,7 @@ class MetadataRecommendationService implements RecommendationService {
         where: {
           isPublished: true,
           processingStatus: "READY",
-          id: { notIn: [trackId, ...rankedIds] },
+          id: { notIn: [...excluded, ...rankedIds] },
           ...(opts.excludeArtistId ? { artistId: { not: opts.excludeArtistId } } : {}),
         },
         orderBy: [{ playCount: "desc" }, { createdAt: "desc" }],

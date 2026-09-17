@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontal, ListPlus, ListEnd, ListMusic, Download, Share2, Disc3, Mic2, ListX } from "lucide-react";
+import { MoreHorizontal, ListPlus, ListEnd, ListMusic, Download, Share2, Disc3, Mic2, ListX, Radio } from "lucide-react";
+import { startRadioFrom } from "@/lib/radio";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,14 @@ export function TrackMenu({
           }}
         >
           <ListPlus className="h-4 w-4" /> Add to queue
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            toast({ title: "Radio", description: `Playing songs like ${track.title}` });
+            void startRadioFrom(track);
+          }}
+        >
+          <Radio className="h-4 w-4" /> Start radio
         </DropdownMenuItem>
         <AddToPlaylistDialog
           trackId={track.id}

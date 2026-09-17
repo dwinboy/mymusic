@@ -11,6 +11,7 @@ import { PlayButton } from "@/components/player/play-button";
 import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
 import { ShareMenu } from "@/components/music/share-menu";
+import { StartRadioButton } from "@/components/music/start-radio-button";
 import { AddToPlaylistDialog } from "@/components/music/add-to-playlist-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -166,6 +167,7 @@ export default async function SongPage({
             ) : (
               <PlayButton track={playerTrack} queue={listenQueue} size="lg" />
             )}
+            <StartRadioButton track={playerTrack} />
             <LikeButton trackId={track.id} initialLiked={liked.has(track.id)} size="lg" className="rounded-full border border-border-strong p-2.5" />
             <DownloadButton track={playerTrack} size="lg" className="rounded-full border border-border-strong p-2.5" />
             <AddToPlaylistDialog

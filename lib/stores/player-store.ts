@@ -29,6 +29,10 @@ interface PlayerState {
   /** Shuffle keeps the original order here so it can be restored. */
   unshuffledTracks: PlayerTrack[] | null;
   sleepTimer: SleepTimer;
+  /** Set while playing a radio station; its queue keeps refilling with similar songs. */
+  radio: { seedId: string; seedTitle: string } | null;
+  /** Seconds to blend one track into the next; 0 plays them back to back. */
+  crossfadeSeconds: number;
 
   currentTrack: () => PlayerTrack | null;
   upcoming: () => PlayerTrack[];
@@ -36,6 +40,9 @@ interface PlayerState {
   /** startAt (seconds) begins mid-track, e.g. from a "listen from 1:24" link. */
   playTrack: (track: PlayerTrack, queue?: PlayerTrack[], startAt?: number) => void;
   playQueue: (tracks: PlayerTrack[], startIndex?: number) => void;
+  /** Plays the seed now; the station's songs are appended as they arrive. */
+  startRadio: (seed: PlayerTrack) => void;
+  appendToRadio: (tracks: PlayerTrack[]) => void;
   togglePlay: () => void;
   pause: () => void;
   resume: () => void;
@@ -55,6 +62,7 @@ interface PlayerState {
   setQueueOpen: (open: boolean) => void;
   /** null turns the timer off. */
   setSleepTimer: (option: SleepTimerOption | null) => void;
+  setCrossfadeSeconds: (seconds: number) => void;
 
   // Called by the audio engine to reflect real playback state.
   _setCurrentTime: (time: number) => void;
@@ -90,6 +98,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isQueueOpen: false,
   unshuffledTracks: null,
   sleepTimer: { endsAt: null, endOfTrack: false },
+  radio: null,
+  crossfadeSeconds: 0,
 
   currentTrack: () => {
     const { tracks, currentIndex } = get();
@@ -112,6 +122,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       error: null,
       shuffle: false,
       unshuffledTracks: null,
+      radio: null,
     });
   },
 
@@ -124,8 +135,32 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       error: null,
       shuffle: false,
       unshuffledTracks: null,
+      radio: null,
     });
   },
+
+  startRadio: (seed) => {
+    set({
+      tracks: [seed],
+      currentIndex: 0,
+      isPlaying: true,
+      currentTime: 0,
+      error: null,
+      shuffle: false,
+      unshuffledTracks: null,
+      repeatMode: "off",
+      radio: { seedId: seed.id, seedTitle: seed.title },
+    });
+  },
+
+  appendToRadio: (incoming) =>
+    set((s) => {
+      if (!s.radio) return s;
+      // Never queue the same song twice in a row.
+      const last = s.tracks[s.tracks.length - 1];
+      const tracks = incoming.filter((t, i) => (i === 0 ? t.id !== last?.id : t.id !== incoming[i - 1].id));
+      return { tracks: [...s.tracks, ...tracks] };
+    }),
 
   togglePlay: () => set((s) => ({ isPlaying: !s.isPlaying })),
   pause: () => set({ isPlaying: false }),
@@ -226,10 +261,20 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   clearQueue: () =>
     set((s) => ({
       tracks: s.currentIndex >= 0 ? s.tracks.slice(0, s.currentIndex + 1) : [],
+      // Clearing a radio queue means "stop after this one", not "refill it".
+      radio: null,
     })),
 
   setNowPlayingOpen: (open) => set({ isNowPlayingOpen: open }),
   setQueueOpen: (open) => set({ isQueueOpen: open }),
+  setCrossfadeSeconds: (seconds) => {
+    set({ crossfadeSeconds: seconds });
+    try {
+      window.localStorage.setItem("vibebanger:crossfade", String(seconds));
+    } catch {
+      // Non-critical preference.
+    }
+  },
   setSleepTimer: (option) =>
     set({
       sleepTimer:

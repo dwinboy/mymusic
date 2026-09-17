@@ -6,7 +6,7 @@ import { ChevronDown, Shuffle, SkipBack, SkipForward, Repeat, Repeat1, ListMusic
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { TrackArt } from "@/components/player/track-art";
 import { PlayButton } from "@/components/player/play-button";
-import { ProgressBar } from "@/components/player/progress-bar";
+import { WaveformProgress } from "@/components/player/waveform-progress";
 import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
 import { ShareMenu } from "@/components/music/share-menu";
@@ -28,6 +28,7 @@ export function NowPlayingSheet() {
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
   const setQueueOpen = usePlayerStore((s) => s.setQueueOpen);
+  const radio = usePlayerStore((s) => s.radio);
 
   const accent = useDominantColor(track?.coverUrl);
   const [showLyrics, setShowLyrics] = useState(false);
@@ -125,7 +126,7 @@ export function NowPlayingSheet() {
             <ChevronDown className="h-5 w-5" />
           </button>
           <p className="truncate px-3 text-xs font-medium uppercase tracking-wide text-foreground-subtle">
-            {track.albumTitle ?? "Playing"}
+            {radio ? `Radio · ${radio.seedTitle}` : (track.albumTitle ?? "Playing")}
           </p>
           <button
             onClick={() => setQueueOpen(true)}
@@ -178,7 +179,7 @@ export function NowPlayingSheet() {
             </div>
 
             <div data-no-swipe>
-              <ProgressBar className="mt-6" />
+              <WaveformProgress className="mt-6" />
             </div>
 
             <div data-no-swipe className="mt-4 flex items-center justify-center gap-6">

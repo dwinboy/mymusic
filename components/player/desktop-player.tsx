@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Shuffle, SkipBack, SkipForward, Repeat, Repeat1, ListMusic, Maximize2 } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { PlayButton } from "@/components/player/play-button";
-import { ProgressBar } from "@/components/player/progress-bar";
+import { WaveformProgress } from "@/components/player/waveform-progress";
 import { VolumeControl } from "@/components/player/volume-control";
 import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
@@ -96,7 +96,7 @@ export function DesktopPlayer() {
             <RepeatIcon className="h-4 w-4" />
           </button>
         </div>
-        <ProgressBar className="w-full" />
+        <WaveformProgress className="w-full" layout="inline" barsClassName="h-5" />
       </div>
 
       <div className="flex w-72 items-center justify-end gap-3">

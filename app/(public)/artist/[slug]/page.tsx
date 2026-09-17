@@ -112,7 +112,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
 
         <div className="mt-6 flex items-center gap-3">
           {popularPlayerTracks[0] && <PlayButton track={popularPlayerTracks[0]} queue={popularPlayerTracks} size="lg" />}
-          <ShareMenu url={shareUrl} title={artist.name} size="lg" className="rounded-full border border-border-strong p-2.5" />
+          <ShareMenu url={shareUrl} title={artist.name} text={`${artist.name} on Vibe Banger`} size="lg" className="rounded-full border border-border-strong p-2.5" />
         </div>
 
         {popularPlayerTracks.length > 0 && (

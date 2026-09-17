@@ -100,7 +100,13 @@ export function DesktopPlayer() {
 
       <div className="flex w-72 items-center justify-end gap-3">
         <DownloadButton track={track} size="sm" />
-        <ShareMenu url={typeof window !== "undefined" ? `${window.location.origin}/song/${track.slug}` : ""} title={track.title} size="sm" />
+        <ShareMenu
+          url={typeof window !== "undefined" ? `${window.location.origin}/song/${track.slug}` : ""}
+          title={track.title}
+          text={`${track.title} by ${track.artistName}`}
+          trackId={track.id}
+          size="sm"
+        />
         <VolumeControl />
         <button
           onClick={() => setQueueOpen(true)}

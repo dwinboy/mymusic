@@ -9,12 +9,18 @@ import type { PlayerTrack } from "@/lib/types";
 export function PlayButton({
   track,
   queue,
+  startAt,
+  label,
   size = "md",
   className,
   variant = "solid",
 }: {
   track: PlayerTrack;
   queue?: PlayerTrack[];
+  /** Seconds into the track to start from when it isn't already playing. */
+  startAt?: number;
+  /** Renders a pill with this text beside the icon instead of a round button. */
+  label?: string;
   size?: "sm" | "md" | "lg";
   className?: string;
   variant?: "solid" | "ghost";
@@ -43,7 +49,7 @@ export function PlayButton({
     if (isCurrent) {
       togglePlay();
     } else {
-      playTrack(track, queue);
+      playTrack(track, queue, startAt);
     }
   }
 
@@ -56,7 +62,7 @@ export function PlayButton({
         variant === "solid"
           ? "bg-accent text-accent-foreground shadow-lg hover:scale-105 hover:bg-accent-hover"
           : "bg-canvas/60 text-foreground backdrop-blur-sm hover:bg-canvas/80",
-        sizeClasses,
+        label ? cn("gap-2 px-6 font-semibold hover:scale-[1.02]", sizeClasses.split(" ")[0]) : sizeClasses,
         className
       )}
     >
@@ -67,6 +73,7 @@ export function PlayButton({
       ) : (
         <Play className={cn(iconSize, "translate-x-[1px]")} fill="currentColor" />
       )}
+      {label && <span className="tabular">{isCurrent ? (isPlaying ? "Pause" : "Resume") : label}</span>}
     </button>
   );
 }

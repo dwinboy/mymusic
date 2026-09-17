@@ -224,6 +224,8 @@ export function NowPlayingSheet() {
               <ShareMenu
                 url={typeof window !== "undefined" ? `${window.location.origin}/song/${track.slug}` : ""}
                 title={track.title}
+                text={`${track.title} by ${track.artistName}`}
+                trackId={track.id}
                 size="md"
               />
             </div>

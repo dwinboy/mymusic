@@ -86,7 +86,7 @@ export default async function PlaylistPage({ params }: { params: Promise<{ slug:
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {playerTracks[0] && <PlayButton track={playerTracks[0]} queue={playerTracks} size="lg" />}
             <ShufflePlayButton tracks={playerTracks} />
-            <ShareMenu url={shareUrl} title={playlist.title} size="lg" className="rounded-full border border-border-strong p-2.5" />
+            <ShareMenu url={shareUrl} title={playlist.title} text={`${playlist.title} — a playlist on Vibe Banger`} size="lg" className="rounded-full border border-border-strong p-2.5" />
             {isOwner && <PlaylistOwnerMenu playlistId={playlist.id} currentTitle={playlist.title} />}
           </div>
         </div>

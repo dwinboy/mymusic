@@ -99,7 +99,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <PlayButton track={firstTrack} queue={playerTracks} size="lg" />
             <ShufflePlayButton tracks={playerTracks} />
-            <ShareMenu url={shareUrl} title={album.title} size="lg" className="rounded-full border border-border-strong p-2.5" />
+            <ShareMenu url={shareUrl} title={album.title} text={`${album.title} by ${album.artist.name}`} size="lg" className="rounded-full border border-border-strong p-2.5" />
           </div>
         </div>
       </div>

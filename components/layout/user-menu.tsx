@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart } from "lucide-react";
+import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +62,14 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/downloads">
             <Download className="h-4 w-4" /> Downloads
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {/* Offered to every listener: the studio onboards anyone without a
+            creator profile, so there's no separate "become a creator" step. */}
+        <DropdownMenuItem asChild>
+          <Link href="/creator">
+            <Sparkles className="h-4 w-4" /> Creator Studio
           </Link>
         </DropdownMenuItem>
         {session.user.role === "ADMIN" && (

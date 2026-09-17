@@ -53,7 +53,12 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!title) return NextResponse.json({ error: "A title is required." }, { status: 400 });
     if (title !== existing.title) {
       data.title = title.slice(0, 120);
-      data.slug = await uniqueSlug(title, async (s) => s !== existing.slug && !!(await db.track.findUnique({ where: { slug: s } })));
+      // The slug is the public URL. It follows the title only until the track
+      // is first submitted (the upload title is usually just the filename);
+      // after that, renaming mustn't break links people have shared.
+      if (existing.moderationStatus === "NONE") {
+        data.slug = await uniqueSlug(title, async (s) => s !== existing.slug && !!(await db.track.findUnique({ where: { slug: s } })));
+      }
     }
   }
   text("description", 2000);

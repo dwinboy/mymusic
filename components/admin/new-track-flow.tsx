@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrackForm, type TrackFormInitial } from "@/components/admin/track-form";
 import { QuickCreateArtist } from "@/components/admin/quick-create-artist";
+import { xhrPut } from "@/lib/upload/xhr-put";
 import { formatFileSize, cn } from "@/lib/utils";
 
 interface Artist {
@@ -283,19 +284,6 @@ export function NewTrackFlow({
   );
 }
 
-function xhrPut(url: string, file: File, onProgress: (percent: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
-    };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error("Upload failed")));
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.send(file);
-  });
-}
 
 function toFormInitial(track: {
   id: string;

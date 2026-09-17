@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Music2, Disc3, Mic2, PlayCircle, Download, Plus, AlertTriangle } from "lucide-react";
+import { Music2, Disc3, Mic2, PlayCircle, Download, Plus, AlertTriangle, ShieldCheck, ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { formatCompactNumber, formatReleaseDate } from "@/lib/utils";
@@ -17,6 +17,7 @@ export default async function AdminDashboardPage() {
     recentUploads,
     popularGroups,
     needsAttention,
+    pendingReview,
   ] = await Promise.all([
       db.track.count(),
       db.album.count(),
@@ -34,7 +35,9 @@ export default async function AdminDashboardPage() {
         orderBy: { _count: { trackId: "desc" } },
         take: 6,
       }),
-      db.track.count({ where: { processingStatus: { not: "READY" } } }),
+      // Platform uploads only: a creator's unfinished upload is theirs to retry.
+      db.track.count({ where: { processingStatus: { not: "READY" }, artist: { ownerId: null } } }),
+      db.track.count({ where: { moderationStatus: "PENDING_REVIEW" } }),
     ]);
 
   const popularTrackIds = popularGroups.map((g) => g.trackId);
@@ -66,6 +69,19 @@ export default async function AdminDashboardPage() {
           </Link>
         </Button>
       </div>
+
+      {pendingReview > 0 && (
+        <Link
+          href="/admin/moderation"
+          className="mt-6 flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 transition-colors hover:bg-accent/10"
+        >
+          <ShieldCheck className="h-5 w-5 shrink-0 text-accent" />
+          <p className="min-w-0 flex-1 text-sm font-medium text-foreground">
+            {pendingReview} creator submission{pendingReview === 1 ? "" : "s"} waiting for review
+          </p>
+          <ArrowRight className="h-4 w-4 shrink-0 text-foreground-muted" />
+        </Link>
+      )}
 
       {needsAttention > 0 && (
         <Link

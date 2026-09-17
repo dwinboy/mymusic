@@ -13,11 +13,13 @@ import {
   HardDrive,
   Settings,
   ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/moderation", label: "Review queue", icon: ShieldCheck },
   { href: "/admin/tracks", label: "Tracks", icon: Music2 },
   { href: "/admin/albums", label: "Albums", icon: Disc3 },
   { href: "/admin/artists", label: "Artists", icon: Mic2 },

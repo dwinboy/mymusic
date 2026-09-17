@@ -23,7 +23,8 @@ interface PlayerState {
   currentTrack: () => PlayerTrack | null;
   upcoming: () => PlayerTrack[];
 
-  playTrack: (track: PlayerTrack, queue?: PlayerTrack[]) => void;
+  /** startAt (seconds) begins mid-track, e.g. from a "listen from 1:24" link. */
+  playTrack: (track: PlayerTrack, queue?: PlayerTrack[], startAt?: number) => void;
   playQueue: (tracks: PlayerTrack[], startIndex?: number) => void;
   togglePlay: () => void;
   pause: () => void;
@@ -87,14 +88,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     return tracks.slice(currentIndex + 1);
   },
 
-  playTrack: (track, queue) => {
+  playTrack: (track, queue, startAt = 0) => {
     const list = queue && queue.length > 0 ? queue : [track];
     const index = list.findIndex((t) => t.id === track.id);
     set({
       tracks: list,
       currentIndex: index >= 0 ? index : 0,
       isPlaying: true,
-      currentTime: 0,
+      currentTime: Math.max(0, startAt),
       error: null,
       shuffle: false,
       unshuffledTracks: null,

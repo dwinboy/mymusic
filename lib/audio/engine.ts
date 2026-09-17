@@ -26,6 +26,8 @@ class AudioEngine {
    */
   private replayPending = false;
   private initialized = false;
+  /** The store's play intent at the last reconcile, to tell a fresh "play" from a stale one. */
+  private wasPlaying = false;
   private lastPersistedVolume = 1;
 
   init() {
@@ -106,19 +108,31 @@ class AudioEngine {
     if (!audio) return;
 
     const track = state.currentTrack();
+    const playRequested = state.isPlaying && !this.wasPlaying;
+    this.wasPlaying = state.isPlaying;
 
     if (track?.id !== this.lastTrackId) {
       this.lastTrackId = track?.id ?? null;
       this.replayPending = false;
       if (track) {
         audio.src = track.audioUrl;
+        // A start position set with the track (a shared "from 1:24" link)
+        // can only be applied once the new source's metadata has loaded.
+        const startAt = state.currentTime;
+        if (startAt > 0) {
+          const trackId = track.id;
+          audio.addEventListener(
+            "loadedmetadata",
+            () => {
+              if (this.lastTrackId !== trackId) return;
+              audio.currentTime = Math.min(startAt, Math.max(0, (audio.duration || startAt) - 1));
+            },
+            { once: true }
+          );
+        }
         audio.load();
         updateMediaSessionMetadata(track);
-        if (state.isPlaying) {
-          audio.play().catch(() => {
-            usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
-          });
-        }
+        if (state.isPlaying) this.play(audio);
         // Records the play (and listening history for signed-in users).
         this.tracker.start(track.id, track.duration);
       } else {
@@ -134,10 +148,25 @@ class AudioEngine {
       this.tracker.start(track.id, track.duration);
     }
 
-    if (state.isPlaying && audio.paused) {
-      audio.play().catch(() => {
-        usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
-      });
+    // Seek before reconciling play state: repeat-one rewinds an ended track,
+    // and it can only start playing again once it's no longer at the end.
+    if (Math.abs(audio.currentTime - state.currentTime) > 0.75) {
+      audio.currentTime = state.currentTime;
+    }
+
+    // An ended track reports paused while the store still says playing,
+    // until the ended handler moves the queue on. Calling play() in that gap
+    // restarted the finished track, and the pause that followed cancelled
+    // the next one too, so a queue stopped after its first song.
+    if (state.isPlaying && audio.paused && audio.ended && playRequested) {
+      // Pressing play on a finished track starts it over. The rewind goes
+      // through the store, which owns the position: moving only the element
+      // gets undone by the next reconcile. That nested reconcile also plays.
+      usePlayerStore.getState().seek(0);
+      return;
+    }
+    if (state.isPlaying && audio.paused && !audio.ended) {
+      this.play(audio);
     } else if (!state.isPlaying && !audio.paused) {
       audio.pause();
     }
@@ -154,10 +183,16 @@ class AudioEngine {
         // Ignore — non-critical preference persistence.
       }
     }
+  }
 
-    if (Math.abs(audio.currentTime - state.currentTime) > 0.75) {
-      audio.currentTime = state.currentTime;
-    }
+  private play(audio: HTMLAudioElement) {
+    audio.play().catch((error: unknown) => {
+      // AbortError is routine: a pause or a new track interrupted this
+      // play() request. Only an autoplay refusal needs the listener.
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
+      }
+    });
   }
 
   getElement() {

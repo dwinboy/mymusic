@@ -60,6 +60,8 @@ export function NewTrackFlow({
     draftForm.set("artistId", artistId);
     draftForm.set("title", title);
 
+    let draftTrackId: string | null = null;
+
     try {
       // Crucial: in R2 mode we must NOT attach the raw file here — the whole
       // point of direct-to-R2 upload is that these bytes never touch our
@@ -79,6 +81,8 @@ export function NewTrackFlow({
         setPhase("select");
         return;
       }
+
+      draftTrackId = draftData.track.id;
 
       if (draftData.upload.mode === "r2") {
         // Direct-to-R2 upload with real progress, then trigger processing.
@@ -135,6 +139,14 @@ export function NewTrackFlow({
       await new Promise((r) => setTimeout(r, 400)); // let the checklist register visually
       setPhase("ready");
     } catch {
+      // The draft row already exists server-side in most failure modes
+      // here (e.g. the R2 PUT itself failing, which has no retry path in
+      // this UI) — clean it up rather than leave a permanently stuck
+      // UPLOADING ghost, since the simplest recovery is just uploading
+      // again from scratch.
+      if (draftTrackId) {
+        fetch(`/api/admin/tracks/${draftTrackId}`, { method: "DELETE" }).catch(() => {});
+      }
       setError("Upload failed. Check your connection and try again.");
       setPhase("select");
     }

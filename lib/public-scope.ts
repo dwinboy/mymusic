@@ -18,3 +18,17 @@ export const PUBLIC_TRACK_WHERE = {
 export const PUBLIC_ARTIST_WHERE = {
   tracks: { some: PUBLIC_TRACK_WHERE },
 } satisfies Prisma.ArtistWhereInput;
+
+/** An album is public once published and holding at least one public track. */
+export const PUBLIC_ALBUM_WHERE = {
+  isPublished: true,
+  tracks: { some: PUBLIC_TRACK_WHERE },
+} satisfies Prisma.AlbumWhereInput;
+
+/**
+ * Playlists anyone can browse: platform-made collections, and listeners'
+ * playlists they chose to make public.
+ */
+export const PUBLIC_PLAYLIST_WHERE = {
+  isPublic: true,
+} satisfies Prisma.PlaylistWhereInput;

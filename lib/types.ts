@@ -49,9 +49,18 @@ export interface SearchPlaylistResult {
   coverUrl: string | null;
 }
 
+export interface SearchTermResult {
+  id: string;
+  kind: string;
+  name: string;
+  href: string;
+}
+
 export interface SearchResponse {
   tracks: SearchTrackResult[];
   artists: SearchArtistResult[];
   albums: SearchAlbumResult[];
   playlists: SearchPlaylistResult[];
+  /** Genres, moods, activities… the query named or partly matches. */
+  terms: SearchTermResult[];
 }

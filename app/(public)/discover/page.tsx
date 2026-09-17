@@ -14,6 +14,7 @@ import { QuickIntents } from "@/components/discovery/quick-intents";
 import { TermRail } from "@/components/discovery/term-rail";
 import { trendingService } from "@/lib/trending";
 import { termHref } from "@/lib/taxonomy";
+import { musicNavLinks } from "@/components/layout/nav-links";
 
 export const metadata: Metadata = {
   title: "Discover",
@@ -55,6 +56,19 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
         <p className="mt-3 max-w-xl text-base text-foreground-muted">
           Music by what it sounds like, how it feels, what you&apos;re doing, or the moment you&apos;re in.
         </p>
+        {/* The catalogue lives under "Music" in the desktop header; phones reach it from here. */}
+        <nav aria-label="Browse the catalogue" className="scrollbar-hidden -mx-4 mt-6 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+          {musicNavLinks.slice(0, 4).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-border-strong px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface"
+            >
+              <link.icon className="h-4 w-4 text-accent" />
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       </header>
 
       {catalogueIsEmpty ? (

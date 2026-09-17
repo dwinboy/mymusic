@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrackRow } from "@/components/music/track-row";
@@ -29,9 +29,12 @@ export function PaginatedTrackList({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const liked = new Set(likedIds);
+  const sentinel = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
   async function loadMore() {
-    if (!cursor) return;
+    if (!cursor || loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
     setError(false);
     try {
@@ -49,9 +52,28 @@ export function PaginatedTrackList({
     } catch {
       setError(true);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   }
+
+  // Loads the next page as the end of the list comes into view. Stops after
+  // an error, so a failing request isn't retried on every scroll; the button
+  // stays for that, and for anyone not scrolling.
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !cursor || error) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void loadMore();
+      },
+      { rootMargin: "600px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+    // loadMore reads the latest cursor through state on each call.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cursor, error]);
 
   return (
     <div>
@@ -62,7 +84,7 @@ export function PaginatedTrackList({
       </div>
 
       {cursor && (
-        <div className="mt-6 flex flex-col items-center gap-2">
+        <div ref={sentinel} className="mt-6 flex flex-col items-center gap-2">
           <Button variant="secondary" onClick={loadMore} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Load more

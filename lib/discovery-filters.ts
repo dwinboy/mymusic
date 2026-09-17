@@ -23,7 +23,7 @@ export const FILTER_PARAMS: Record<string, TaxonomyKind> = {
 };
 
 export const ENERGY_VALUES: EnergyLevel[] = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
-export const SORT_VALUES: TrackSort[] = ["recommended", "popular", "newest"];
+export const SORT_VALUES: TrackSort[] = ["recommended", "popular", "newest", "trending"];
 
 export const DURATION_BUCKETS = {
   short: { max: 180 },

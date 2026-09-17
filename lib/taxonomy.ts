@@ -327,7 +327,7 @@ export async function getTopArtistsForTerms(subtreeTermIds: string[], limit = 10
 // Track discovery query
 // ---------------------------------------------------------------------------
 
-export type TrackSort = "newest" | "popular" | "recommended";
+export type TrackSort = "newest" | "popular" | "recommended" | "trending";
 
 export interface TrackFilter {
   /** Track must carry every one of these (intersection: Calm AND Piano). */
@@ -400,6 +400,8 @@ export async function findTracks(
   opts: { sort?: TrackSort; limit?: number; cursor?: string | null } = {}
 ) {
   const limit = Math.min(Math.max(opts.limit ?? 24, 1), 100);
+  if (opts.sort === "trending") return findTrendingTracks(filter, limit, opts.cursor);
+
   const rows = await db.track.findMany({
     where: buildTrackWhere(filter),
     orderBy: orderFor(opts.sort ?? "newest"),
@@ -411,6 +413,49 @@ export async function findTracks(
   const hasMore = rows.length > limit;
   const tracks = hasMore ? rows.slice(0, limit) : rows;
   return { tracks, nextCursor: hasMore ? tracks[tracks.length - 1].id : null };
+}
+
+/**
+ * Trending order within a filter: tracks with recent momentum first, in rank
+ * order, then everything else by popularity, so a quiet week still gives a
+ * full list. Ranks come from a cached id list, so the cursor is an offset
+ * ("o:48") rather than a track id.
+ */
+async function findTrendingTracks(filter: TrackFilter, limit: number, cursor?: string | null) {
+  // Imported here: lib/trending imports this module.
+  const { trendingService } = await import("@/lib/trending");
+  const offset = cursor ? Number(/^o:(\d+)$/.exec(cursor)?.[1] ?? NaN) : 0;
+  if (!Number.isInteger(offset) || offset < 0) throw new Error("Invalid cursor");
+
+  const where = buildTrackWhere(filter);
+  const rankedIds = await trendingService.rankedIds(500);
+  const rank = new Map(rankedIds.map((id, i) => [id, i]));
+  const rising = (
+    await db.track.findMany({ where: { AND: [where, { id: { in: rankedIds } }] }, select: { id: true } })
+  )
+    .map((t) => t.id)
+    .sort((a, b) => rank.get(a)! - rank.get(b)!);
+
+  let pageIds = rising.slice(offset, offset + limit + 1);
+  if (pageIds.length < limit + 1) {
+    const rest = await db.track.findMany({
+      where: { AND: [where, { id: { notIn: rising } }] },
+      orderBy: orderFor("popular"),
+      skip: Math.max(0, offset - rising.length),
+      take: limit + 1 - pageIds.length,
+      select: { id: true },
+    });
+    pageIds = [...pageIds, ...rest.map((t) => t.id)];
+  }
+
+  const hasMore = pageIds.length > limit;
+  pageIds = pageIds.slice(0, limit);
+  const rows = await db.track.findMany({ where: { id: { in: pageIds } }, include: TRACK_WITH_RELATIONS });
+  const byId = new Map(rows.map((t) => [t.id, t]));
+  return {
+    tracks: pageIds.map((id) => byId.get(id)).filter((t): t is (typeof rows)[number] => !!t),
+    nextCursor: hasMore ? `o:${offset + limit}` : null,
+  };
 }
 
 /**

@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Loader2, Music2, Mic2, Disc3, X } from "lucide-react";
+import { Search, Loader2, Music2, Mic2, Disc3, X, Compass } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { cn, formatDuration } from "@/lib/utils";
 import type { SearchResponse } from "@/lib/types";
 
-const EMPTY: SearchResponse = { tracks: [], artists: [], albums: [], playlists: [] };
+const EMPTY: SearchResponse = { tracks: [], artists: [], albums: [], playlists: [], terms: [] };
 
 export function SearchBar({ className }: { className?: string }) {
   const router = useRouter();
@@ -57,7 +57,7 @@ export function SearchBar({ className }: { className?: string }) {
   }, []);
 
   const hasResults =
-    results.tracks.length + results.artists.length + results.albums.length + results.playlists.length > 0;
+    results.tracks.length + results.artists.length + results.albums.length + results.playlists.length + results.terms.length > 0;
 
   function goToFullSearch() {
     if (query.trim().length === 0) return;
@@ -110,6 +110,23 @@ export function SearchBar({ className }: { className?: string }) {
 
           {!isLoading && hasResults && (
             <div className="flex flex-col gap-3 py-1">
+              {results.terms.length > 0 && (
+                <SearchSection title="Browse" icon={Compass}>
+                  <div className="flex flex-wrap gap-1.5 px-2 pb-1 pt-0.5">
+                    {results.terms.map((term) => (
+                      <Link
+                        key={term.id}
+                        href={term.href}
+                        onClick={() => setIsOpen(false)}
+                        className="rounded-full border border-border-strong px-3 py-1 text-xs text-foreground transition-colors hover:border-foreground-subtle hover:bg-surface-hover"
+                      >
+                        {term.name}
+                      </Link>
+                    ))}
+                  </div>
+                </SearchSection>
+              )}
+
               {results.tracks.length > 0 && (
                 <SearchSection title="Songs" icon={Music2}>
                   {results.tracks.map((t) => (

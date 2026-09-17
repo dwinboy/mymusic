@@ -27,8 +27,9 @@ export interface FilterDimension {
   single?: boolean;
 }
 
-const SORTS = [
+export const TRACK_SORTS = [
   { value: "recommended", label: "Recommended" },
+  { value: "trending", label: "Trending" },
   { value: "popular", label: "Popular" },
   { value: "newest", label: "Newest" },
 ];
@@ -38,14 +39,24 @@ const SORTS = [
  * URL, so a filtered view is shareable, survives refresh, and is what the
  * server renders — there's no separate client filter state to drift.
  */
-export function FilterBar({ dimensions, className }: { dimensions: FilterDimension[]; className?: string }) {
+export function FilterBar({
+  dimensions,
+  sorts = TRACK_SORTS,
+  className,
+}: {
+  dimensions: FilterDimension[];
+  /** Sort choices, the first being the default. null hides sorting. */
+  sorts?: { value: string; label: string }[] | null;
+  className?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
 
   const valuesFor = (param: string) => searchParams.getAll(param).flatMap((v) => v.split(",")).filter(Boolean);
-  const sort = searchParams.get("sort") ?? "recommended";
+  const defaultSort = sorts?.[0]?.value;
+  const sort = searchParams.get("sort") ?? defaultSort;
 
   function update(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -77,30 +88,34 @@ export function FilterBar({ dimensions, className }: { dimensions: FilterDimensi
     <div className={cn("flex flex-col gap-3", className)}>
       {/* Horizontally scrollable on phones rather than wrapping into a wall of controls. */}
       <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 scrollbar-hidden sm:mx-0 sm:flex-wrap sm:px-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border-strong bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover">
-              {SORTS.find((s) => s.value === sort)?.label ?? "Recommended"}
-              <ChevronDown className="h-4 w-4 text-foreground-subtle" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuRadioGroup
-              value={sort}
-              onValueChange={(value) =>
-                update((params) => (value === "recommended" ? params.delete("sort") : params.set("sort", value)))
-              }
-            >
-              {SORTS.map((s) => (
-                <DropdownMenuRadioItem key={s.value} value={s.value}>
-                  {s.label}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {sorts && (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border-strong bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover">
+                  {sorts.find((s) => s.value === sort)?.label ?? sorts[0].label}
+                  <ChevronDown className="h-4 w-4 text-foreground-subtle" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuRadioGroup
+                  value={sort}
+                  onValueChange={(value) =>
+                    update((params) => (value === defaultSort ? params.delete("sort") : params.set("sort", value)))
+                  }
+                >
+                  {sorts.map((s) => (
+                    <DropdownMenuRadioItem key={s.value} value={s.value}>
+                      {s.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-        <span aria-hidden className="h-5 w-px shrink-0 bg-border-strong" />
+            <span aria-hidden className="h-5 w-px shrink-0 bg-border-strong" />
+          </>
+        )}
 
         {usable.map((dim) => {
           const selected = valuesFor(dim.param);

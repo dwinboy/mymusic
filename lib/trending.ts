@@ -104,6 +104,11 @@ const cachedTrendingIds = unstable_cache(rankTrendingIds, ["trending-track-ids"]
 });
 
 export const trendingService = {
+  /** Ranked ids only, cached: for sorting a filtered list by trend. */
+  rankedIds(limit = 500): Promise<string[]> {
+    return cachedTrendingIds(limit);
+  },
+
   async tracks(limit = 12): Promise<TrendingResult> {
     const rankedIds = await cachedTrendingIds(limit);
     const organic = rankedIds.length >= Math.min(limit, 4);

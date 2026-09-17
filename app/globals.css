@@ -133,6 +133,15 @@ body::before {
   }
 }
 
+/* Registered so it can actually animate — a plain custom property used in a
+   gradient jumps between values instead of easing. Lets the player cross-fade
+   from one track's colour to the next. */
+@property --track-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e3a857;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);

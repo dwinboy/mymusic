@@ -35,5 +35,6 @@ export function toPlayerTrack(track: TrackWithRelations, coverSize: ImageSize = 
     duration: track.duration,
     downloadEnabled: track.downloadEnabled,
     isExplicit: track.isExplicit,
+    lyrics: track.lyrics,
   };
 }

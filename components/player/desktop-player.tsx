@@ -10,6 +10,7 @@ import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
 import { ShareMenu } from "@/components/music/share-menu";
 import { usePlayerStore } from "@/lib/stores/player-store";
+import { useDominantColor } from "@/hooks/use-dominant-color";
 import { cn } from "@/lib/utils";
 
 export function DesktopPlayer() {
@@ -21,6 +22,7 @@ export function DesktopPlayer() {
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
   const setQueueOpen = usePlayerStore((s) => s.setQueueOpen);
+  const accent = useDominantColor(track?.coverUrl);
 
   if (!track) return null;
 
@@ -28,8 +30,12 @@ export function DesktopPlayer() {
 
   return (
     <div
-      className="relative hidden h-20 items-center gap-6 border-t border-border bg-canvas-raised/85 px-6 shadow-player backdrop-blur-xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-accent/50 before:to-transparent md:flex"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      className="relative hidden h-20 items-center gap-6 border-t border-border bg-canvas-raised/85 px-6 shadow-player backdrop-blur-xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-[linear-gradient(to_right,transparent,color-mix(in_srgb,var(--track-color)_65%,transparent),transparent)] md:flex"
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        ["--track-color" as string]: accent ?? "var(--color-accent)",
+        transition: "--track-color 900ms ease-out",
+      }}
     >
       <div className="flex w-72 min-w-0 items-center gap-3">
         <Link href={`/song/${track.slug}`}>

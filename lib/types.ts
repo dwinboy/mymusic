@@ -13,6 +13,7 @@ export interface PlayerTrack {
   duration: number;
   downloadEnabled: boolean;
   isExplicit: boolean;
+  lyrics?: string | null;
 }
 
 export interface SearchTrackResult {

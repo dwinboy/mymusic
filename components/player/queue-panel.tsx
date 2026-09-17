@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { ChevronUp, ChevronDown, X, ListX } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { Equalizer } from "@/components/music/equalizer";
@@ -10,8 +11,12 @@ import { formatDuration } from "@/lib/utils";
 
 export function QueuePanel() {
   const track = usePlayerStore((s) => s.currentTrack());
-  const upcoming = usePlayerStore((s) => s.upcoming());
+  // Select the stored array and derive from it: a selector that returns a
+  // fresh slice on every read never compares equal, and React bails out of
+  // the endless re-render by crashing the page.
+  const tracks = usePlayerStore((s) => s.tracks);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const upcoming = useMemo(() => tracks.slice(currentIndex + 1), [tracks, currentIndex]);
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const reorderQueue = usePlayerStore((s) => s.reorderQueue);
   const clearQueue = usePlayerStore((s) => s.clearQueue);

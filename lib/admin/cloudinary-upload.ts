@@ -9,9 +9,11 @@ export interface CloudinaryUploadResult {
 export async function uploadImageToCloudinary(
   file: File,
   folder: string,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
+  /** Creators sign through their own endpoint, which fixes the folder server-side. */
+  signEndpoint = "/api/admin/uploads/image"
 ): Promise<CloudinaryUploadResult> {
-  const sigRes = await fetch("/api/admin/uploads/image", {
+  const sigRes = await fetch(signEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ folder }),

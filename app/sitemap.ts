@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { PUBLIC_ARTIST_WHERE } from "@/lib/public-scope";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -11,7 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [tracks, albums, artists, playlists] = await Promise.all([
     db.track.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     db.album.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
-    db.artist.findMany({ select: { slug: true, updatedAt: true } }),
+    // Unapproved creator profiles must not be submitted for indexing.
+    db.artist.findMany({ where: PUBLIC_ARTIST_WHERE, select: { slug: true, updatedAt: true } }),
     db.playlist.findMany({ where: { isPublic: true }, select: { slug: true, updatedAt: true } }),
   ]);
 

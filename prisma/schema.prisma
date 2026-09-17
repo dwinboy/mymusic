@@ -35,6 +35,7 @@ model User {
   listeningHistory  ListeningHistory[]
   downloads         Download[]
   plays             Play[]
+  creatorProfiles   Artist[]
 
   @@map("users")
 }
@@ -95,13 +96,23 @@ model Artist {
   coverUrl  String?
   coverImagePublicId  String?
   isFeatured Boolean @default(false)
+  /// Shown on the creator profile only if the creator chooses to disclose it.
+  location  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  /// The account that runs this creator profile. Null for profiles an admin
+  /// created on the platform's behalf. Being a creator isn't a role: any
+  /// account that owns a profile can publish through it, so one person can
+  /// listen, create, and run more than one project name.
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   albums Album[]
   tracks Track[]
 
   @@index([isFeatured])
+  @@index([ownerId])
   @@map("artists")
 }
 
@@ -299,7 +310,16 @@ model Track {
   rightsConfirmedAt DateTime?
   rightsConfirmedBy String?
 
+  /// Creator uploads can only become public through admin approval, which is
+  /// what sets `isPublished`. Public queries keep filtering on `isPublished`
+  /// alone, so nothing pending or rejected can surface on any page — without
+  /// every query needing to remember a second condition.
   moderationStatus  ModerationStatus @default(NONE)
+  /// Why a track was rejected, shown to its creator so they can fix it.
+  moderationNote    String?   @db.Text
+  submittedAt       DateTime?
+  reviewedAt        DateTime?
+  reviewedBy        String?
 
   energy            EnergyLevel?
   tempoBpm          Int?
@@ -327,6 +347,8 @@ model Track {
   @@index([isPublished, isFeatured])
   @@index([isPublished, createdAt])
   @@index([processingStatus])
+  /// The admin review queue: pending submissions, oldest first.
+  @@index([moderationStatus, submittedAt])
   @@map("tracks")
 }
 

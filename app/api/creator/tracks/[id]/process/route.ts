@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-guard";
+import { requireOwnedTrack } from "@/lib/creator-guard";
 import { processTrackAudio, PipelineError } from "@/lib/tracks/pipeline";
 
-// Transcoding a multi-minute master can take a while; allow for it.
 export const maxDuration = 300;
 
-/** Transcodes a directly-uploaded original. See lib/tracks/pipeline. */
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
   const { id } = await params;
+  const owned = await requireOwnedTrack(id);
+  if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   try {
     const track = await processTrackAudio(id);
     return NextResponse.json({ track });

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { TERM_SELECT } from "@/lib/taxonomy";
+import { PUBLIC_ARTIST_WHERE } from "@/lib/public-scope";
 
 const TRACK_TERMS_INCLUDE = {
   terms: {
@@ -30,8 +31,9 @@ export function getAlbumBySlug(slug: string) {
   });
 }
 
+/** Public profile — null until the artist has something published. */
 export function getArtistBySlug(slug: string) {
-  return db.artist.findUnique({ where: { slug } });
+  return db.artist.findFirst({ where: { slug, ...PUBLIC_ARTIST_WHERE } });
 }
 
 export function getPlaylistBySlug(slug: string) {

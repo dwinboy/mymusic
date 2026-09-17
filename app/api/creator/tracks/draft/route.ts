@@ -1,22 +1,18 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-guard";
-import { db } from "@/lib/db";
+import { requireOwnedArtist } from "@/lib/creator-guard";
 import { startTrackUpload, PipelineError } from "@/lib/tracks/pipeline";
 
 /**
- * Starts a new track upload for any artist. See lib/tracks/pipeline for the
- * R2 (presigned direct upload) and local-storage flows.
+ * Starts an upload for a creator profile the caller owns. The track begins as
+ * an unpublished draft; nothing reaches the public site without admin
+ * approval.
  */
 export async function POST(request: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
   const formData = await request.formData();
   const artistId = String(formData.get("artistId") ?? "");
 
-  if (artistId && !(await db.artist.findUnique({ where: { id: artistId }, select: { id: true } }))) {
-    return NextResponse.json({ error: "Artist not found." }, { status: 404 });
-  }
+  const owned = await requireOwnedArtist(artistId);
+  if (!owned) return NextResponse.json({ error: "Choose one of your creator profiles." }, { status: 403 });
 
   try {
     const result = await startTrackUpload({

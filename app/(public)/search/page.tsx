@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { PUBLIC_ARTIST_WHERE } from "@/lib/public-scope";
 import { toPlayerTrack } from "@/lib/mappers";
 import { getLikedTrackIds } from "@/lib/favorites";
 import { TrackRow } from "@/components/music/track-row";
@@ -43,7 +44,7 @@ export default async function SearchPage({
       orderBy: { playCount: "desc" },
       include: { artist: true, album: true },
     }),
-    db.artist.findMany({ where: { name: { contains: query, mode: "insensitive" } }, take: 10 }),
+    db.artist.findMany({ where: { ...PUBLIC_ARTIST_WHERE, name: { contains: query, mode: "insensitive" } }, take: 10 }),
     db.album.findMany({
       where: { isPublished: true, title: { contains: query, mode: "insensitive" } },
       take: 10,

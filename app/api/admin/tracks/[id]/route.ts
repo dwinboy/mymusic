@@ -11,6 +11,7 @@ import { deleteCloudinaryImage, uploadImageLocally } from "@/lib/media/image-ser
 import { productionLocalStorageWarning } from "@/lib/media/production-guard";
 import { uniqueSlug } from "@/lib/slug";
 import { setTrackTermsForKind, TERM_SELECT } from "@/lib/taxonomy";
+import { validateForSubmission } from "@/lib/tracks/submission";
 import type { AiDisclosure, EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
 
 const TAXONOMY_KINDS: TaxonomyKind[] = ["GENRE", "MOOD", "ACTIVITY", "OCCASION", "INSTRUMENT", "LANGUAGE", "VOCAL", "TAG"];
@@ -39,7 +40,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const existing = await db.track.findUnique({ where: { id } });
+  const existing = await db.track.findUnique({ where: { id }, include: { artist: { select: { ownerId: true } } } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const formData = await request.formData();
@@ -86,6 +87,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   })();
   if (data.isPublished === true && existing.processingStatus !== "READY" && !replacingAudioNow) {
     return NextResponse.json({ error: "This track's audio isn't ready yet — it can't be published." }, { status: 400 });
+  }
+
+  // Creator uploads follow the same rule whichever admin screen publishes
+  // them: publishing *is* approval, so it requires what approval requires
+  // (rights confirmed, genre, artwork) and records the decision.
+  if (data.isPublished === true && existing.artist.ownerId && existing.moderationStatus !== "APPROVED") {
+    const problems = await validateForSubmission(id);
+    if (problems.length > 0) {
+      return NextResponse.json({ error: "This creator track doesn't meet the publishing requirements.", problems }, { status: 422 });
+    }
+    Object.assign(data, { moderationStatus: "APPROVED", moderationNote: null, reviewedAt: new Date(), reviewedBy: admin.user!.id });
   }
 
   // --- Discovery classification -----------------------------------------

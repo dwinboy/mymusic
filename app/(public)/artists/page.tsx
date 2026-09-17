@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
+import { PUBLIC_ARTIST_WHERE, PUBLIC_TRACK_WHERE } from "@/lib/public-scope";
 import { Mic2 } from "lucide-react";
 import { EmptyState } from "@/components/states/empty-state";
 
@@ -15,8 +16,11 @@ export const dynamic = "force-dynamic";
 
 export default async function ArtistsPage() {
   const artists = await db.artist.findMany({
+    where: PUBLIC_ARTIST_WHERE,
     orderBy: { name: "asc" },
-    include: { _count: { select: { tracks: true } } },
+    // Published tracks only: counting all of them exposed how many unreleased
+    // drafts a creator had.
+    include: { _count: { select: { tracks: { where: PUBLIC_TRACK_WHERE } } } },
   });
 
   return (

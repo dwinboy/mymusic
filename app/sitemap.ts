@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
-import { PUBLIC_ARTIST_WHERE } from "@/lib/public-scope";
+import { PUBLIC_ARTIST_WHERE, PUBLIC_TRACK_WHERE } from "@/lib/public-scope";
+import { BROWSABLE_KINDS, kindIndexHref, termHref } from "@/lib/taxonomy";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -9,12 +10,18 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [tracks, albums, artists, playlists] = await Promise.all([
+  const [tracks, albums, artists, playlists, terms] = await Promise.all([
     db.track.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     db.album.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     // Unapproved creator profiles must not be submitted for indexing.
     db.artist.findMany({ where: PUBLIC_ARTIST_WHERE, select: { slug: true, updatedAt: true } }),
     db.playlist.findMany({ where: { isPublic: true }, select: { slug: true, updatedAt: true } }),
+    // Genre, mood, activity and occasion pages — the discovery pages people
+    // search for ("sleep music"). Only terms that actually have music.
+    db.taxonomyTerm.findMany({
+      where: { kind: { in: [...BROWSABLE_KINDS] }, isActive: true, tracks: { some: { track: PUBLIC_TRACK_WHERE } } },
+      select: { kind: true, slug: true, updatedAt: true },
+    }),
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -26,6 +33,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/artists`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/playlists`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/search`, changeFrequency: "monthly", priority: 0.3 },
+    ...BROWSABLE_KINDS.map((kind) => ({
+      url: `${SITE_URL}${kindIndexHref(kind)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
   ];
 
   return [
@@ -54,5 +66,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.5,
     })),
+    ...terms.flatMap((t) => {
+      const href = termHref(t.kind, t.slug);
+      return href
+        ? [{ url: `${SITE_URL}${href}`, lastModified: t.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 }]
+        : [];
+    }),
   ];
 }

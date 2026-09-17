@@ -6,12 +6,16 @@ import { TAXONOMY, type TermSeed } from "./taxonomy-data";
  * safe to run repeatedly and against a database that already holds terms —
  * including production.
  *
- * Re-running refreshes name, description, ordering and hierarchy from the seed
- * data, but leaves admin-owned state alone: `isActive`, `isFeatured` and
- * artwork are only set on first creation, so re-seeding never undoes an
- * admin's decision to hide or re-feature a term.
+ * Two modes:
+ *  - "refresh" (default, for development and first-time setup) rewrites name,
+ *    description, ordering and hierarchy from the seed data.
+ *  - "insert-missing" only adds terms that don't exist yet and never touches
+ *    existing rows — safe once admins have edited the taxonomy.
+ *
+ * Either way `isActive`, `isFeatured` and artwork are only set on creation,
+ * so re-seeding never undoes an admin hiding or re-featuring a term.
  */
-export async function seedTaxonomy(db: PrismaClient) {
+export async function seedTaxonomy(db: PrismaClient, mode: "refresh" | "insert-missing" = "refresh") {
   let created = 0;
   let updated = 0;
 
@@ -20,6 +24,13 @@ export async function seedTaxonomy(db: PrismaClient) {
       where: { kind_slug: { kind, slug: seed.slug } },
       select: { id: true },
     });
+
+    if (existing && mode === "insert-missing") {
+      for (const [i, child] of (seed.children ?? []).entries()) {
+        await upsertTerm(kind, child, i, existing.id);
+      }
+      return;
+    }
 
     const term = await db.taxonomyTerm.upsert({
       where: { kind_slug: { kind, slug: seed.slug } },

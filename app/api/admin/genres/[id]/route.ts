@@ -7,6 +7,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  await db.genre.delete({ where: { id } });
+  // Scoped to GENRE so this legacy route can't delete a mood or activity by id.
+  await db.taxonomyTerm.deleteMany({ where: { id, kind: "GENRE" } });
   return NextResponse.json({ deleted: true });
 }

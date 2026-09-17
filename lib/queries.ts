@@ -1,9 +1,18 @@
 import { db } from "@/lib/db";
+import { TERM_SELECT } from "@/lib/taxonomy";
+
+const TRACK_TERMS_INCLUDE = {
+  terms: {
+    where: { term: { isActive: true } },
+    orderBy: [{ isPrimary: "desc" as const }, { term: { displayOrder: "asc" as const } }],
+    select: { isPrimary: true, term: { select: TERM_SELECT } },
+  },
+};
 
 export function getTrackBySlug(slug: string) {
   return db.track.findFirst({
     where: { slug, isPublished: true },
-    include: { artist: true, album: true, genres: { include: { genre: true } } },
+    include: { artist: true, album: true, ...TRACK_TERMS_INCLUDE },
   });
 }
 
@@ -15,7 +24,7 @@ export function getAlbumBySlug(slug: string) {
       tracks: {
         where: { isPublished: true },
         orderBy: { trackNumber: "asc" },
-        include: { artist: true, album: true, genres: { include: { genre: true } } },
+        include: { artist: true, album: true, ...TRACK_TERMS_INCLUDE },
       },
     },
   });

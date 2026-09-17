@@ -18,7 +18,7 @@ export async function NewReleasesSection() {
 
   return (
     <section>
-      <SectionHeader title="New Releases" subtitle="Freshly published to the catalogue" href="/new-releases" />
+      <SectionHeader title="New AI Music" subtitle="Freshly published by creators" href="/new-releases" />
       <HorizontalScroller>
         {playerTracks.map((track) => (
           <MusicCard key={track.id} track={track} queue={playerTracks} />

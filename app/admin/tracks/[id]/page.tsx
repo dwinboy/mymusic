@@ -12,7 +12,11 @@ export default async function EditTrackPage({ params }: { params: Promise<{ id: 
   const [track, playCount] = await Promise.all([
     db.track.findUnique({
       where: { id },
-      include: { artist: true, album: true, genres: true },
+      include: {
+        artist: true,
+        album: true,
+        terms: { select: { termId: true, isPrimary: true, term: { select: { kind: true } } } },
+      },
     }),
     db.listeningHistory.count({ where: { trackId: id } }),
   ]);
@@ -34,7 +38,7 @@ export default async function EditTrackPage({ params }: { params: Promise<{ id: 
     isPublished: track.isPublished,
     isFeatured: track.isFeatured,
     downloadEnabled: track.downloadEnabled,
-    genreIds: track.genres.map((g) => g.genreId),
+    genreIds: track.terms.filter((t) => t.term.kind === "GENRE").map((t) => t.termId),
     coverUrl: track.coverUrl,
     duration: track.duration,
     fileSize: track.fileSize,

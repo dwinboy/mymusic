@@ -10,16 +10,25 @@ import { getAudioProcessingService } from "@/lib/media/processing-service";
 import { deleteCloudinaryImage, uploadImageLocally } from "@/lib/media/image-service";
 import { productionLocalStorageWarning } from "@/lib/media/production-guard";
 import { uniqueSlug } from "@/lib/slug";
+import { setTrackTermsForKind, TERM_SELECT } from "@/lib/taxonomy";
+import type { AiDisclosure, EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
+
+const TAXONOMY_KINDS: TaxonomyKind[] = ["GENRE", "MOOD", "ACTIVITY", "OCCASION", "INSTRUMENT", "LANGUAGE", "VOCAL", "TAG"];
+const AI_DISCLOSURES: AiDisclosure[] = ["AI_GENERATED", "AI_ASSISTED", "HUMAN_CREATED"];
+const ENERGY_LEVELS: EnergyLevel[] = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
+
+const TRACK_DETAIL_INCLUDE = {
+  artist: true,
+  album: true,
+  terms: { select: { isPrimary: true, term: { select: TERM_SELECT } } },
+} as const;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
-  const track = await db.track.findUnique({
-    where: { id },
-    include: { artist: true, album: true, genres: { include: { genre: true } } },
-  });
+  const track = await db.track.findUnique({ where: { id }, include: TRACK_DETAIL_INCLUDE });
   if (!track) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({ track });
@@ -79,12 +88,46 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "This track's audio isn't ready yet — it can't be published." }, { status: 400 });
   }
 
-  if (formData.has("genreIds")) {
-    const genreIds = formData.getAll("genreIds").map(String).filter(Boolean);
-    await db.trackGenre.deleteMany({ where: { trackId: id } });
-    if (genreIds.length > 0) {
-      await db.trackGenre.createMany({ data: genreIds.map((genreId) => ({ trackId: id, genreId })) });
+  // --- Discovery classification -----------------------------------------
+  // Each kind is replaced independently and only when the request includes
+  // that field, so saving moods never clears genres. `genreIds` is accepted
+  // as a legacy alias for `terms:GENRE`.
+  const termWrites: { kind: TaxonomyKind; ids: string[] }[] = [];
+  for (const kind of TAXONOMY_KINDS) {
+    const field = `terms:${kind}`;
+    const legacy = kind === "GENRE" && formData.has("genreIds") ? "genreIds" : null;
+    const key = formData.has(field) ? field : legacy;
+    if (key) termWrites.push({ kind, ids: formData.getAll(key).map(String).filter(Boolean) });
+  }
+  const primaryGenreId = (formData.get("primaryGenreId") as string | null) || null;
+
+  if (termWrites.length > 0) {
+    await db.$transaction(async (tx) => {
+      for (const { kind, ids } of termWrites) {
+        await setTrackTermsForKind(tx, id, kind, ids, kind === "GENRE" ? primaryGenreId : null);
+      }
+    });
+  }
+
+  if (formData.has("aiDisclosure")) {
+    const disclosure = String(formData.get("aiDisclosure")) as AiDisclosure;
+    if (AI_DISCLOSURES.includes(disclosure)) {
+      data.aiDisclosure = disclosure;
+      // Keep the legacy boolean in step: the public "AI Composed" badge and
+      // existing queries still read it.
+      data.isAiGenerated = disclosure !== "HUMAN_CREATED";
     }
+  }
+  if (formData.has("aiTool")) strField("aiTool", true);
+  if (formData.has("aiDetails")) strField("aiDetails", true);
+
+  if (formData.has("energy")) {
+    const energy = String(formData.get("energy"));
+    data.energy = ENERGY_LEVELS.includes(energy as EnergyLevel) ? energy : null;
+  }
+  if (formData.has("tempoBpm")) {
+    const bpm = Number(formData.get("tempoBpm"));
+    data.tempoBpm = Number.isFinite(bpm) && bpm >= 20 && bpm <= 300 ? Math.round(bpm) : null;
   }
 
   // --- Audio replacement -----------------------------------------------
@@ -209,11 +252,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
-  const track = await db.track.update({
-    where: { id },
-    data,
-    include: { artist: true, album: true, genres: { include: { genre: true } } },
-  });
+  const track = await db.track.update({ where: { id }, data, include: TRACK_DETAIL_INCLUDE });
 
   return NextResponse.json({ track });
 }

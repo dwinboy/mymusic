@@ -127,15 +127,82 @@ model Album {
   @@map("albums")
 }
 
-model Genre {
-  id       String  @id @default(cuid())
-  name     String
-  slug     String  @unique
-  coverUrl String?
+// ---------------------------------------------------------------------------
+// Discovery taxonomy
+//
+// Genres, moods, activities, occasions, instruments, languages, vocal
+// characteristics and tags are all the same shape: a controlled, admin-curated
+// term with a name, slug, description, artwork and ordering. They live in one
+// table keyed by `kind` rather than eight near-identical tables, which buys:
+//
+//   - one admin CRUD surface instead of eight
+//   - one reusable filter component across every discovery page
+//   - cross-kind queries (a track's full classification) in a single join
+//   - new dimensions (era, region) without a migration
+//
+// This is still fully normalised — terms are rows with foreign keys, not a
+// denormalised string column. Hierarchy (subgenres) uses `parentId`.
+// ---------------------------------------------------------------------------
 
-  tracks TrackGenre[]
+enum TaxonomyKind {
+  GENRE
+  MOOD
+  ACTIVITY
+  OCCASION
+  INSTRUMENT
+  LANGUAGE
+  VOCAL
+  TAG
+}
 
-  @@map("genres")
+model TaxonomyTerm {
+  id          String       @id @default(cuid())
+  kind        TaxonomyKind
+  name        String
+  slug        String
+  description String?      @db.Text
+
+  imageUrl      String?
+  imagePublicId String?
+
+  /// Subgenres, and sub-terms generally (e.g. Activity "Study" → "Exam Prep").
+  parentId String?
+
+  displayOrder Int     @default(0)
+  isActive     Boolean @default(true)
+  isFeatured   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   TaxonomyTerm?  @relation("TermHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children TaxonomyTerm[] @relation("TermHierarchy")
+  tracks   TrackTerm[]
+
+  /// Canonical per kind — prevents "sleep" / "Sleep" / "sleep-music" drifting
+  /// into separate categories.
+  @@unique([kind, slug])
+  @@index([kind, isActive, displayOrder])
+  @@index([kind, isFeatured])
+  @@index([parentId])
+  @@map("taxonomy_terms")
+}
+
+model TrackTerm {
+  trackId String
+  termId  String
+
+  /// Primary genre vs. secondary genres. Meaningless for other kinds.
+  isPrimary Boolean @default(false)
+
+  track Track        @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  term  TaxonomyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, termId])
+  /// Drives every discovery page: "published tracks carrying this term".
+  @@index([termId])
+  @@index([trackId])
+  @@map("track_terms")
 }
 
 enum ProcessingStatus {
@@ -143,6 +210,32 @@ enum ProcessingStatus {
   PROCESSING
   READY
   FAILED
+}
+
+/// Moderation is deliberately separate from `isPublished`/`processingStatus`
+/// rather than collapsed into one status column: every existing query filters
+/// `isPublished`, and rewriting those was a needless risk. NONE means the
+/// platform is publishing automatically, which is the current policy.
+enum ModerationStatus {
+  NONE
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum EnergyLevel {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+/// The creator asserts this; the platform does not infer or verify it.
+enum AiDisclosure {
+  AI_GENERATED
+  AI_ASSISTED
+  HUMAN_CREATED
 }
 
 model Track {
@@ -192,7 +285,25 @@ model Track {
   credits           String?   @db.Text
   composer          String?
   producer          String?
+  /// Retained so existing queries and the public "AI Composed" badge keep
+  /// working; `aiDisclosure` is the richer replacement and the two are kept
+  /// consistent on write.
   isAiGenerated     Boolean   @default(true)
+  aiDisclosure      AiDisclosure @default(AI_GENERATED)
+  /// Free text, creator-supplied: generation tool, human editing, vocals.
+  aiTool            String?
+  aiDetails         String?   @db.Text
+
+  /// Set when the creator accepts the rights confirmation at publish time.
+  /// Null means it has never been accepted for this track.
+  rightsConfirmedAt DateTime?
+  rightsConfirmedBy String?
+
+  moderationStatus  ModerationStatus @default(NONE)
+
+  energy            EnergyLevel?
+  tempoBpm          Int?
+
   isExplicit        Boolean   @default(false)
   isPublished       Boolean   @default(false)
   isFeatured        Boolean   @default(false)
@@ -204,7 +315,7 @@ model Track {
 
   artist  Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
   album   Album?        @relation(fields: [albumId], references: [id], onDelete: SetNull)
-  genres  TrackGenre[]
+  terms   TrackTerm[]
   playlistTracks    PlaylistTrack[]
   favorites         Favorite[]
   listeningHistory  ListeningHistory[]
@@ -219,36 +330,48 @@ model Track {
   @@map("tracks")
 }
 
-model TrackGenre {
-  trackId String
-  genreId String
-
-  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
-
-  @@id([trackId, genreId])
-  @@map("track_genres")
-}
 
 // ---------------------------------------------------------------------------
 // Playlists & library
 // ---------------------------------------------------------------------------
 
+enum PlaylistKind {
+  /// Built by a listener.
+  USER
+  /// Curated by the platform — hand-picked track list.
+  EDITORIAL
+  /// Defined by taxonomy rules, not a stored track list. Membership is
+  /// resolved at query time so a track is never duplicated into a collection
+  /// (see `rules`).
+  ALGORITHMIC
+}
+
 model Playlist {
   id          String   @id @default(cuid())
   title       String
   slug        String   @unique
-  description String?
+  description String?  @db.Text
   coverUrl    String?
+  coverImagePublicId String?
   isPublic    Boolean  @default(false)
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  kind       PlaylistKind @default(USER)
+  isFeatured Boolean      @default(false)
+
+  /// ALGORITHMIC only. Shape: { "all": [termId, ...], "any": [termId, ...],
+  /// "energy": "LOW", "limit": 50 } — resolved by CollectionService rather
+  /// than copying track rows.
+  rules Json?
+
   user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   tracks PlaylistTrack[]
 
   @@index([userId])
+  @@index([kind, isPublic])
+  @@index([kind, isFeatured])
   @@map("playlists")
 }
 
@@ -265,6 +388,7 @@ model PlaylistTrack {
   @@unique([playlistId, trackId])
   @@index([playlistId, position])
   @@map("playlist_tracks")
+  @@index([addedAt])
 }
 
 model Favorite {
@@ -278,6 +402,7 @@ model Favorite {
 
   @@unique([userId, trackId])
   @@map("favorites")
+  @@index([createdAt])
 }
 
 model ListeningHistory {
@@ -305,6 +430,7 @@ model Download {
 
   @@unique([userId, trackId])
   @@map("downloads")
+  @@index([createdAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -326,6 +452,7 @@ model Play {
 
   @@index([trackId, createdAt])
   @@map("plays")
+  @@index([createdAt])
 }
 
 // ---------------------------------------------------------------------------

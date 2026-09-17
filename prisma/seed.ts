@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { LocalStorageDriver } from "@/lib/storage/local";
 import { toSlug } from "@/lib/slug";
+import type { EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
 import {
   generateToneWav,
   transcodeToMp3,
@@ -11,6 +12,7 @@ import {
   generateCoverArt,
   generateAvatarArt,
 } from "./demo-assets";
+import { seedTaxonomy } from "./taxonomy-seed";
 
 const storage = new LocalStorageDriver();
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -25,20 +27,25 @@ const CHORDS: Record<string, number[]> = {
   gMajor: [196.0, 246.94, 293.66],
 };
 
-interface GenreSeed {
-  name: string;
-}
-
-const GENRES: GenreSeed[] = [
-  { name: "Electronic" },
-  { name: "Afrobeat" },
-  { name: "Pop" },
-  { name: "R&B" },
-  { name: "Hip-Hop" },
-  { name: "Ambient" },
-  { name: "Cinematic" },
-  { name: "Lo-Fi" },
-];
+/**
+ * Discovery classification implied by each demo genre, so the seeded catalogue
+ * exercises mood, activity and occasion pages rather than leaving them empty.
+ * Values are taxonomy slugs. Every demo track is a generated tone with no
+ * voice, hence "instrumental" throughout.
+ */
+const GENRE_DISCOVERY: Record<
+  string,
+  { moods: string[]; activities: string[]; occasions: string[]; energy: EnergyLevel }
+> = {
+  Electronic: { moods: ["energetic", "dreamy"], activities: ["focus", "coding", "workout"], occasions: ["party"], energy: "HIGH" },
+  Cinematic: { moods: ["epic", "dreamy"], activities: ["focus", "reading"], occasions: [], energy: "MEDIUM" },
+  Ambient: { moods: ["calm", "peaceful", "dreamy"], activities: ["sleep", "deep-sleep", "meditation", "relaxation", "study"], occasions: [], energy: "VERY_LOW" },
+  "Hip-Hop": { moods: ["chill"], activities: ["work", "workout"], occasions: [], energy: "MEDIUM" },
+  "R&B": { moods: ["romantic", "chill"], activities: ["relaxation"], occasions: ["romantic-evening", "dinner", "first-dance"], energy: "LOW" },
+  Afrobeat: { moods: ["happy", "energetic"], activities: ["workout"], occasions: ["party", "celebration", "afrobeat-wedding"], energy: "HIGH" },
+  Pop: { moods: ["happy", "uplifting"], activities: ["running"], occasions: ["party", "birthday"], energy: "HIGH" },
+  "Lo-Fi": { moods: ["chill", "calm", "nostalgic"], activities: ["study", "lo-fi-study", "reading", "coding"], occasions: [], energy: "LOW" },
+};
 
 interface ArtistSeed {
   name: string;
@@ -259,11 +266,12 @@ async function main() {
     db.listeningHistory.deleteMany(),
     db.download.deleteMany(),
     db.play.deleteMany(),
-    db.trackGenre.deleteMany(),
+    db.trackTerm.deleteMany(),
     db.track.deleteMany(),
     db.album.deleteMany(),
     db.artist.deleteMany(),
-    db.genre.deleteMany(),
+    // The taxonomy is deliberately not cleared: it's admin-owned platform
+    // structure, not disposable demo catalogue.
   ]);
 
   console.log("Seeding users...");
@@ -281,13 +289,11 @@ async function main() {
     update: { passwordHash: demoPasswordHash },
   });
 
-  console.log("Seeding genres...");
-  const genreBySlug = new Map<string, { id: string; slug: string }>();
-  for (const g of GENRES) {
-    const slug = toSlug(g.name);
-    const genre = await db.genre.create({ data: { name: g.name, slug } });
-    genreBySlug.set(g.name, genre);
-  }
+  console.log("Seeding taxonomy...");
+  await seedTaxonomy(db);
+  const allTerms = await db.taxonomyTerm.findMany({ select: { id: true, kind: true, slug: true } });
+  const termId = (kind: TaxonomyKind, slug: string) =>
+    allTerms.find((t) => t.kind === kind && t.slug === slug)?.id;
 
   console.log("Seeding artists...");
   const artistByName = new Map<string, { id: string; slug: string; name: string }>();
@@ -397,11 +403,39 @@ async function main() {
       },
     });
 
+    // Genre names map to taxonomy slugs the same way they always did
+    // ("R&B" -> "randb"); the first listed genre is primary.
+    const links = new Map<string, boolean>();
+    for (const [i, genreName] of params.genres.entries()) {
+      const id = termId("GENRE", toSlug(genreName));
+      if (id) links.set(id, i === 0);
+    }
     for (const genreName of params.genres) {
-      const genre = genreBySlug.get(genreName);
-      if (genre) {
-        await db.trackGenre.create({ data: { trackId: track.id, genreId: genre.id } });
+      const discovery = GENRE_DISCOVERY[genreName];
+      if (!discovery) continue;
+      for (const slug of discovery.moods) {
+        const id = termId("MOOD", slug);
+        if (id && !links.has(id)) links.set(id, false);
       }
+      for (const slug of discovery.activities) {
+        const id = termId("ACTIVITY", slug);
+        if (id && !links.has(id)) links.set(id, false);
+      }
+      for (const slug of discovery.occasions) {
+        const id = termId("OCCASION", slug);
+        if (id && !links.has(id)) links.set(id, false);
+      }
+    }
+    const instrumental = termId("VOCAL", "instrumental");
+    if (instrumental) links.set(instrumental, false);
+
+    await db.trackTerm.createMany({
+      data: [...links].map(([id, isPrimary]) => ({ trackId: track.id, termId: id, isPrimary })),
+    });
+
+    const primaryEnergy = GENRE_DISCOVERY[params.genres[0]]?.energy;
+    if (primaryEnergy) {
+      await db.track.update({ where: { id: track.id }, data: { energy: primaryEnergy } });
     }
 
     return track;

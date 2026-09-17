@@ -21,6 +21,9 @@ import { formatReleaseDate, formatDuration } from "@/lib/utils";
 import { ListMusic } from "lucide-react";
 import { JsonLd } from "@/components/seo/json-ld";
 import { resolveTrackCoverUrl } from "@/lib/media/entity-images";
+import { recommendationService } from "@/lib/recommendations";
+import { TermChips, TermLine } from "@/components/discovery/term-links";
+import type { TaxonomyKind } from "@/lib/taxonomy";
 
 export async function generateMetadata({
   params,
@@ -59,30 +62,27 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
 
   if (!track) notFound();
 
-  const genreIds = track.genres.map((g) => g.genreId);
+  const termsOf = (kind: TaxonomyKind) => track.terms.filter((t) => t.term.kind === kind).map((t) => t.term);
+  const genres = termsOf("GENRE");
+  const moods = termsOf("MOOD");
+  const vocals = termsOf("VOCAL");
+  const perfectFor = [...termsOf("ACTIVITY"), ...termsOf("OCCASION")];
+  // The summary line under the title: primary genre, lead mood, vocal style.
+  const summaryTerms = [genres[0], moods[0], vocals[0]].filter((t): t is NonNullable<typeof t> => !!t);
 
-  const [moreFromArtist, moreLikeThis] = await Promise.all([
+  const [moreFromArtist, youMayAlsoLike] = await Promise.all([
     db.track.findMany({
       where: { isPublished: true, artistId: track.artistId, id: { not: track.id } },
       take: 8,
       orderBy: { releaseDate: "desc" },
       include: { artist: true, album: true },
     }),
-    genreIds.length > 0
-      ? db.track.findMany({
-          where: {
-            isPublished: true,
-            id: { not: track.id },
-            genres: { some: { genreId: { in: genreIds } } },
-          },
-          take: 8,
-          orderBy: { playCount: "desc" },
-          include: { artist: true, album: true },
-        })
-      : Promise.resolve([]),
+    // Other artists only: "More from this artist" already covers the rest.
+    recommendationService.similarTracks(track.id, { limit: 10, excludeArtistId: track.artistId }),
   ]);
 
   const playerTrack = toPlayerTrack(track, "large");
+  const similarQueue = youMayAlsoLike.map((t) => toPlayerTrack(t));
   const liked = await getLikedTrackIds(session?.user?.id, [track.id]);
   const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ""}/song/${track.slug}`;
   const heroImage = resolveTrackCoverUrl(track, "large");
@@ -136,6 +136,8 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
             <span className="tabular">{formatDuration(track.duration)}</span>
           </div>
 
+          <TermLine terms={summaryTerms} className="mt-2" />
+
           {track.description && <p className="mt-4 max-w-xl text-sm text-foreground-muted">{track.description}</p>}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -154,6 +156,29 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
           </div>
         </div>
       </div>
+
+      {(moods.length > 0 || perfectFor.length > 0 || genres.length > 0) && (
+        <div className="mt-12 grid gap-8 sm:grid-cols-3">
+          {genres.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Genre</h2>
+              <TermChips terms={genres} />
+            </div>
+          )}
+          {moods.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Mood</h2>
+              <TermChips terms={moods} />
+            </div>
+          )}
+          {perfectFor.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Perfect For</h2>
+              <TermChips terms={perfectFor} />
+            </div>
+          )}
+        </div>
+      )}
 
       {(track.lyrics || track.credits || track.composer || track.producer) && (
         <div className="mt-12 grid gap-8 sm:grid-cols-2">
@@ -197,12 +222,12 @@ export default async function SongPage({ params }: { params: Promise<{ slug: str
         </div>
       )}
 
-      {moreLikeThis.length > 0 && (
+      {youMayAlsoLike.length > 0 && (
         <div className="mt-10">
-          <SectionHeader title="More like this" />
+          <SectionHeader title="You May Also Like" />
           <HorizontalScroller>
-            {moreLikeThis.map((t) => (
-              <MusicCard key={t.id} track={toPlayerTrack(t)} />
+            {similarQueue.map((t) => (
+              <MusicCard key={t.id} track={t} queue={similarQueue} />
             ))}
           </HorizontalScroller>
         </div>

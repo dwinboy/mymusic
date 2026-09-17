@@ -9,17 +9,26 @@ export async function ContinueListeningSection() {
   const session = await auth();
   if (!session?.user) return null;
 
-  const history = await db.listeningHistory.findMany({
-    where: { userId: session.user.id },
+  const recent = await db.listeningHistory.findMany({
+    // A track unpublished since it was heard would sit here and fail to play.
+    where: { userId: session.user.id, track: { isPublished: true, processingStatus: "READY" } },
     orderBy: { playedAt: "desc" },
-    take: 12,
-    distinct: ["trackId"],
-    include: { track: { include: { artist: true, album: true } } },
+    // Deduplicated below rather than with Prisma `distinct`, which applies
+    // after `take`: someone who looped one song would otherwise get a single
+    // card instead of a row.
+    take: 60,
+    select: { trackId: true },
   });
 
-  if (history.length === 0) return null;
+  const trackIds = [...new Set(recent.map((h) => h.trackId))].slice(0, 12);
+  if (trackIds.length === 0) return null;
 
-  const playerTracks = history.map((h) => toPlayerTrack(h.track));
+  const rows = await db.track.findMany({ where: { id: { in: trackIds } }, include: { artist: true, album: true } });
+  const byId = new Map(rows.map((t) => [t.id, t]));
+  const playerTracks = trackIds
+    .map((id) => byId.get(id))
+    .filter((t): t is NonNullable<typeof t> => !!t)
+    .map((t) => toPlayerTrack(t));
 
   return (
     <section>

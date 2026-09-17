@@ -85,6 +85,21 @@ body {
   font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  position: relative;
+}
+
+/* A faint, fixed ambient light source behind the page — the kind of subtle
+   depth cue that reads as "premium dark UI" without calling attention to
+   itself. Doesn't scroll with content; sits behind everything. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -10%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 70%),
+    radial-gradient(ellipse 700px 500px at 100% 10%, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 70%);
 }
 
 ::selection {

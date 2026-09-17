@@ -28,7 +28,7 @@ export function DesktopPlayer() {
 
   return (
     <div
-      className="hidden h-20 items-center gap-6 border-t border-border bg-canvas-raised px-6 shadow-player md:flex"
+      className="relative hidden h-20 items-center gap-6 border-t border-border bg-canvas-raised/85 px-6 shadow-player backdrop-blur-xl before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-accent/50 before:to-transparent md:flex"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex w-72 min-w-0 items-center gap-3">

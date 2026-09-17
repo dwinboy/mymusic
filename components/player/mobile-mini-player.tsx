@@ -22,7 +22,7 @@ export function MobileMiniPlayer() {
     <button
       onClick={() => setNowPlayingOpen(true)}
       className={cn(
-        "fixed inset-x-0 z-30 flex h-16 w-full items-center gap-3 border-t border-border bg-canvas-raised px-3 text-left shadow-player md:hidden"
+        "fixed inset-x-0 z-30 flex h-16 w-full items-center gap-3 border-t border-border bg-canvas-raised/85 px-3 text-left shadow-player backdrop-blur-xl md:hidden"
       )}
       style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
       aria-label="Open Now Playing"

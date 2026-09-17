@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { Music2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,10 +18,19 @@ export function TrackArt({
   sizes?: string;
   rounded?: string;
 }) {
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <div className={cn("relative shrink-0 overflow-hidden bg-surface-active", rounded, className)}>
       {src ? (
-        <Image src={src} alt={alt} fill sizes={sizes} className="object-cover" />
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          className={cn("object-cover transition-opacity duration-500 ease-out", loaded ? "opacity-100" : "opacity-0")}
+          onLoad={() => setLoaded(true)}
+        />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-foreground-subtle">
           <Music2 className="h-1/3 w-1/3" />

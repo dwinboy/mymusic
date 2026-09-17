@@ -24,10 +24,10 @@ const Slider = React.forwardRef<
         trackClassName
       )}
     >
-      <SliderPrimitive.Range className="absolute h-full rounded-full bg-foreground group-hover:bg-accent" />
+      <SliderPrimitive.Range className="absolute h-full rounded-full bg-foreground transition-colors duration-200 group-hover:bg-accent group-hover:shadow-[0_0_10px_var(--color-accent)]" />
     </SliderPrimitive.Track>
     <SliderPrimitive.Thumb
-      className="block h-3 w-3 rounded-full bg-foreground opacity-0 shadow transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent group-hover:opacity-100"
+      className="block h-3 w-3 scale-90 rounded-full bg-foreground opacity-0 shadow transition-[opacity,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent group-hover:scale-100 group-hover:opacity-100"
     />
   </SliderPrimitive.Root>
 ));

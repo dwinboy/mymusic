@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Shuffle, SkipBack, SkipForward, Repeat, Repeat1, ListMusic, FileText } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -38,6 +38,58 @@ export function NowPlayingSheet() {
     setShowLyrics(false);
   }, [trackId]);
 
+  // --- Swipe: down to dismiss, sideways to change track ------------------
+  // Gestures starting on the transport controls or inside the scrollable
+  // lyrics are ignored, so dragging the seek bar can't skip a track and
+  // scrolling lyrics can't dismiss the sheet.
+  const dragStart = useRef<{ x: number; y: number; ignore: boolean } | null>(null);
+  const [dragY, setDragY] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) setDragY(0);
+  }, [isOpen]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    const touch = e.touches[0];
+    const target = e.target as HTMLElement;
+    dragStart.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      ignore: !!target.closest("[data-no-swipe]") || !!target.closest("[data-scrollable]"),
+    };
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const start = dragStart.current;
+    if (!start || start.ignore) return;
+    const touch = e.touches[0];
+    const dy = touch.clientY - start.y;
+    const dx = touch.clientX - start.x;
+    // Only follow the finger downward, and only once the gesture is clearly
+    // vertical — otherwise a sideways swipe drags the sheet as it goes.
+    if (dy > 0 && Math.abs(dy) > Math.abs(dx)) setDragY(dy);
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const start = dragStart.current;
+    dragStart.current = null;
+    setDragY(0);
+    if (!start || start.ignore) return;
+
+    const touch = e.changedTouches[0];
+    const dy = touch.clientY - start.y;
+    const dx = touch.clientX - start.x;
+
+    if (Math.abs(dy) > Math.abs(dx)) {
+      if (dy > 110) setOpen(false);
+      return;
+    }
+    if (Math.abs(dx) > 70) {
+      if (dx < 0) next();
+      else previous();
+    }
+  }
+
   if (!track) return null;
 
   const RepeatIcon = repeatMode === "one" ? Repeat1 : Repeat;
@@ -48,11 +100,19 @@ export function NowPlayingSheet() {
       <SheetContent
         side="full"
         className="flex flex-col px-6 pb-8 pt-2 md:hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           ["--track-color" as string]: accent ?? "var(--color-accent)",
-          transition: "--track-color 900ms ease-out",
           background:
             "radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--track-color) 34%, transparent), transparent 70%), var(--color-canvas)",
+          transform: dragY ? `translateY(${dragY}px)` : undefined,
+          // No transition while the finger is down — it should track exactly,
+          // then spring back on release.
+          transition: dragY
+            ? "--track-color 900ms ease-out"
+            : "--track-color 900ms ease-out, transform 280ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         <div className="flex items-center justify-between py-3">
@@ -78,7 +138,7 @@ export function NowPlayingSheet() {
         <div className="flex flex-1 flex-col items-center justify-center gap-8">
           {showLyrics && hasLyrics ? (
             <div className="flex w-full max-w-sm flex-1 flex-col overflow-hidden">
-              <div className="-mx-2 flex-1 overflow-y-auto px-2 py-4">
+              <div data-scrollable className="-mx-2 flex-1 overflow-y-auto px-2 py-4">
                 <p className="whitespace-pre-line text-lg font-medium leading-loose text-foreground/90">
                   {track.lyrics}
                 </p>
@@ -116,9 +176,11 @@ export function NowPlayingSheet() {
               <LikeButton trackId={track.id} size="lg" className="mt-1 shrink-0" />
             </div>
 
-            <ProgressBar className="mt-6" />
+            <div data-no-swipe>
+              <ProgressBar className="mt-6" />
+            </div>
 
-            <div className="mt-4 flex items-center justify-center gap-6">
+            <div data-no-swipe className="mt-4 flex items-center justify-center gap-6">
               <button
                 onClick={toggleShuffle}
                 aria-pressed={shuffle}
@@ -144,7 +206,7 @@ export function NowPlayingSheet() {
               </button>
             </div>
 
-            <div className="mt-6 flex items-center justify-center gap-8">
+            <div data-no-swipe className="mt-6 flex items-center justify-center gap-8">
               <DownloadButton track={track} size="md" />
               {hasLyrics && (
                 <button

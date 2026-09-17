@@ -15,7 +15,9 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitive.Viewport
     ref={ref}
     className={cn(
-      "fixed bottom-[calc(var(--mobile-chrome-height)+16px)] left-1/2 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 p-4 outline-none sm:bottom-6 sm:left-auto sm:right-6 sm:translate-x-0",
+      // Above the bottom nav and mini player below md, and above the 80px
+      // desktop player bar from md up, so toasts never cover playback controls.
+      "fixed bottom-[calc(var(--mobile-chrome-height)+16px)] left-1/2 z-[100] flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 p-4 outline-none md:bottom-24 md:left-auto md:right-6 md:translate-x-0",
       className
     )}
     {...props}

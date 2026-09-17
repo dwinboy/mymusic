@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Upload, ArrowRight, Headphones, Users, Heart, Download, Music2 } from "lucide-react";
+import { Upload, ArrowRight, Headphones, Users, Heart, UserPlus, Music2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BecomeCreator } from "@/components/creator/become-creator";
 import { StudioTrackRow } from "@/components/creator/studio-track-row";
@@ -52,7 +52,7 @@ export default async function CreatorOverviewPage() {
           <StatCard icon={Headphones} label="Plays" value={stats.plays} />
           <StatCard icon={Users} label="Listeners" value={stats.listeners} />
           <StatCard icon={Heart} label="Likes" value={stats.likes} />
-          <StatCard icon={Download} label="Downloads" value={stats.downloads} />
+          <StatCard icon={UserPlus} label="Followers" value={stats.followers} />
         </div>
       </section>
 

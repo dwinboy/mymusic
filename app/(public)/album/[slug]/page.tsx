@@ -3,12 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { getAlbumBySlug } from "@/lib/queries";
 import { toPlayerTrack } from "@/lib/mappers";
 import { getLikedTrackIds } from "@/lib/favorites";
 import { PlayButton } from "@/components/player/play-button";
 import { ShufflePlayButton } from "@/components/music/shuffle-play-button";
 import { ShareMenu } from "@/components/music/share-menu";
+import { SaveAlbumButton } from "@/components/music/save-album-button";
 import { TrackRow } from "@/components/music/track-row";
 import { formatDuration, formatDurationLong, formatReleaseDate } from "@/lib/utils";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -53,6 +55,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
 
   const playerTracks = album.tracks.map((t) => toPlayerTrack(t));
   const liked = await getLikedTrackIds(session?.user?.id, playerTracks.map((t) => t.id));
+  const saved = session?.user?.id
+    ? !!(await db.savedAlbum.findUnique({ where: { userId_albumId: { userId: session.user.id, albumId: album.id } }, select: { id: true } }))
+    : false;
   const totalSeconds = album.tracks.reduce((sum, t) => sum + t.duration, 0);
   const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ""}/album/${album.slug}`;
   const firstTrack = playerTracks[0];
@@ -99,6 +104,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <PlayButton track={firstTrack} queue={playerTracks} size="lg" />
             <ShufflePlayButton tracks={playerTracks} />
+            <SaveAlbumButton albumId={album.id} albumTitle={album.title} initialSaved={saved} className="h-11 w-11 rounded-full border border-border-strong" />
             <ShareMenu url={shareUrl} title={album.title} text={`${album.title} by ${album.artist.name}`} size="lg" className="rounded-full border border-border-strong p-2.5" />
           </div>
         </div>

@@ -22,6 +22,9 @@ function since(days: Range) {
 export interface CreatorStats {
   plays: number;
   listeners: number;
+  /** Followers in total, and how many arrived within the range. */
+  followers: number;
+  newFollowers: number;
   /** Share of started plays that reached the end, 0–1. */
   completionRate: number;
   likes: number;
@@ -30,14 +33,24 @@ export interface CreatorStats {
 }
 
 export async function getCreatorStats(artistIds: string[], days: Range, trackId?: string): Promise<CreatorStats> {
-  const empty = { plays: 0, listeners: 0, completionRate: 0, likes: 0, playlistAdds: 0, downloads: 0 };
+  const empty = { plays: 0, listeners: 0, followers: 0, newFollowers: 0, completionRate: 0, likes: 0, playlistAdds: 0, downloads: 0 };
   if (artistIds.length === 0) return empty;
   const ids = Prisma.join(artistIds);
   const from = since(days);
   const one = onlyTrack(trackId);
 
   const [row] = await db.$queryRaw<
-    { plays: number; listeners: number; started: number; completed: number; likes: number; adds: number; downloads: number }[]
+    {
+      plays: number;
+      listeners: number;
+      started: number;
+      completed: number;
+      likes: number;
+      adds: number;
+      downloads: number;
+      followers: number;
+      new_followers: number;
+    }[]
   >(Prisma.sql`
     SELECT
       (SELECT COUNT(*)::int FROM plays p JOIN tracks t ON t.id = p."trackId"
@@ -53,12 +66,17 @@ export async function getCreatorStats(artistIds: string[], days: Range, trackId?
       (SELECT COUNT(*)::int FROM playlist_tracks pt JOIN tracks t ON t.id = pt."trackId"
         WHERE t."artistId" IN (${ids}) ${one} AND pt."addedAt" > ${from}) AS adds,
       (SELECT COUNT(*)::int FROM downloads d JOIN tracks t ON t.id = d."trackId"
-        WHERE t."artistId" IN (${ids}) ${one} AND d."createdAt" > ${from}) AS downloads
+        WHERE t."artistId" IN (${ids}) ${one} AND d."createdAt" > ${from}) AS downloads,
+      -- Followers belong to the profile, not a track, so a track filter doesn't apply.
+      (SELECT COUNT(*)::int FROM follows f WHERE f."artistId" IN (${ids})) AS followers,
+      (SELECT COUNT(*)::int FROM follows f WHERE f."artistId" IN (${ids}) AND f."createdAt" > ${from}) AS new_followers
   `);
 
   return {
     plays: row.plays,
     listeners: row.listeners,
+    followers: row.followers,
+    newFollowers: row.new_followers,
     completionRate: row.started > 0 ? row.completed / row.started : 0,
     likes: row.likes,
     playlistAdds: row.adds,

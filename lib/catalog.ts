@@ -172,6 +172,24 @@ export const creatorCatalog = {
     return hydrateInOrder(ids, await db.artist.findMany({ where: { id: { in: ids } }, select: ARTIST_SELECT }));
   },
 
+  /**
+   * Profile numbers: released tracks, followers, and listeners in the last
+   * 30 days (distinct people, signed in or not).
+   */
+  async profileStats(artistId: string) {
+    const [releases, followers, rows] = await Promise.all([
+      db.track.count({ where: { artistId, ...PUBLIC_TRACK_WHERE } }),
+      db.follow.count({ where: { artistId } }),
+      db.$queryRaw<{ listeners: number }[]>(Prisma.sql`
+        SELECT COUNT(DISTINCT COALESCE(p."userId", p."sessionId"))::int AS listeners
+          FROM plays p
+          JOIN tracks t ON t.id = p."trackId"
+         WHERE t."artistId" = ${artistId} AND p."countedAsPlay" AND p."createdAt" > NOW() - INTERVAL '30 days'
+      `),
+    ]);
+    return { releases, followers, monthlyListeners: rows[0]?.listeners ?? 0 };
+  },
+
   /** Everyone, A–Z, with their public track count. */
   async list(opts: { cursor?: string | null; limit?: number } = {}) {
     const limit = Math.min(Math.max(opts.limit ?? 36, 1), 90);

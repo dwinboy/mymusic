@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Heart, ListMusic, History, Plus } from "lucide-react";
+import { Heart, ListMusic, History, Disc3, Users } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
@@ -11,6 +11,9 @@ import { EmptyState } from "@/components/states/empty-state";
 import { CreatePlaylistButton } from "@/components/playlist/create-playlist-button";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { formatCompactNumber } from "@/lib/utils";
+import { AlbumCard, CreatorCard } from "@/components/music/collection-cards";
+import { toAlbumCard, toCreatorCard } from "@/lib/catalog-cards";
+import { PUBLIC_ALBUM_WHERE, PUBLIC_TRACK_WHERE } from "@/lib/public-scope";
 
 export const metadata: Metadata = {
   title: "Your Library",
@@ -25,9 +28,10 @@ export default async function LibraryPage({
   if (!session?.user) redirect("/login?callbackUrl=/library");
 
   const { tab } = await searchParams;
-  const defaultTab = tab === "playlists" || tab === "history" ? tab : "liked";
+  const TABS = ["liked", "playlists", "history", "albums", "following"];
+  const defaultTab = tab && TABS.includes(tab) ? tab : "liked";
 
-  const [favorites, playlists, history] = await Promise.all([
+  const [favorites, playlists, history, savedAlbums, follows] = await Promise.all([
     db.favorite.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
@@ -44,6 +48,16 @@ export default async function LibraryPage({
       take: 30,
       distinct: ["trackId"],
       include: { track: { include: { artist: true, album: true } } },
+    }),
+    db.savedAlbum.findMany({
+      where: { userId: session.user.id, album: PUBLIC_ALBUM_WHERE },
+      orderBy: { createdAt: "desc" },
+      include: { album: { include: { artist: { select: { name: true } } } } },
+    }),
+    db.follow.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: { artist: { include: { _count: { select: { tracks: { where: PUBLIC_TRACK_WHERE } } } } } },
     }),
   ]);
 
@@ -64,6 +78,8 @@ export default async function LibraryPage({
           <TabsTrigger value="liked">Liked Songs</TabsTrigger>
           <TabsTrigger value="playlists">Playlists</TabsTrigger>
           <TabsTrigger value="history">Recently Played</TabsTrigger>
+          <TabsTrigger value="albums">Saved Albums</TabsTrigger>
+          <TabsTrigger value="following">Following</TabsTrigger>
         </TabsList>
 
         <TabsContent value="liked">
@@ -120,6 +136,42 @@ export default async function LibraryPage({
             <div className="flex flex-col">
               {historyTracks.map((track, i) => (
                 <TrackRow key={track.id} track={track} index={i} queue={historyTracks} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="albums">
+          {savedAlbums.length === 0 ? (
+            <EmptyState
+              icon={Disc3}
+              title="No saved albums yet"
+              description="Save an album from its page to find it here."
+              actionLabel="Browse albums"
+              actionHref="/albums"
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {savedAlbums.map((saved) => (
+                <AlbumCard key={saved.id} album={toAlbumCard(saved.album)} className="w-full sm:w-full" />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="following">
+          {follows.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="You're not following anyone yet"
+              description="Follow a creator to keep their new music close."
+              actionLabel="Browse creators"
+              actionHref="/artists"
+            />
+          ) : (
+            <div className="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-6">
+              {follows.map((follow) => (
+                <CreatorCard key={follow.id} creator={toCreatorCard(follow.artist)} className="w-full sm:w-full" />
               ))}
             </div>
           )}

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Headphones, Users, CheckCircle2, Heart, ListPlus, Download, X, BarChart3 } from "lucide-react";
+import { Headphones, Users, CheckCircle2, Heart, ListPlus, Download, UserPlus, X, BarChart3 } from "lucide-react";
 import { StatCard } from "@/components/creator/stat-card";
 import { TrendChart } from "@/components/creator/trend-chart";
 import { EmptyState } from "@/components/states/empty-state";
@@ -110,6 +110,8 @@ export default async function CreatorAnalyticsPage({
             <StatCard icon={Heart} label="Likes" value={stats.likes} />
             <StatCard icon={ListPlus} label="Playlist adds" value={stats.playlistAdds} />
             <StatCard icon={Download} label="Downloads" value={stats.downloads} />
+            <StatCard icon={UserPlus} label="Followers" value={stats.followers} />
+            <StatCard icon={Users} label="New followers" value={stats.newFollowers} />
           </div>
 
           <section>

@@ -191,3 +191,13 @@ body::before {
   animation: eq-bar 0.9s ease-in-out infinite;
   transform-origin: bottom;
 }
+
+/* Embedded player: the host page shows around it, so no page ground or glow. */
+html:has(.embed-root),
+html:has(.embed-root) body {
+  background: transparent;
+  min-height: 0;
+}
+html:has(.embed-root) body::before {
+  display: none;
+}

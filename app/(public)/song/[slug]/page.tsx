@@ -43,7 +43,11 @@ export async function generateMetadata({
   return {
     title: track.title,
     description,
-    alternates: { canonical: path },
+    alternates: {
+      canonical: path,
+      // oEmbed discovery: editors that support it turn a pasted link into the player.
+      types: { "application/json+oembed": `/api/oembed?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_SITE_URL || ""}${path}`)}` },
+    },
     openGraph: {
       title,
       description,

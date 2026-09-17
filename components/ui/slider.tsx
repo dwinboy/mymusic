@@ -27,7 +27,7 @@ const Slider = React.forwardRef<
       <SliderPrimitive.Range className="absolute h-full rounded-full bg-foreground transition-colors duration-200 group-hover:bg-accent group-hover:shadow-[0_0_10px_var(--color-accent)]" />
     </SliderPrimitive.Track>
     <SliderPrimitive.Thumb
-      className="block h-3 w-3 scale-90 rounded-full bg-foreground opacity-0 shadow transition-[opacity,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent group-hover:scale-100 group-hover:opacity-100"
+      className="block h-3 w-3 rounded-full bg-foreground shadow transition-[opacity,transform] duration-200 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent can-hover:scale-90 can-hover:opacity-0 can-hover:group-hover:scale-100 can-hover:group-hover:opacity-100"
     />
   </SliderPrimitive.Root>
 ));

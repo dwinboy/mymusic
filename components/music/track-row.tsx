@@ -76,9 +76,21 @@ export function TrackRow({
           columns stay aligned with the header row when showArt is false. */}
       <div className="md:hidden">
         {showArt && (
-          <button onClick={handlePlay} className="relative shrink-0">
+          <button
+            onClick={handlePlay}
+            className="relative shrink-0"
+            aria-label={isPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+          >
             <TrackArt src={track.coverUrl} alt={track.title} className="h-11 w-11" />
-            <span className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+            {/* Touch has no hover, so the overlay can't be the only affordance:
+                show it for the active track (so play/pause state is legible)
+                and on press, rather than permanently dimming every row. */}
+            <span
+              className={cn(
+                "absolute inset-0 flex items-center justify-center rounded-md bg-black/40 transition-opacity active:opacity-100",
+                isCurrent ? "opacity-100" : "opacity-0"
+              )}
+            >
               {isPlaying ? (
                 <Pause className="h-4 w-4 text-white" fill="currentColor" />
               ) : (
@@ -90,9 +102,18 @@ export function TrackRow({
       </div>
       <div className="hidden md:block">
         {showArt && (
-          <button onClick={handlePlay} className="relative shrink-0">
+          <button
+            onClick={handlePlay}
+            className="relative shrink-0"
+            aria-label={isPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+          >
             <TrackArt src={track.coverUrl} alt={track.title} className="h-11 w-11" />
-            <span className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+            <span
+              className={cn(
+                "absolute inset-0 flex items-center justify-center rounded-md bg-black/40 transition-opacity can-hover:group-hover:opacity-100",
+                isCurrent ? "opacity-100" : "can-hover:opacity-0"
+              )}
+            >
               {isPlaying ? (
                 <Pause className="h-4 w-4 text-white" fill="currentColor" />
               ) : (
@@ -139,11 +160,12 @@ export function TrackRow({
         )}
       </div>
 
-      <div className="flex items-center gap-1 md:gap-3">
-        {showLike && <LikeButton trackId={track.id} initialLiked={initiallyLiked} size="sm" className="hidden md:flex" />}
-        <span className="tabular hidden text-xs text-foreground-subtle md:inline">
-          {formatDuration(track.duration)}
-        </span>
+      {/* Hidden as a whole on mobile, not just its children: leaving the
+          wrapper in the grid consumed the third column and bumped the
+          track menu onto a second row. */}
+      <div className="hidden items-center gap-1 md:flex md:gap-3">
+        {showLike && <LikeButton trackId={track.id} initialLiked={initiallyLiked} size="sm" />}
+        <span className="tabular text-xs text-foreground-subtle">{formatDuration(track.duration)}</span>
       </div>
 
       <TrackMenu

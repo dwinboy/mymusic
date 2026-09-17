@@ -24,7 +24,7 @@ export function MusicCard({
             track={track}
             queue={queue}
             size="md"
-            className="absolute bottom-2 right-2 translate-y-1 opacity-0 shadow-lg transition-all group-hover:translate-y-0 group-hover:opacity-100"
+            className="absolute bottom-2 right-2 shadow-lg transition-all can-hover:translate-y-1 can-hover:opacity-0 can-hover:group-hover:translate-y-0 can-hover:group-hover:opacity-100"
           />
         </div>
       </Link>
@@ -67,7 +67,7 @@ export function CompactMusicCard({
           track={track}
           queue={queue}
           size="sm"
-          className="absolute inset-0 h-full w-full rounded-md bg-black/40 opacity-0 shadow-none transition-opacity group-hover:opacity-100"
+          className="absolute inset-0 h-full w-full rounded-md bg-black/40 shadow-none transition-opacity can-hover:opacity-0 can-hover:group-hover:opacity-100"
         />
       </div>
       <div className="min-w-0 flex-1">
@@ -104,7 +104,9 @@ export function FeaturedMusicCard({
           <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/10 to-transparent" />
         </div>
       </Link>
-      <div className="p-4">
+      {/* Right padding keeps the title and artist clear of the play button,
+          which floats over this boundary and is permanently visible on touch. */}
+      <div className="p-4 pr-20">
         <Link href={`/song/${track.slug}`} className="block truncate text-base font-semibold text-foreground hover:underline">
           {track.title}
         </Link>
@@ -120,7 +122,7 @@ export function FeaturedMusicCard({
         track={track}
         queue={queue}
         size="lg"
-        className="absolute right-4 top-[calc(75%-28px)] translate-y-2 opacity-0 shadow-lg transition-all group-hover:translate-y-0 group-hover:opacity-100"
+        className="absolute right-4 top-[calc(75%-28px)] shadow-lg transition-all can-hover:translate-y-2 can-hover:opacity-0 can-hover:group-hover:translate-y-0 can-hover:group-hover:opacity-100"
       />
     </div>
   );

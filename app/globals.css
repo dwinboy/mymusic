@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Gate hover-reveal affordances behind real hover support. Without this,
+   anything styled `opacity-0 group-hover:opacity-100` is invisible but still
+   tappable on a touch device — which is exactly how the card play buttons
+   and the seek thumb behaved. */
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
+
 :root {
   color-scheme: dark;
 

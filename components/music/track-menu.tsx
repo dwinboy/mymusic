@@ -40,7 +40,9 @@ export function TrackMenu({
           onClick={(e) => e.stopPropagation()}
           aria-label="More options"
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground",
+            // Comfortably tappable on touch, tighter on desktop where the
+            // pointer is precise and rows should stay dense.
+            "flex h-10 w-10 items-center justify-center rounded-full text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground md:h-8 md:w-8",
             className
           )}
         >

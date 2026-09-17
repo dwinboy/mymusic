@@ -1,4 +1,5 @@
 import { resolveImageUrl } from "@/lib/media/image-service";
+import { categoryPhotoForSlug } from "@/lib/media/category-photos";
 import type { AlbumCardData, CreatorCardData, PlaylistCardData } from "@/components/music/collection-cards";
 
 /** Server-side: turns catalogue rows into card data with resolved image URLs. */
@@ -38,7 +39,11 @@ export function toPlaylistCard(playlist: {
     id: playlist.id,
     slug: playlist.slug,
     title: playlist.title,
-    cover: resolveImageUrl({ publicId: playlist.coverImagePublicId, fallbackUrl: playlist.coverUrl }, "small"),
+    // A playlist named after a category — "Deep Focus", "Wedding Reception" —
+    // borrows that category's photo when it has no artwork of its own.
+    cover:
+      resolveImageUrl({ publicId: playlist.coverImagePublicId, fallbackUrl: playlist.coverUrl }, "small") ??
+      categoryPhotoForSlug(playlist.slug),
     kind: playlist.kind,
     subtitle: [byline, count].filter(Boolean).join(" · "),
   };

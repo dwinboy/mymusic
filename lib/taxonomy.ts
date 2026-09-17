@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { Prisma, type EnergyLevel, type TaxonomyKind } from "@/lib/generated/prisma/client";
 import { resolveImageUrl, type ImageSize } from "@/lib/media/image-service";
+import { categoryPhoto } from "@/lib/media/category-photos";
 
 /**
  * Single query path for the discovery taxonomy. Pages and API routes read
@@ -135,11 +136,16 @@ export async function getTrackTerms(trackId: string): Promise<GroupedTerms> {
 }
 
 /**
- * Real artwork for term cards. An admin-assigned image wins; otherwise the
- * cover of the most-played published track carrying the term (falling back
- * to that track's album cover). Terms with no artwork anywhere are simply
- * absent from the map — the card renders typographically rather than with a
- * generated gradient.
+ * Real artwork for term cards, in order of how specific it is to the term:
+ * an admin-assigned image, then the photography bundled for that category,
+ * then the cover of the most-played published track carrying the term
+ * (falling back to that track's album cover). Terms with no artwork anywhere
+ * are simply absent from the map — the card renders typographically rather
+ * than with a generated gradient.
+ *
+ * The bundled photo outranks track artwork because a category is a place, a
+ * feeling or a moment: a wedding tile showing a wedding reads at a glance,
+ * where one song's square cover cropped into a wide tile reads as that song.
  *
  * One query regardless of how many terms: DISTINCT ON picks the top track per
  * term inside Postgres instead of fetching every tagged track and discarding
@@ -151,8 +157,16 @@ export async function getTermArtwork(terms: Term[], size: ImageSize = "medium"):
 
   for (const term of terms) {
     const own = resolveImageUrl({ publicId: term.imagePublicId, fallbackUrl: term.imageUrl }, size);
-    if (own) artwork.set(term.id, own);
-    else needFallback.push(term.id);
+    if (own) {
+      artwork.set(term.id, own);
+      continue;
+    }
+    const bundled = categoryPhoto(term.kind, term.slug);
+    if (bundled) {
+      artwork.set(term.id, bundled);
+      continue;
+    }
+    needFallback.push(term.id);
   }
   if (needFallback.length === 0) return artwork;
 

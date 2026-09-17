@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { permanentRedirect } from "next/navigation";
 import { ListMusic } from "lucide-react";
 import { db } from "@/lib/db";
@@ -9,6 +8,8 @@ import { SectionHeader } from "@/components/music/section-header";
 import { HorizontalScroller } from "@/components/music/horizontal-scroller";
 import { MusicCard } from "@/components/music/music-card";
 import { ArtistCard } from "@/components/music/artist-card";
+import { PlaylistCard } from "@/components/music/collection-cards";
+import { toPlaylistCard } from "@/lib/catalog-cards";
 import { EmptyState } from "@/components/states/empty-state";
 import { QuickIntents } from "@/components/discovery/quick-intents";
 import { TermRail } from "@/components/discovery/term-rail";
@@ -118,21 +119,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
               <SectionHeader title="Featured Playlists" />
               <HorizontalScroller>
                 {playlists.map((playlist) => (
-                  <Link key={playlist.id} href={`/playlist/${playlist.slug}`} className="group w-40 shrink-0 sm:w-44">
-                    <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-surface shadow-sm transition-shadow group-hover:shadow-elevated">
-                      {playlist.coverUrl ? (
-                        <Image src={playlist.coverUrl} alt={playlist.title} fill sizes="176px" className="object-cover" />
-                      ) : (
-                        <ListMusic className="h-8 w-8 text-foreground-subtle" />
-                      )}
-                    </div>
-                    <p className="mt-2.5 truncate text-sm font-medium text-foreground group-hover:underline">
-                      {playlist.title}
-                    </p>
-                    <p className="text-xs text-foreground-muted">
-                      {playlist._count.tracks} {playlist._count.tracks === 1 ? "track" : "tracks"}
-                    </p>
-                  </Link>
+                  <PlaylistCard key={playlist.id} playlist={toPlaylistCard(playlist)} />
                 ))}
               </HorizontalScroller>
             </section>

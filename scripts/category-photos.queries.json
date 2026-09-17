@@ -1,0 +1,363 @@
+{
+  "GENRE|afrobeat": [
+    "drums percussion",
+    "african dancer",
+    "drummer playing outdoor",
+    "conga drums music"
+  ],
+  "GENRE|ambient": [
+    "misty forest morning fog",
+    "minimal landscape horizon",
+    "clouds soft light sky"
+  ],
+  "GENRE|electronic": [
+    "neon lights night club",
+    "synthesizer knobs studio",
+    "laser lights concert"
+  ],
+  "GENRE|cinematic": [
+    "mountain landscape dramatic sky",
+    "desert road sunset wide",
+    "orchestra hall stage"
+  ],
+  "GENRE|jazz": [
+    "saxophone player",
+    "trumpet brass instrument",
+    "bar night moody light"
+  ],
+  "GENRE|classical": [
+    "violin strings close",
+    "concert hall seats",
+    "sheet music piano"
+  ],
+  "GENRE|hip-hop": [
+    "graffiti wall urban",
+    "city street night basketball",
+    "microphone studio dark"
+  ],
+  "GENRE|randb": [
+    "microphone studio warm light",
+    "singer silhouette stage",
+    "velvet red light room"
+  ],
+  "GENRE|pop": [
+    "concert crowd confetti",
+    "stage lights performance",
+    "colorful smoke portrait"
+  ],
+  "GENRE|rock": [
+    "electric guitar amplifier",
+    "drum kit stage",
+    "guitarist live concert"
+  ],
+  "GENRE|reggae": [
+    "beach palm sunset caribbean",
+    "dreadlocks portrait music",
+    "tropical colors wall"
+  ],
+  "GENRE|soul": [
+    "vinyl record player warm",
+    "microphone vintage studio",
+    "old radio warm light"
+  ],
+  "GENRE|world": [
+    "market fruit stall",
+    "traditional dancer costume",
+    "colorful flags festival"
+  ],
+  "GENRE|lo-fi": [
+    "cassette tape",
+    "turntable headphones",
+    "record shop"
+  ],
+  "GENRE|highlife": [
+    "guitar player outdoors africa",
+    "street musicians band",
+    "festival dancing crowd"
+  ],
+  "MOOD|calm": [
+    "calm lake reflection morning",
+    "still water mist",
+    "empty beach soft waves"
+  ],
+  "MOOD|dreamy": [
+    "pastel clouds sunset",
+    "soft focus flowers light",
+    "stars night sky dreamy"
+  ],
+  "MOOD|happy": [
+    "friends laughing outdoors",
+    "sunflowers bright sun",
+    "balloons colorful sky"
+  ],
+  "MOOD|romantic": [
+    "couple sunset silhouette",
+    "candles dinner warm",
+    "roses soft light"
+  ],
+  "MOOD|dark": [
+    "dark forest night moody",
+    "storm clouds dramatic",
+    "rain city night dark"
+  ],
+  "MOOD|epic": [
+    "mountain peak clouds vast",
+    "canyon dramatic light",
+    "waves crashing cliffs"
+  ],
+  "MOOD|chill": [
+    "hammock palm trees",
+    "pool float summer",
+    "beach umbrella sand"
+  ],
+  "MOOD|motivational": [
+    "runner sunrise silhouette",
+    "climber summit sunrise",
+    "training determination gym"
+  ],
+  "MOOD|peaceful": [
+    "zen stones water",
+    "quiet forest path light",
+    "meadow morning dew"
+  ],
+  "MOOD|melancholic": [
+    "rain window droplets",
+    "lonely bench autumn fog",
+    "empty road grey day"
+  ],
+  "MOOD|energetic": [
+    "crowd hands raised concert",
+    "runner sprinting track",
+    "bmx rider air"
+  ],
+  "MOOD|nostalgic": [
+    "old photographs vintage",
+    "polaroid camera retro",
+    "vintage car summer road"
+  ],
+  "MOOD|uplifting": [
+    "sunrise over hills warm",
+    "arms raised sunrise",
+    "light rays through clouds"
+  ],
+  "ACTIVITY|sleep": [
+    "empty bed morning light",
+    "white bedding pillows",
+    "bedroom window curtains"
+  ],
+  "ACTIVITY|deep-sleep": [
+    "dark bedroom night calm",
+    "night sky stars quiet",
+    "pillow bed dim light"
+  ],
+  "ACTIVITY|falling-asleep": [
+    "bedside lamp",
+    "candle dark room",
+    "warm blanket sofa"
+  ],
+  "ACTIVITY|rain-and-nature": [
+    "rain leaves close up",
+    "forest rain drops green",
+    "waterfall forest mist"
+  ],
+  "ACTIVITY|long-sleep-sessions": [
+    "full moon clouds",
+    "milky way lake",
+    "starry sky mountains"
+  ],
+  "ACTIVITY|study": [
+    "desk books notebook study",
+    "library books shelves",
+    "student writing notes"
+  ],
+  "ACTIVITY|deep-focus": [
+    "laptop desk minimal workspace",
+    "coffee notebook desk quiet",
+    "workspace window light"
+  ],
+  "ACTIVITY|lo-fi-study": [
+    "headphones desk study night",
+    "notebook coffee lamp",
+    "study desk plants"
+  ],
+  "ACTIVITY|exam-preparation": [
+    "notes highlighter studying",
+    "library study desk",
+    "stack of books study"
+  ],
+  "ACTIVITY|focus": [
+    "minimal desk laptop clean",
+    "pen notebook writing",
+    "office window morning"
+  ],
+  "ACTIVITY|work": [
+    "office desk laptop coffee",
+    "coworking space desks",
+    "notebook meeting table"
+  ],
+  "ACTIVITY|coding": [
+    "code screen developer",
+    "laptop code dark room",
+    "keyboard programming night"
+  ],
+  "ACTIVITY|workout": [
+    "gym weights training",
+    "kettlebell workout gym",
+    "fitness training rope"
+  ],
+  "ACTIVITY|running": [
+    "runner road morning",
+    "running shoes pavement",
+    "trail running forest"
+  ],
+  "ACTIVITY|meditation": [
+    "meditation sunrise silhouette",
+    "lotus pose beach",
+    "incense calm room"
+  ],
+  "ACTIVITY|reading": [
+    "reading book armchair",
+    "open book coffee",
+    "bookshelf reading nook"
+  ],
+  "ACTIVITY|yoga": [
+    "yoga pose mat sunrise",
+    "yoga studio stretching",
+    "yoga beach silhouette"
+  ],
+  "ACTIVITY|relaxation": [
+    "hammock trees relax",
+    "bath candles relax",
+    "beach chair ocean calm"
+  ],
+  "ACTIVITY|travel": [
+    "airplane window clouds",
+    "road trip map car",
+    "suitcase train station"
+  ],
+  "OCCASION|wedding": [
+    "wedding couple bouquet",
+    "bride groom outdoor wedding",
+    "wedding rings hands"
+  ],
+  "OCCASION|wedding-ceremony": [
+    "wedding ceremony aisle chairs",
+    "church wedding ceremony",
+    "outdoor ceremony arch"
+  ],
+  "OCCASION|processional": [
+    "wedding aisle petals",
+    "bridal party walking",
+    "church aisle candles"
+  ],
+  "OCCASION|bride-entrance": [
+    "bride walking aisle",
+    "bride portrait veil",
+    "bride bouquet dress"
+  ],
+  "OCCASION|groom-entrance": [
+    "groom suit portrait",
+    "groomsmen suits",
+    "groom boutonniere"
+  ],
+  "OCCASION|vows": [
+    "wedding vows hands",
+    "couple exchanging rings",
+    "wedding ceremony close"
+  ],
+  "OCCASION|recessional": [
+    "wedding confetti exit",
+    "newlyweds sparklers",
+    "wedding celebration exit"
+  ],
+  "OCCASION|wedding-reception": [
+    "wedding reception table setting",
+    "reception lights tent",
+    "banquet hall celebration"
+  ],
+  "OCCASION|first-dance": [
+    "couple dancing wedding",
+    "first dance lights",
+    "dance floor couple"
+  ],
+  "OCCASION|dance-floor": [
+    "dance floor disco lights",
+    "party dancing night",
+    "club dancing lights"
+  ],
+  "OCCASION|wedding-dinner": [
+    "wedding table flowers",
+    "long table dinner outdoor",
+    "place setting flowers"
+  ],
+  "OCCASION|wedding-celebration": [
+    "champagne toast",
+    "cheers glasses friends",
+    "confetti wedding"
+  ],
+  "OCCASION|wedding-closing": [
+    "sparklers night celebration",
+    "fireworks night party",
+    "night wedding lights"
+  ],
+  "OCCASION|african-wedding": [
+    "african fabric colorful",
+    "kente cloth",
+    "african woman traditional dress"
+  ],
+  "OCCASION|afrobeat-wedding": [
+    "dancers traditional costume",
+    "carnival dancers street",
+    "drummers performing outdoor"
+  ],
+  "OCCASION|highlife-wedding": [
+    "african band celebration",
+    "traditional music ceremony",
+    "festive drums party"
+  ],
+  "OCCASION|afro-romantic": [
+    "african couple portrait",
+    "romantic couple sunset",
+    "couple holding hands sunset"
+  ],
+  "OCCASION|romantic-evening": [
+    "candlelight dinner table",
+    "wine glasses evening",
+    "city night lights dinner"
+  ],
+  "OCCASION|dinner": [
+    "dinner table friends",
+    "restaurant table evening",
+    "food table candles"
+  ],
+  "OCCASION|birthday": [
+    "birthday cake candles",
+    "balloons party celebration",
+    "birthday party friends"
+  ],
+  "OCCASION|party": [
+    "party lights crowd",
+    "friends party night",
+    "confetti party celebration"
+  ],
+  "OCCASION|celebration": [
+    "fireworks celebration night",
+    "champagne toast celebration",
+    "crowd cheering celebration"
+  ],
+  "OCCASION|ceremony": [
+    "ceremony candles hall",
+    "formal ceremony seats",
+    "ceremonial flowers hall"
+  ],
+  "OCCASION|memorial": [
+    "lily flowers white",
+    "candles church memorial",
+    "cemetery flowers stone"
+  ],
+  "OCCASION|road-trip": [
+    "road trip desert highway",
+    "car window road",
+    "open road mountains"
+  ]
+}

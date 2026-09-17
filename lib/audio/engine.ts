@@ -5,6 +5,7 @@ import {
   setMediaSessionPlaybackState,
   setMediaSessionPosition,
 } from "./media-session";
+import { PlayTracker } from "./play-tracker";
 
 /**
  * Owns a single HTMLAudioElement created outside the React tree so playback
@@ -17,6 +18,13 @@ import {
 class AudioEngine {
   private audio: HTMLAudioElement | null = null;
   private lastTrackId: string | null = null;
+  private tracker = new PlayTracker();
+  /**
+   * Set when a track ends. Repeat-one (or repeat-all over a single track)
+   * replays the same track id, so no track change occurs — without this the
+   * loop would never register as a new listen.
+   */
+  private replayPending = false;
   private initialized = false;
   private lastPersistedVolume = 1;
 
@@ -41,6 +49,7 @@ class AudioEngine {
     audio.addEventListener("timeupdate", () => {
       usePlayerStore.getState()._setCurrentTime(audio.currentTime);
       setMediaSessionPosition(audio.duration, audio.currentTime);
+      this.tracker.onTimeUpdate(audio.currentTime, !audio.paused);
     });
     audio.addEventListener("loadedmetadata", () => {
       usePlayerStore.getState()._setDuration(audio.duration || 0);
@@ -57,8 +66,14 @@ class AudioEngine {
       setMediaSessionPlaybackState("paused");
     });
     audio.addEventListener("ended", () => {
+      this.tracker.onEnded();
+      this.replayPending = true;
       usePlayerStore.getState()._onEnded();
     });
+
+    // Closing the tab or backgrounding the app on mobile is the last chance to
+    // report how much of the current track was heard.
+    window.addEventListener("pagehide", () => this.tracker.flush(true));
     audio.addEventListener("error", () => {
       if (!audio.src) return;
       usePlayerStore.getState()._setError("This track couldn't be played.");
@@ -94,6 +109,7 @@ class AudioEngine {
 
     if (track?.id !== this.lastTrackId) {
       this.lastTrackId = track?.id ?? null;
+      this.replayPending = false;
       if (track) {
         audio.src = track.audioUrl;
         audio.load();
@@ -103,18 +119,19 @@ class AudioEngine {
             usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
           });
         }
-        fetch("/api/history", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trackId: track.id }),
-        }).catch(() => {
-          // Best-effort — listening history is a convenience, not critical path.
-        });
+        // Records the play (and listening history for signed-in users).
+        this.tracker.start(track.id, track.duration);
       } else {
+        this.tracker.flush();
         audio.removeAttribute("src");
         audio.load();
       }
       return;
+    }
+
+    if (this.replayPending && track && state.isPlaying) {
+      this.replayPending = false;
+      this.tracker.start(track.id, track.duration);
     }
 
     if (state.isPlaying && audio.paused) {

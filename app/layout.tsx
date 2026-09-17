@@ -5,6 +5,8 @@ import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSiteSettings, DEFAULT_SETTINGS } from "@/lib/settings";
+import { UpdateBanner } from "@/components/pwa/update-banner";
+import { getBuildId } from "@/lib/build-id";
 
 const display = Plus_Jakarta_Sans({
   variable: "--font-display",
@@ -72,6 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider delayDuration={200}>
             {children}
             <Toaster />
+            <UpdateBanner buildId={getBuildId()} />
           </TooltipProvider>
         </Providers>
       </body>

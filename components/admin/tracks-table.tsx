@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/states/empty-state";
+import { ConfirmDialog, type ConfirmRequest } from "@/components/admin/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatDuration, formatCompactNumber, cn } from "@/lib/utils";
@@ -33,6 +35,9 @@ export function TracksTable() {
   const [tracks, setTracks] = useState<AdminTrack[] | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "published" | "draft" | "attention">("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
   const debouncedQuery = useDebounce(query, 250);
   const { toast } = useToast();
 
@@ -69,10 +74,62 @@ export function TracksTable() {
   }
 
   async function deleteTrack(track: AdminTrack) {
-    if (!confirm(`Delete "${track.title}"?`)) return;
     setTracks((prev) => prev?.filter((t) => t.id !== track.id) ?? null);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(track.id);
+      return next;
+    });
     const res = await fetch(`/api/admin/tracks/${track.id}`, { method: "DELETE" });
     if (res.ok) toast({ title: "Track deleted" });
+  }
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function bulkSetPublished(publish: boolean) {
+    const ids = [...selected];
+    setBulkBusy(true);
+    setTracks((prev) => prev?.map((t) => (selected.has(t.id) ? { ...t, isPublished: publish } : t)) ?? null);
+
+    const results = await Promise.all(
+      ids.map((id) => {
+        const fd = new FormData();
+        fd.set("isPublished", String(publish));
+        return fetch(`/api/admin/tracks/${id}`, { method: "PATCH", body: fd }).then((r) => r.ok);
+      })
+    );
+
+    setBulkBusy(false);
+    const failed = results.filter((ok) => !ok).length;
+    if (failed > 0) {
+      // Publishing is refused server-side for tracks whose audio isn't
+      // READY, so a partial failure here is expected rather than broken.
+      toast({
+        title: `${ids.length - failed} updated, ${failed} skipped`,
+        description: "Tracks whose audio isn't ready yet can't be published.",
+      });
+      load();
+    } else {
+      toast({ title: publish ? `${ids.length} published` : `${ids.length} unpublished` });
+    }
+    setSelected(new Set());
+  }
+
+  async function bulkDelete() {
+    const ids = [...selected];
+    setBulkBusy(true);
+    setTracks((prev) => prev?.filter((t) => !selected.has(t.id)) ?? null);
+    await Promise.all(ids.map((id) => fetch(`/api/admin/tracks/${id}`, { method: "DELETE" })));
+    setBulkBusy(false);
+    setSelected(new Set());
+    toast({ title: `${ids.length} track${ids.length === 1 ? "" : "s"} deleted` });
   }
 
   return (
@@ -99,6 +156,39 @@ export function TracksTable() {
         </div>
       </div>
 
+      {selected.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+          <p className="text-sm font-medium text-foreground">
+            {selected.size} selected
+          </p>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="secondary" disabled={bulkBusy} onClick={() => bulkSetPublished(true)}>
+              Publish
+            </Button>
+            <Button size="sm" variant="secondary" disabled={bulkBusy} onClick={() => bulkSetPublished(false)}>
+              Unpublish
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              disabled={bulkBusy}
+              onClick={() =>
+                setConfirmRequest({
+                  title: `Delete ${selected.size} track${selected.size === 1 ? "" : "s"}?`,
+                  description: "Their audio and artwork are removed too. This can't be undone.",
+                  onConfirm: bulkDelete,
+                })
+              }
+            >
+              Delete
+            </Button>
+            <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelected(new Set())}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {tracks === null && (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -124,6 +214,17 @@ export function TracksTable() {
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-surface text-left text-xs uppercase tracking-wide text-foreground-subtle">
+                <th className="w-10 px-4 py-3 font-medium">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all tracks"
+                    className="h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
+                    checked={visibleTracks.length > 0 && visibleTracks.every((t) => selected.has(t.id))}
+                    onChange={(e) =>
+                      setSelected(e.target.checked ? new Set(visibleTracks.map((t) => t.id)) : new Set())
+                    }
+                  />
+                </th>
                 <th className="px-4 py-3 font-medium">Track</th>
                 <th className="px-4 py-3 font-medium">Album</th>
                 <th className="px-4 py-3 font-medium">Duration</th>
@@ -135,7 +236,22 @@ export function TracksTable() {
             </thead>
             <tbody className="divide-y divide-border">
               {visibleTracks.map((track) => (
-                <tr key={track.id} className="transition-colors hover:bg-surface/60">
+                <tr
+                  key={track.id}
+                  className={cn(
+                    "transition-colors hover:bg-surface/60",
+                    selected.has(track.id) && "bg-accent/5"
+                  )}
+                >
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${track.title}`}
+                      className="h-4 w-4 cursor-pointer accent-[var(--color-accent)]"
+                      checked={selected.has(track.id)}
+                      onChange={() => toggleSelected(track.id)}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-surface-active">
@@ -182,7 +298,18 @@ export function TracksTable() {
                         onClick={() => togglePublished(track)}
                         icon={track.isPublished ? EyeOff : Eye}
                       />
-                      <IconAction label="Delete" onClick={() => deleteTrack(track)} icon={Trash2} destructive />
+                      <IconAction
+                        label="Delete"
+                        onClick={() =>
+                          setConfirmRequest({
+                            title: `Delete "${track.title}"?`,
+                            description: "Its audio and artwork are removed too. This can't be undone.",
+                            onConfirm: () => deleteTrack(track),
+                          })
+                        }
+                        icon={Trash2}
+                        destructive
+                      />
                     </div>
                   </td>
                 </tr>
@@ -191,6 +318,8 @@ export function TracksTable() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog request={confirmRequest} onClose={() => setConfirmRequest(null)} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Music2, Disc3, Mic2, PlayCircle, Download, Plus } from "lucide-react";
+import { Music2, Disc3, Mic2, PlayCircle, Download, Plus, AlertTriangle } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { formatCompactNumber, formatReleaseDate } from "@/lib/utils";
@@ -8,8 +8,16 @@ import { formatCompactNumber, formatReleaseDate } from "@/lib/utils";
 export const metadata = { title: "Admin Dashboard" };
 
 export default async function AdminDashboardPage() {
-  const [totalTracks, totalAlbums, totalArtists, totalPlays, totalDownloads, recentUploads, popularGroups] =
-    await Promise.all([
+  const [
+    totalTracks,
+    totalAlbums,
+    totalArtists,
+    totalPlays,
+    totalDownloads,
+    recentUploads,
+    popularGroups,
+    needsAttention,
+  ] = await Promise.all([
       db.track.count(),
       db.album.count(),
       db.artist.count(),
@@ -26,6 +34,7 @@ export default async function AdminDashboardPage() {
         orderBy: { _count: { trackId: "desc" } },
         take: 6,
       }),
+      db.track.count({ where: { processingStatus: { not: "READY" } } }),
     ]);
 
   const popularTrackIds = popularGroups.map((g) => g.trackId);
@@ -57,6 +66,23 @@ export default async function AdminDashboardPage() {
           </Link>
         </Button>
       </div>
+
+      {needsAttention > 0 && (
+        <Link
+          href="/admin/tracks"
+          className="mt-6 flex items-center gap-3 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 transition-colors hover:bg-danger/10"
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0 text-danger" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">
+              {needsAttention} track{needsAttention === 1 ? "" : "s"} didn&apos;t finish processing
+            </p>
+            <p className="text-xs text-foreground-muted">
+              They stay hidden from the public site until their audio is ready. Open Tracks → Needs attention.
+            </p>
+          </div>
+        </Link>
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (

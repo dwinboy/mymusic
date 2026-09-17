@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrackForm, type TrackFormInitial } from "@/components/admin/track-form";
-import { xhrUpload } from "@/lib/admin/xhr-upload";
+import { QuickCreateArtist } from "@/components/admin/quick-create-artist";
 import { formatFileSize, cn } from "@/lib/utils";
 
 interface Artist {
@@ -33,6 +33,7 @@ export function NewTrackFlow({
   const [artists, setArtists] = useState<Artist[]>([]);
   const [artistId, setArtistId] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [title, setTitle] = useState("");
   const [phase, setPhase] = useState<Phase>("select");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +56,9 @@ export function NewTrackFlow({
     setPhase("uploading");
     setProgress(0);
 
-    const title = titleFromFilename(file.name);
     const draftForm = new FormData();
     draftForm.set("artistId", artistId);
-    draftForm.set("title", title);
+    draftForm.set("title", title.trim() || titleFromFilename(file.name));
 
     let draftTrackId: string | null = null;
 
@@ -160,21 +160,31 @@ export function NewTrackFlow({
     <div className="flex flex-col gap-6">
       <div>
         <Label>Artist</Label>
-        <Select value={artistId} onValueChange={setArtistId} disabled={phase !== "select"}>
-          <SelectTrigger className="mt-1.5 max-w-sm">
-            <SelectValue placeholder="Select an artist" />
-          </SelectTrigger>
-          <SelectContent>
-            {artists.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
-                {a.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="mt-1.5 flex items-center gap-2">
+          <Select value={artistId} onValueChange={setArtistId} disabled={phase !== "select"}>
+            <SelectTrigger className="max-w-sm">
+              <SelectValue placeholder="Select an artist" />
+            </SelectTrigger>
+            <SelectContent>
+              {artists.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {phase === "select" && (
+            <QuickCreateArtist
+              onCreated={(artist) => {
+                setArtists((prev) => [...prev, artist].sort((a, b) => a.name.localeCompare(b.name)));
+                setArtistId(artist.id);
+              }}
+            />
+          )}
+        </div>
         {artists.length === 0 && (
           <p className="mt-1.5 text-xs text-foreground-subtle">
-            No artists yet — <a href="/admin/artists" className="underline">create one first</a>.
+            No artists yet — create one without leaving this page.
           </p>
         )}
       </div>
@@ -204,10 +214,31 @@ export function NewTrackFlow({
             className="hidden"
             accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/flac,audio/x-flac,audio/mp4,audio/m4a,audio/x-m4a,audio/aac"
             disabled={phase !== "select"}
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const picked = e.target.files?.[0] ?? null;
+              setFile(picked);
+              // Seed the title from the filename, but only while the admin
+              // hasn't typed their own — re-picking a file shouldn't clobber
+              // a title they already corrected.
+              if (picked && !title.trim()) setTitle(titleFromFilename(picked.name));
+            }}
           />
         </label>
       </div>
+
+      {file && (
+        <div>
+          <Label htmlFor="new-track-title">Title</Label>
+          <Input
+            id="new-track-title"
+            className="mt-1.5 max-w-sm"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={phase !== "select"}
+            placeholder={titleFromFilename(file.name)}
+          />
+        </div>
+      )}
 
       {phase === "uploading" && (
         <div>

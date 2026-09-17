@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> & { trackClassName?: string }
->(({ className, trackClassName, ...props }, ref) => (
+>(({ className, trackClassName, "aria-label": ariaLabel, ...props }, ref) => (
   <SliderPrimitive.Root
     ref={ref}
     className={cn(
@@ -26,7 +26,10 @@ const Slider = React.forwardRef<
     >
       <SliderPrimitive.Range className="absolute h-full rounded-full bg-foreground transition-colors duration-200 group-hover:bg-accent group-hover:shadow-[0_0_10px_var(--color-accent)]" />
     </SliderPrimitive.Track>
+    {/* The thumb is the element with role="slider", so it carries the name
+        screen readers announce ("Seek", "Volume"). */}
     <SliderPrimitive.Thumb
+      aria-label={ariaLabel}
       className="block h-3 w-3 rounded-full bg-foreground shadow transition-[opacity,transform] duration-200 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent can-hover:scale-90 can-hover:opacity-0 can-hover:group-hover:scale-100 can-hover:group-hover:opacity-100"
     />
   </SliderPrimitive.Root>

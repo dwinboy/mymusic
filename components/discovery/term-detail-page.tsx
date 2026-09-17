@@ -143,12 +143,13 @@ export async function TermDetailPage({
       <header className="relative overflow-hidden">
         {heroImage && (
           <div className="absolute inset-0">
-            <Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-60" />
+            <Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-80" />
             {/* Two scrims: down to the page ground so the sections below
-                continue it, and across so the title has a dark side to sit on
-                whatever the photo is doing. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/80 to-canvas/35" />
-            <div className="absolute inset-0 bg-gradient-to-r from-canvas/85 via-canvas/40 to-transparent" />
+                continue it, and across so the title keeps a dark side to sit
+                on whatever the photo is doing. Weighted to the left, where the
+                text is, leaving the rest of the photograph visible. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/70 to-canvas/25" />
+            <div className="absolute inset-0 bg-gradient-to-r from-canvas/90 via-canvas/30 to-transparent" />
           </div>
         )}
         <div className="relative mx-auto max-w-[1600px] px-4 pb-10 pt-12 sm:px-8 sm:pb-14 sm:pt-24">

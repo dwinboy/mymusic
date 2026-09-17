@@ -15,6 +15,8 @@ import { PlayTracker } from "./play-tracker";
  * the real <audio> element against that intent, and pushes real playback
  * facts (buffering, actual position, errors) back into the store.
  */
+const SLEEP_FADE_MS = 8000;
+
 class AudioEngine {
   private audio: HTMLAudioElement | null = null;
   private lastTrackId: string | null = null;
@@ -28,6 +30,9 @@ class AudioEngine {
   private initialized = false;
   /** The store's play intent at the last reconcile, to tell a fresh "play" from a stale one. */
   private wasPlaying = false;
+  /** Sleep timer volume multiplier: eases from 1 to 0 over the last seconds before stopping. */
+  private fade = 1;
+  private sleepTicker: ReturnType<typeof setInterval> | null = null;
   private lastPersistedVolume = 1;
 
   init() {
@@ -70,7 +75,14 @@ class AudioEngine {
     audio.addEventListener("ended", () => {
       this.tracker.onEnded();
       this.replayPending = true;
-      usePlayerStore.getState()._onEnded();
+      const store = usePlayerStore.getState();
+      // "Stop at the end of this song": stay on it, paused, instead of moving on.
+      if (store.sleepTimer.endOfTrack) {
+        store.setSleepTimer(null);
+        store.pause();
+        return;
+      }
+      store._onEnded();
     });
 
     // Closing the tab or backgrounding the app on mobile is the last chance to
@@ -106,6 +118,8 @@ class AudioEngine {
   private reconcile(state: ReturnType<typeof usePlayerStore.getState>) {
     const audio = this.audio;
     if (!audio) return;
+
+    this.syncSleepTicker(state);
 
     const track = state.currentTrack();
     const playRequested = state.isPlaying && !this.wasPlaying;
@@ -171,7 +185,7 @@ class AudioEngine {
       audio.pause();
     }
 
-    const targetVolume = state.isMuted ? 0 : state.volume;
+    const targetVolume = (state.isMuted ? 0 : state.volume) * this.fade;
     if (Math.abs(audio.volume - targetVolume) > 0.001) {
       audio.volume = targetVolume;
     }
@@ -183,6 +197,48 @@ class AudioEngine {
         // Ignore — non-critical preference persistence.
       }
     }
+  }
+
+  private syncSleepTicker(state: ReturnType<typeof usePlayerStore.getState>) {
+    const active = state.sleepTimer.endsAt !== null || state.sleepTimer.endOfTrack;
+    if (active && !this.sleepTicker) {
+      this.sleepTicker = setInterval(() => this.sleepTick(), 250);
+    } else if (!active && this.sleepTicker) {
+      clearInterval(this.sleepTicker);
+      this.sleepTicker = null;
+      this.setFade(1);
+    }
+  }
+
+  private sleepTick() {
+    const audio = this.audio;
+    const store = usePlayerStore.getState();
+    const { endsAt, endOfTrack } = store.sleepTimer;
+    if (!audio) return;
+
+    let remainingMs: number | null = null;
+    if (endsAt !== null) remainingMs = endsAt - Date.now();
+    else if (endOfTrack && Number.isFinite(audio.duration) && audio.duration > 0) {
+      remainingMs = (audio.duration - audio.currentTime) * 1000;
+    }
+    if (remainingMs === null) return;
+
+    if (endsAt !== null && remainingMs <= 0) {
+      // Pause first, at zero volume, then restore the volume for next time.
+      store.pause();
+      store.setSleepTimer(null);
+      return;
+    }
+    // Ease out rather than cutting off mid-phrase. (iOS ignores element
+    // volume, so there it simply stops.)
+    this.setFade(store.isPlaying ? Math.min(1, Math.max(0, remainingMs / SLEEP_FADE_MS)) : 1);
+  }
+
+  private setFade(fade: number) {
+    if (Math.abs(this.fade - fade) < 0.01) return;
+    this.fade = fade;
+    const state = usePlayerStore.getState();
+    if (this.audio) this.audio.volume = (state.isMuted ? 0 : state.volume) * fade;
   }
 
   private play(audio: HTMLAudioElement) {

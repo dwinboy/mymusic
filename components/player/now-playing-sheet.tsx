@@ -10,6 +10,7 @@ import { ProgressBar } from "@/components/player/progress-bar";
 import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
 import { ShareMenu } from "@/components/music/share-menu";
+import { SleepTimerMenu } from "@/components/player/sleep-timer-menu";
 import { Badge } from "@/components/ui/badge";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useDominantColor } from "@/hooks/use-dominant-color";
@@ -206,8 +207,9 @@ export function NowPlayingSheet() {
               </button>
             </div>
 
-            <div data-no-swipe className="mt-6 flex items-center justify-center gap-8">
+            <div data-no-swipe className="mt-6 flex items-center justify-center gap-7">
               <DownloadButton track={track} size="md" />
+              <SleepTimerMenu />
               {hasLyrics && (
                 <button
                   onClick={() => setShowLyrics((v) => !v)}

@@ -9,6 +9,7 @@ import { VolumeControl } from "@/components/player/volume-control";
 import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
 import { ShareMenu } from "@/components/music/share-menu";
+import { SleepTimerMenu } from "@/components/player/sleep-timer-menu";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useDominantColor } from "@/hooks/use-dominant-color";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,7 @@ export function DesktopPlayer() {
           trackId={track.id}
           size="sm"
         />
+        <SleepTimerMenu size="sm" />
         <VolumeControl />
         <button
           onClick={() => setQueueOpen(true)}

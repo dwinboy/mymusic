@@ -3,6 +3,15 @@ import type { PlayerTrack } from "@/lib/types";
 
 export type RepeatMode = "off" | "all" | "one";
 
+/** Stop after a number of minutes, or when the current track finishes. */
+export type SleepTimerOption = number | "end-of-track";
+
+export interface SleepTimer {
+  /** Epoch ms when playback stops; null for end-of-track or no timer. */
+  endsAt: number | null;
+  endOfTrack: boolean;
+}
+
 interface PlayerState {
   tracks: PlayerTrack[];
   currentIndex: number;
@@ -19,6 +28,7 @@ interface PlayerState {
   isQueueOpen: boolean;
   /** Shuffle keeps the original order here so it can be restored. */
   unshuffledTracks: PlayerTrack[] | null;
+  sleepTimer: SleepTimer;
 
   currentTrack: () => PlayerTrack | null;
   upcoming: () => PlayerTrack[];
@@ -43,6 +53,8 @@ interface PlayerState {
   clearQueue: () => void;
   setNowPlayingOpen: (open: boolean) => void;
   setQueueOpen: (open: boolean) => void;
+  /** null turns the timer off. */
+  setSleepTimer: (option: SleepTimerOption | null) => void;
 
   // Called by the audio engine to reflect real playback state.
   _setCurrentTime: (time: number) => void;
@@ -77,6 +89,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isNowPlayingOpen: false,
   isQueueOpen: false,
   unshuffledTracks: null,
+  sleepTimer: { endsAt: null, endOfTrack: false },
 
   currentTrack: () => {
     const { tracks, currentIndex } = get();
@@ -217,6 +230,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setNowPlayingOpen: (open) => set({ isNowPlayingOpen: open }),
   setQueueOpen: (open) => set({ isQueueOpen: open }),
+  setSleepTimer: (option) =>
+    set({
+      sleepTimer:
+        option === null
+          ? { endsAt: null, endOfTrack: false }
+          : option === "end-of-track"
+            ? { endsAt: null, endOfTrack: true }
+            : { endsAt: Date.now() + option * 60_000, endOfTrack: false },
+    }),
 
   _setCurrentTime: (time) => set({ currentTime: time }),
   _setDuration: (duration) => set({ duration }),

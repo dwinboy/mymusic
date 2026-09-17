@@ -16,7 +16,7 @@ import { Compass } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Discover",
-  description: "Curated new music, featured artists, and genre collections on Lumen.",
+  description: "Curated new music, featured artists, and genre collections on Vibe Banger.",
 };
 
 export default async function DiscoverPage({

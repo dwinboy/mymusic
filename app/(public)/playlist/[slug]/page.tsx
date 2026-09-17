@@ -25,7 +25,7 @@ export async function generateMetadata({
 
   return {
     title: playlist.title,
-    description: playlist.description || `${playlist.title} — a playlist on Lumen.`,
+    description: playlist.description || `${playlist.title} — a playlist on Vibe Banger.`,
     openGraph: {
       title: playlist.title,
       description: playlist.description || undefined,
@@ -72,7 +72,7 @@ export default async function PlaylistPage({ params }: { params: Promise<{ slug:
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{playlist.title}</h1>
           {playlist.description && <p className="mt-3 max-w-xl text-sm text-foreground-muted">{playlist.description}</p>}
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-muted">
-            <span>{playlist.user.name ?? "Lumen"}</span>
+            <span>{playlist.user.name ?? "Vibe Banger"}</span>
             <span>·</span>
             <span>{playerTracks.length} tracks</span>
             {totalSeconds > 0 && (

@@ -13,7 +13,7 @@ export function Logo({ className }: { className?: string }) {
       <span className="relative flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 transition-transform group-hover:scale-105">
         <span className="h-2 w-2 rounded-full bg-accent" />
       </span>
-      <span className="font-semibold tracking-[0.18em] text-[15px] uppercase">Lumen</span>
+      <span className="font-semibold tracking-[0.18em] text-[15px] uppercase">Vibe Banger</span>
     </Link>
   );
 }

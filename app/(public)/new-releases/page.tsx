@@ -9,7 +9,7 @@ import { Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "New Releases",
-  description: "The latest tracks published on Lumen.",
+  description: "The latest tracks published on Vibe Banger.",
 };
 
 export default async function NewReleasesPage() {
@@ -29,7 +29,7 @@ export default async function NewReleasesPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">New Releases</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Fresh on Lumen</h1>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Fresh on Vibe Banger</h1>
 
       {playerTracks.length === 0 ? (
         <EmptyState icon={Sparkles} title="Nothing published yet" className="mt-10" />

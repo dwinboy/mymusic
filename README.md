@@ -1,4 +1,4 @@
-# Lumen
+# Vibe Banger
 
 A premium, mobile-first AI music streaming PWA — built with Next.js (App Router), TypeScript, Tailwind CSS v4, Prisma/PostgreSQL, and NextAuth.
 
@@ -17,7 +17,7 @@ A premium, mobile-first AI music streaming PWA — built with Next.js (App Route
 1. **Database.** Point `DATABASE_URL` in `.env` at a running Postgres instance. Locally this project was built against Homebrew Postgres:
 
    ```bash
-   createdb -O <role> lumen_dev
+   createdb -O <role> vibebanger_dev
    ```
 
 2. **Env vars.** Copy `.env.example` to `.env` and fill in `NEXTAUTH_SECRET` (any random string — `openssl rand -base64 32`).
@@ -35,8 +35,8 @@ A premium, mobile-first AI music streaming PWA — built with Next.js (App Route
    npm run db:seed
    ```
 
-   - Admin login: `admin@lumen.app` / `lumen-admin-2026`
-   - Demo user: `demo@lumen.app` / `lumen-demo-2026`
+   - Admin login: `admin@vibebanger.app` / `vibebanger-admin-2026`
+   - Demo user: `demo@vibebanger.app` / `vibebanger-demo-2026`
 
    Delete the seed data any time via `/admin/tracks` (or wipe and re-run the seed) once you're uploading real music.
 

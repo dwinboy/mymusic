@@ -1,4 +1,4 @@
-// Lumen service worker — minimal, deliberately narrow scope:
+// Vibe Banger service worker — minimal, deliberately narrow scope:
 //   1. Serve downloaded track audio from Cache Storage when offline
 //      (the actual caching happens in lib/offline/manager.ts when the
 //      user presses Download; this worker just knows to look there).
@@ -6,8 +6,8 @@
 // Bump CACHE_VERSION whenever the shell list below changes.
 
 const CACHE_VERSION = "v1";
-const SHELL_CACHE = `lumen-shell-${CACHE_VERSION}`;
-const AUDIO_CACHE = "lumen-audio-v1";
+const SHELL_CACHE = `vibebanger-shell-${CACHE_VERSION}`;
+const AUDIO_CACHE = "vibebanger-audio-v1";
 const OFFLINE_URL = "/offline.html";
 
 const SHELL_ASSETS = ["/", OFFLINE_URL, "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
@@ -28,7 +28,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key.startsWith("lumen-shell-") && key !== SHELL_CACHE)
+            .filter((key) => key.startsWith("vibebanger-shell-") && key !== SHELL_CACHE)
             .map((key) => caches.delete(key))
         )
       )

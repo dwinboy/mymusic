@@ -197,7 +197,7 @@ function AlbumForm({
     try {
       if (coverFile) {
         if (imageCloudinaryEnabled) {
-          const uploaded = await uploadImageToCloudinary(coverFile, "lumen/covers");
+          const uploaded = await uploadImageToCloudinary(coverFile, "vibebanger/covers");
           fd.set("coverImagePublicId", uploaded.publicId);
           fd.set("coverImageUrl", uploaded.secureUrl);
         } else {

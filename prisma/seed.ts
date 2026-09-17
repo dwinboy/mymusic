@@ -267,17 +267,17 @@ async function main() {
   ]);
 
   console.log("Seeding users...");
-  const adminPasswordHash = await bcrypt.hash("lumen-admin-2026", 12);
-  const demoPasswordHash = await bcrypt.hash("lumen-demo-2026", 12);
+  const adminPasswordHash = await bcrypt.hash("vibebanger-admin-2026", 12);
+  const demoPasswordHash = await bcrypt.hash("vibebanger-demo-2026", 12);
 
   const admin = await db.user.upsert({
-    where: { email: "admin@lumen.app" },
-    create: { email: "admin@lumen.app", name: "Lumen Admin", role: "ADMIN", passwordHash: adminPasswordHash },
+    where: { email: "admin@vibebanger.app" },
+    create: { email: "admin@vibebanger.app", name: "Vibe Banger Admin", role: "ADMIN", passwordHash: adminPasswordHash },
     update: { passwordHash: adminPasswordHash, role: "ADMIN" },
   });
   await db.user.upsert({
-    where: { email: "demo@lumen.app" },
-    create: { email: "demo@lumen.app", name: "Demo Listener", role: "USER", passwordHash: demoPasswordHash },
+    where: { email: "demo@vibebanger.app" },
+    create: { email: "demo@vibebanger.app", name: "Demo Listener", role: "USER", passwordHash: demoPasswordHash },
     update: { passwordHash: demoPasswordHash },
   });
 
@@ -513,8 +513,8 @@ async function main() {
 
   const totalTracks = await db.track.count();
   console.log(`\nDone. Seeded ${totalTracks} tracks across ${ALBUMS.length} albums and ${SINGLES.length} singles.`);
-  console.log("Admin login:  admin@lumen.app / lumen-admin-2026");
-  console.log("Demo login:   demo@lumen.app / lumen-demo-2026");
+  console.log("Admin login:  admin@vibebanger.app / vibebanger-admin-2026");
+  console.log("Demo login:   demo@vibebanger.app / vibebanger-demo-2026");
 }
 
 main()

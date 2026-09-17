@@ -6,7 +6,7 @@ export interface SiteSettings {
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
-  siteName: "Lumen",
+  siteName: "Vibe Banger",
   accentColor: "#e3a857",
 };
 

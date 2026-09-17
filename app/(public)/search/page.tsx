@@ -31,7 +31,7 @@ export default async function SearchPage({
         <div className="mb-8 md:hidden">
           <SearchBar />
         </div>
-        <EmptyState icon={SearchIcon} title="Search Lumen" description="Find songs, artists, albums, and playlists." />
+        <EmptyState icon={SearchIcon} title="Search Vibe Banger" description="Find songs, artists, albums, and playlists." />
       </div>
     );
   }

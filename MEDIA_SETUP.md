@@ -1,6 +1,6 @@
 # Media architecture: R2 + Cloudinary setup
 
-Lumen's media layer is provider-agnostic by design: **local disk** (zero setup, the dev default) or **Cloudflare R2 + Cloudinary** (production), switched entirely by environment variables — no code changes either way. This doc covers turning on the production path.
+Vibe Banger's media layer is provider-agnostic by design: **local disk** (zero setup, the dev default) or **Cloudflare R2 + Cloudinary** (production), switched entirely by environment variables — no code changes either way. This doc covers turning on the production path.
 
 ```
 PostgreSQL   → metadata only (never audio/image binaries)

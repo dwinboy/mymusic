@@ -17,28 +17,28 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Lumen — Independent Sound",
-    template: "%s — Lumen",
+    default: "Vibe Banger — Independent Sound",
+    template: "%s — Vibe Banger",
   },
   description: "An original catalogue of AI-composed music, streamed in premium quality.",
-  applicationName: "Lumen",
+  applicationName: "Vibe Banger",
   manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
-    siteName: "Lumen",
-    title: "Lumen — Independent Sound",
+    siteName: "Vibe Banger",
+    title: "Vibe Banger — Independent Sound",
     description: "An original catalogue of AI-composed music, streamed in premium quality.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lumen — Independent Sound",
+    title: "Vibe Banger — Independent Sound",
     description: "An original catalogue of AI-composed music, streamed in premium quality.",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Lumen",
+    title: "Vibe Banger",
   },
   formatDetection: {
     telephone: false,

@@ -7,24 +7,24 @@ export interface OfflineTrackRecord {
   downloadedAt: number;
 }
 
-interface LumenOfflineDB extends DBSchema {
+interface VibeBangerOfflineDB extends DBSchema {
   tracks: {
     key: string;
     value: OfflineTrackRecord;
   };
 }
 
-const DB_NAME = "lumen-offline";
+const DB_NAME = "vibebanger-offline";
 const DB_VERSION = 1;
 
-let dbPromise: Promise<IDBPDatabase<LumenOfflineDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<VibeBangerOfflineDB>> | null = null;
 
 function getDb() {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("IndexedDB is only available in the browser."));
   }
   if (!dbPromise) {
-    dbPromise = openDB<LumenOfflineDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<VibeBangerOfflineDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         if (!db.objectStoreNames.contains("tracks")) {
           db.createObjectStore("tracks", { keyPath: "track.id" });

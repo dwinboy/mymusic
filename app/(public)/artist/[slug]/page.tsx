@@ -25,7 +25,7 @@ export async function generateMetadata({
   const artist = await getArtistBySlug(slug);
   if (!artist) return {};
 
-  const description = artist.bio || `Stream music by ${artist.name} on Lumen.`;
+  const description = artist.bio || `Stream music by ${artist.name} on Vibe Banger.`;
 
   return {
     title: artist.name,

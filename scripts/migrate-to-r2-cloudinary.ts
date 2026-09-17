@@ -158,7 +158,7 @@ async function migrateImages() {
       continue;
     }
     try {
-      const result = await cloudinary.uploader.upload(localPath, { folder: "lumen/covers" });
+      const result = await cloudinary.uploader.upload(localPath, { folder: "vibebanger/covers" });
       await db.track.update({
         where: { id: track.id },
         data: {
@@ -184,7 +184,7 @@ async function migrateImages() {
       continue;
     }
     try {
-      const result = await cloudinary.uploader.upload(localPath, { folder: "lumen/avatars" });
+      const result = await cloudinary.uploader.upload(localPath, { folder: "vibebanger/avatars" });
       await db.artist.update({
         where: { id: artist.id },
         data: { avatarImagePublicId: result.public_id },

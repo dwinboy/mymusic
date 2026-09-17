@@ -1,6 +1,6 @@
 # Deploying to Railway
 
-Lumen is a single Next.js application — there's no separate "backend service" to split out. Its API routes, admin logic, and auth all run *as part of* the Next.js deployment. The whole thing deploys to Railway as two services in one project:
+Vibe Banger is a single Next.js application — there's no separate "backend service" to split out. Its API routes, admin logic, and auth all run *as part of* the Next.js deployment. The whole thing deploys to Railway as two services in one project:
 
 ```
 web       → the whole Next.js app (UI + API routes + admin + auth)
@@ -22,7 +22,7 @@ Vercel would work, but Railway wins on two specifics for this app:
 
 ```bash
 railway login
-railway init --name lumen
+railway init --name vibebanger
 railway add --database postgres
 ```
 

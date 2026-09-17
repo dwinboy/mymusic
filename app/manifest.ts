@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Lumen — Independent Sound",
-    short_name: "Lumen",
+    name: "Vibe Banger — Independent Sound",
+    short_name: "Vibe Banger",
     description: "An original catalogue of AI-composed music, streamed in premium quality.",
     start_url: "/",
     display: "standalone",

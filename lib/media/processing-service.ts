@@ -52,7 +52,7 @@ export class FfmpegAudioProcessingService implements AudioProcessingService {
       throw new Error("ffmpeg-static did not resolve a binary for this platform.");
     }
 
-    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "lumen-audio-"));
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "vibebanger-audio-"));
     try {
       const inputPath = path.join(tmpDir, `input.${sourceExtension}`);
       await writeFile(inputPath, originalBuffer);

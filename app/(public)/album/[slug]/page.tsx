@@ -23,7 +23,7 @@ export async function generateMetadata({
   const album = await getAlbumBySlug(slug);
   if (!album) return {};
 
-  const description = album.description || `${album.title} by ${album.artist.name} on Lumen.`;
+  const description = album.description || `${album.title} by ${album.artist.name} on Vibe Banger.`;
 
   const ogImage = resolveAlbumCoverUrl(album, "large");
 

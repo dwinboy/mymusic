@@ -16,8 +16,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cloudinary is not enabled (IMAGE_PROVIDER=cloudinary)." }, { status: 400 });
   }
 
-  const { folder } = await request.json().catch(() => ({ folder: "lumen/covers" }));
-  const signature = await createImageUploadSignature(folder || "lumen/covers");
+  const { folder } = await request.json().catch(() => ({ folder: "vibebanger/covers" }));
+  const signature = await createImageUploadSignature(folder || "vibebanger/covers");
 
   return NextResponse.json(signature);
 }

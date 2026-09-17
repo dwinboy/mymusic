@@ -172,7 +172,7 @@ export function TrackForm({
       if (coverFile) {
         if (imageCloudinaryEnabled) {
           setProgressLabel("Uploading artwork...");
-          const uploaded = await uploadImageToCloudinary(coverFile, "lumen/covers", setProgress);
+          const uploaded = await uploadImageToCloudinary(coverFile, "vibebanger/covers", setProgress);
           formData.set("coverImagePublicId", uploaded.publicId);
           formData.set("coverImageUrl", uploaded.secureUrl);
           formData.set("coverImageWidth", String(uploaded.width));

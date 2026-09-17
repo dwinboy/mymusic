@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/states/empty-state";
 
 export const metadata: Metadata = {
   title: "Artists",
-  description: "Every artist publishing music on Lumen.",
+  description: "Every artist publishing music on Vibe Banger.",
 };
 
 // Rendered per request so newly added artists appear without a redeploy.

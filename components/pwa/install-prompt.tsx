@@ -9,7 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const DISMISSED_KEY = "lumen:install-prompt-dismissed";
+const DISMISSED_KEY = "vibebanger:install-prompt-dismissed";
 
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -59,7 +59,7 @@ export function InstallPrompt() {
         <Download className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground">Install Lumen</p>
+        <p className="text-sm font-medium text-foreground">Install Vibe Banger</p>
         <p className="text-xs text-foreground-muted">Add it to your home screen for the full app experience.</p>
       </div>
       <Button size="sm" onClick={install}>

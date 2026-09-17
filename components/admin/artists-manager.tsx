@@ -193,7 +193,7 @@ function ArtistForm({
     try {
       if (avatarFile) {
         if (imageCloudinaryEnabled) {
-          const uploaded = await uploadImageToCloudinary(avatarFile, "lumen/avatars");
+          const uploaded = await uploadImageToCloudinary(avatarFile, "vibebanger/avatars");
           fd.set("avatarImagePublicId", uploaded.publicId);
           fd.set("avatarImageUrl", uploaded.secureUrl);
         } else {

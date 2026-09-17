@@ -30,7 +30,7 @@ class AudioEngine {
     this.audio = audio;
 
     try {
-      const savedVolume = window.localStorage.getItem("lumen:volume");
+      const savedVolume = window.localStorage.getItem("vibebanger:volume");
       if (savedVolume !== null) {
         usePlayerStore.setState({ volume: Math.min(1, Math.max(0, Number(savedVolume))) });
       }
@@ -132,7 +132,7 @@ class AudioEngine {
     if (Math.abs(this.lastPersistedVolume - state.volume) > 0.001) {
       this.lastPersistedVolume = state.volume;
       try {
-        window.localStorage.setItem("lumen:volume", String(state.volume));
+        window.localStorage.setItem("vibebanger:volume", String(state.volume));
       } catch {
         // Ignore — non-critical preference persistence.
       }

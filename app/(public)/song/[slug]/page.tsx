@@ -31,7 +31,7 @@ export async function generateMetadata({
   const track = await getTrackBySlug(slug);
   if (!track) return {};
 
-  const description = track.description || `${track.title} by ${track.artist.name} on Lumen.`;
+  const description = track.description || `${track.title} by ${track.artist.name} on Vibe Banger.`;
 
   const ogImage = resolveTrackCoverUrl(track, "large");
 

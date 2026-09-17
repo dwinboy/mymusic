@@ -1,4 +1,4 @@
-export const OFFLINE_AUDIO_CACHE = "lumen-audio-v1";
+export const OFFLINE_AUDIO_CACHE = "vibebanger-audio-v1";
 
 function isCacheStorageSupported(): boolean {
   return typeof window !== "undefined" && "caches" in window;

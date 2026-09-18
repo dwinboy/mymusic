@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shuffle, SkipBack, SkipForward, Repeat, Repeat1, ListMusic, Maximize2 } from "lucide-react";
+import { Shuffle, SkipBack, SkipForward, Repeat, Repeat1, Keyboard, ListMusic, Maximize2 } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { PlayButton } from "@/components/player/play-button";
 import { WaveformProgress } from "@/components/player/waveform-progress";
@@ -9,6 +9,7 @@ import { VolumeControl } from "@/components/player/volume-control";
 import { LikeButton } from "@/components/music/like-button";
 import { DownloadButton } from "@/components/music/download-button";
 import { ShareMenu } from "@/components/music/share-menu";
+import { SHORTCUTS_EVENT } from "@/components/player/keyboard-shortcuts";
 import { SleepTimerMenu } from "@/components/player/sleep-timer-menu";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useDominantColor } from "@/hooks/use-dominant-color";
@@ -110,6 +111,14 @@ export function DesktopPlayer() {
         />
         <SleepTimerMenu size="sm" />
         <VolumeControl />
+        <button
+          onClick={() => window.dispatchEvent(new Event(SHORTCUTS_EVENT))}
+          aria-label="Keyboard shortcuts"
+          title="Keyboard shortcuts (?)"
+          className="hidden h-8 w-8 items-center justify-center rounded-full text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground lg:flex"
+        >
+          <Keyboard className="h-4 w-4" />
+        </button>
         <button
           onClick={() => setQueueOpen(true)}
           aria-label="Open queue"

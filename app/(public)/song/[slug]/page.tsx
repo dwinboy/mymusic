@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ViewTransition } from "react";
+import { HERO_ART } from "@/components/music/artwork-morph-link";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -128,11 +130,14 @@ export default async function SongPage({
       />
       <div className="flex flex-col gap-8 sm:flex-row sm:items-end">
         {/* Sized so the play button is on the first screen of a phone, above the bottom navigation. */}
-        <div className="relative aspect-square w-56 shrink-0 overflow-hidden rounded-xl shadow-elevated sm:w-64">
-          {heroImage && (
-            <Image src={heroImage} alt={track.title} fill sizes="256px" className="object-cover" priority />
-          )}
-        </div>
+        {/* The other half of the morph — see components/music/music-card.tsx. */}
+        <ViewTransition name={HERO_ART} share="morph" default="none">
+          <div className="relative aspect-square w-56 shrink-0 overflow-hidden rounded-xl shadow-elevated sm:w-64">
+            {heroImage && (
+              <Image src={heroImage} alt={track.title} fill sizes="256px" className="object-cover" priority />
+            )}
+          </div>
+        </ViewTransition>
 
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground-subtle">Song</p>

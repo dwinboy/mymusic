@@ -6,6 +6,8 @@ import { volumeIsControllable } from "@/lib/audio/engine";
 import { SHORTCUTS, SEEK_SECONDS, VOLUME_STEP, isTyping } from "@/lib/audio/shortcuts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
+export const SHORTCUTS_EVENT = "vibebanger:shortcuts";
+
 const noop = () => () => {};
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -102,6 +104,14 @@ export function KeyboardShortcuts() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [handler]);
+
+  // Opened from the player bar too: nothing on screen hints that "?" exists,
+  // and a shortcut nobody can find is a shortcut nobody uses.
+  useEffect(() => {
+    const open = () => setShowHelp(true);
+    window.addEventListener(SHORTCUTS_EVENT, open);
+    return () => window.removeEventListener(SHORTCUTS_EVENT, open);
+  }, []);
 
   const groups = ["Playback", "Sound", "Elsewhere"] as const;
 

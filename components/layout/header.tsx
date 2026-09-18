@@ -22,7 +22,7 @@ export function Header() {
   return (
     <header
       className="sticky top-0 z-40 hidden border-b border-border bg-canvas/80 backdrop-blur-md md:block"
-      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)", viewTransitionName: "site-header" }}
     >
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-8 px-8">
         <Logo />

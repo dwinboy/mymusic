@@ -201,3 +201,62 @@ html:has(.embed-root) body {
 html:has(.embed-root) body::before {
   display: none;
 }
+
+/* ---------------------------------------------------------------------------
+   View transitions
+
+   Opening a track moves its artwork into the song page rather than repainting
+   the screen — the one thing that separates an app from a website on every
+   navigation. Only the artwork animates; everything else is deliberately
+   still, because the fixed chrome is what anchors the page.
+   --------------------------------------------------------------------------- */
+
+/* The transition overlay swallows clicks while it runs. Let them through, so
+   a navigation can never feel like it dropped a tap. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(.morph) {
+  animation-duration: 320ms;
+}
+/* Blur hides the pixel interpolation as one aspect ratio becomes another. */
+::view-transition-image-pair(.morph) {
+  animation-name: art-morph-blur;
+}
+@keyframes art-morph-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+
+/* Chrome holds still: a player bar that slid or flickered on every navigation
+   would be far worse than no transition at all. */
+::view-transition-group(site-header),
+::view-transition-group(player-bar),
+::view-transition-group(mini-player),
+::view-transition-group(bottom-nav) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(site-header),
+::view-transition-old(player-bar),
+::view-transition-old(mini-player),
+::view-transition-old(bottom-nav) {
+  display: none;
+}
+::view-transition-new(site-header),
+::view-transition-new(player-bar),
+::view-transition-new(mini-player),
+::view-transition-new(bottom-nav) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

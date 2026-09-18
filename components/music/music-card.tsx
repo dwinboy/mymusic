@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TrackArt } from "@/components/player/track-art";
+import { ArtworkMorphLink } from "@/components/music/artwork-morph-link";
 import { PlayButton } from "@/components/player/play-button";
 import { cn, formatDuration } from "@/lib/utils";
 import type { PlayerTrack } from "@/lib/types";
@@ -16,7 +17,7 @@ export function MusicCard({
 }) {
   return (
     <div className={cn("group w-40 shrink-0 sm:w-44", className)}>
-      <Link href={`/song/${track.slug}`} className="block">
+      <ArtworkMorphLink href={`/song/${track.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-surface shadow-sm transition-shadow group-hover:shadow-elevated">
           <TrackArt src={track.coverUrl} alt={track.title} className="h-full w-full" rounded="rounded-none" sizes="176px" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -27,7 +28,7 @@ export function MusicCard({
             className="absolute bottom-2 right-2 shadow-lg transition-all can-hover:translate-y-1 can-hover:opacity-0 can-hover:group-hover:translate-y-0 can-hover:group-hover:opacity-100"
           />
         </div>
-      </Link>
+      </ArtworkMorphLink>
       <div className="mt-2.5 min-w-0">
         <Link href={`/song/${track.slug}`} className="block truncate text-sm font-medium text-foreground hover:underline">
           {track.title}

@@ -19,9 +19,9 @@ export function Logo({ className }: { className?: string }) {
         width={32}
         height={32}
         priority
-        className="h-8 w-8 rounded-lg transition-transform group-hover:scale-105"
+        className="h-8 w-8 shrink-0 rounded-lg transition-transform group-hover:scale-105"
       />
-      <span className="font-semibold tracking-[0.18em] text-[15px] uppercase">Vibe Banger</span>
+      <span className="whitespace-nowrap font-semibold tracking-[0.18em] text-[15px] uppercase">Vibe Banger</span>
     </Link>
   );
 }

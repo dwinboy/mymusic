@@ -18,7 +18,7 @@ export function PlayerShell() {
       <RadioAutofill />
       <KeyboardShortcuts />
       {hasTrack && (
-        <div className="fixed inset-x-0 bottom-0 z-30 hidden md:block">
+        <div className="fixed inset-x-0 bottom-0 z-30 hidden md:block" style={{ viewTransitionName: "player-bar" }}>
           <DesktopPlayer />
         </div>
       )}

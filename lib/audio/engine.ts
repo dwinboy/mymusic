@@ -6,6 +6,16 @@ import {
   setMediaSessionPosition,
 } from "./media-session";
 import { PlayTracker } from "./play-tracker";
+import type { AudioQuality } from "@/lib/stores/player-store";
+import type { PlayerTrack } from "@/lib/types";
+
+/**
+ * Which file to stream. "High" is per-track: most tracks have a 320k encode,
+ * but one without simply plays the standard stream rather than failing.
+ */
+function sourceFor(track: PlayerTrack, quality: AudioQuality): string {
+  return quality === "high" && track.highQualityUrl ? track.highQualityUrl : track.audioUrl;
+}
 
 const SLEEP_FADE_MS = 8000;
 const CROSSFADE_TICK_MS = 50;
@@ -63,6 +73,8 @@ class AudioEngine {
   /** Set while the engine itself is moving the queue on for a crossfade. */
   private advancingForCrossfade = false;
   private canFade = true;
+  /** The quality at the last reconcile, to notice a change mid-track. */
+  private lastQuality: AudioQuality = "standard";
 
   init() {
     if (this.initialized || typeof window === "undefined") return;
@@ -75,10 +87,13 @@ class AudioEngine {
     try {
       const savedVolume = window.localStorage.getItem("vibebanger:volume");
       const savedCrossfade = window.localStorage.getItem("vibebanger:crossfade");
+      const savedQuality = window.localStorage.getItem("vibebanger:quality");
       usePlayerStore.setState({
         ...(savedVolume !== null ? { volume: Math.min(1, Math.max(0, Number(savedVolume))) } : {}),
         ...(savedCrossfade !== null ? { crossfadeSeconds: Math.min(12, Math.max(0, Number(savedCrossfade) || 0)) } : {}),
+        ...(savedQuality === "high" || savedQuality === "standard" ? { audioQuality: savedQuality } : {}),
       });
+      this.lastQuality = usePlayerStore.getState().audioQuality;
     } catch {
       // Storage unavailable (private mode, disabled cookies) — fall back to defaults.
     }
@@ -175,6 +190,28 @@ class AudioEngine {
     const playRequested = state.isPlaying && !this.wasPlaying;
     this.wasPlaying = state.isPlaying;
 
+    // Changing quality swaps the file under the current track. Reload it at
+    // the same position rather than making the listener start the song again.
+    if (state.audioQuality !== this.lastQuality) {
+      this.lastQuality = state.audioQuality;
+      if (track && track.id === this.lastTrackId) {
+        const wanted = sourceFor(track, state.audioQuality);
+        if (audio.src !== wanted) {
+          const resumeAt = audio.currentTime;
+          const wasPlaying = !audio.paused;
+          audio.src = wanted;
+          audio.addEventListener(
+            "loadedmetadata",
+            () => {
+              audio.currentTime = resumeAt;
+              if (wasPlaying) this.play(audio);
+            },
+            { once: true }
+          );
+        }
+      }
+    }
+
     // Pausing mid-crossfade stops both tracks, not just the incoming one.
     if (this.crossfade && !state.isPlaying) this.finishCrossfade();
 
@@ -186,7 +223,7 @@ class AudioEngine {
       this.lastTrackId = track?.id ?? null;
       this.replayPending = false;
       if (track) {
-        audio.src = track.audioUrl;
+        audio.src = sourceFor(track, state.audioQuality);
         // A start position set with the track (a shared "from 1:24" link)
         // can only be applied once the new source's metadata has loaded.
         const startAt = state.currentTime;

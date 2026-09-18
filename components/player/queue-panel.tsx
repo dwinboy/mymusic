@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { formatDuration } from "@/lib/utils";
 import { CrossfadeSetting } from "@/components/player/crossfade-setting";
+import { QualitySetting } from "@/components/player/quality-setting";
 
 export function QueuePanel() {
   const track = usePlayerStore((s) => s.currentTrack());
@@ -99,6 +100,7 @@ export function QueuePanel() {
         )}
       </div>
 
+      <QualitySetting />
       <CrossfadeSetting />
     </div>
   );

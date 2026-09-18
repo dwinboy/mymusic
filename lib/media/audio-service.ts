@@ -63,6 +63,24 @@ export function getDownloadUrl(track: TrackAudioRefs): string | null {
   return null;
 }
 
+/**
+ * The higher-bitrate copy, for listeners who ask for it — or null when the
+ * track only has the streaming encode, in which case there is nothing better
+ * to play. Unlike getDownloadUrl this never falls back to the streaming file:
+ * the caller needs to know whether a real upgrade exists.
+ *
+ * Gated on downloadEnabled like the download itself. A creator who has asked
+ * for their master not to be handed out shouldn't have it served under
+ * another name — the consequence being that turning downloads off also turns
+ * off high-quality streaming for that track.
+ */
+export function getHighQualityUrl(track: TrackAudioRefs): string | null {
+  if (!track.downloadEnabled) return null;
+  if (track.downloadStorageKey) return publicUrlForKey(track.downloadStorageKey);
+  if (track.downloadAudioUrl) return track.downloadAudioUrl;
+  return null;
+}
+
 /** Original/master file — admin-only, time-limited signed URL when stored in R2 (never a permanent public link). */
 export async function getOriginalUrl(track: TrackAudioRefs): Promise<string | null> {
   if (track.originalStorageKey) return createPresignedGetUrl(track.originalStorageKey);

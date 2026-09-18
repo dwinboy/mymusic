@@ -3,6 +3,9 @@ import type { PlayerTrack } from "@/lib/types";
 
 export type RepeatMode = "off" | "all" | "one";
 
+/** Standard is the 192k stream every track has; high is the 320k encode, where one exists. */
+export type AudioQuality = "standard" | "high";
+
 /** Stop after a number of minutes, or when the current track finishes. */
 export type SleepTimerOption = number | "end-of-track";
 
@@ -33,6 +36,8 @@ interface PlayerState {
   radio: { seedId: string; seedTitle: string } | null;
   /** Seconds to blend one track into the next; 0 plays them back to back. */
   crossfadeSeconds: number;
+  /** Which encode to stream. "high" falls back per track when there is no better file. */
+  audioQuality: AudioQuality;
 
   currentTrack: () => PlayerTrack | null;
   upcoming: () => PlayerTrack[];
@@ -63,6 +68,7 @@ interface PlayerState {
   /** null turns the timer off. */
   setSleepTimer: (option: SleepTimerOption | null) => void;
   setCrossfadeSeconds: (seconds: number) => void;
+  setAudioQuality: (quality: AudioQuality) => void;
 
   // Called by the audio engine to reflect real playback state.
   _setCurrentTime: (time: number) => void;
@@ -100,6 +106,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   sleepTimer: { endsAt: null, endOfTrack: false },
   radio: null,
   crossfadeSeconds: 0,
+  audioQuality: "standard" as AudioQuality,
 
   currentTrack: () => {
     const { tracks, currentIndex } = get();
@@ -271,6 +278,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ crossfadeSeconds: seconds });
     try {
       window.localStorage.setItem("vibebanger:crossfade", String(seconds));
+    } catch {
+      // Non-critical preference.
+    }
+  },
+  setAudioQuality: (quality) => {
+    set({ audioQuality: quality });
+    try {
+      window.localStorage.setItem("vibebanger:quality", quality);
     } catch {
       // Non-critical preference.
     }

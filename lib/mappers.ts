@@ -1,6 +1,6 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import type { PlayerTrack } from "@/lib/types";
-import { getStreamingUrl, getDownloadUrl } from "@/lib/media/audio-service";
+import { getStreamingUrl, getDownloadUrl, getHighQualityUrl } from "@/lib/media/audio-service";
 import { type ImageSize } from "@/lib/media/image-service";
 import { resolveTrackCoverUrl } from "@/lib/media/entity-images";
 
@@ -27,6 +27,7 @@ export function toPlayerTrack(track: TrackWithRelations, coverSize: ImageSize = 
     // simply fails to load if it ever is — never a crash.
     audioUrl: getStreamingUrl(track) ?? "",
     downloadUrl: getDownloadUrl(track),
+    highQualityUrl: getHighQualityUrl(track),
     duration: track.duration,
     downloadEnabled: track.downloadEnabled,
     isExplicit: track.isExplicit,

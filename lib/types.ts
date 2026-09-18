@@ -10,6 +10,8 @@ export interface PlayerTrack {
   audioUrl: string;
   /** Distinct download-quality file when one exists; null when downloads are unavailable. */
   downloadUrl: string | null;
+  /** Higher-bitrate stream, when the track has one. See lib/media/audio-service.ts. */
+  highQualityUrl: string | null;
   duration: number;
   downloadEnabled: boolean;
   isExplicit: boolean;

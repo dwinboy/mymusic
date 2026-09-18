@@ -29,6 +29,7 @@ interface PlayerState {
   error: string | null;
   isNowPlayingOpen: boolean;
   isQueueOpen: boolean;
+  isLyricsOpen: boolean;
   /** Shuffle keeps the original order here so it can be restored. */
   unshuffledTracks: PlayerTrack[] | null;
   sleepTimer: SleepTimer;
@@ -65,6 +66,7 @@ interface PlayerState {
   clearQueue: () => void;
   setNowPlayingOpen: (open: boolean) => void;
   setQueueOpen: (open: boolean) => void;
+  setLyricsOpen: (open: boolean) => void;
   /** null turns the timer off. */
   setSleepTimer: (option: SleepTimerOption | null) => void;
   setCrossfadeSeconds: (seconds: number) => void;
@@ -102,6 +104,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   error: null,
   isNowPlayingOpen: false,
   isQueueOpen: false,
+  isLyricsOpen: false,
   unshuffledTracks: null,
   sleepTimer: { endsAt: null, endOfTrack: false },
   radio: null,
@@ -274,6 +277,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setNowPlayingOpen: (open) => set({ isNowPlayingOpen: open }),
   setQueueOpen: (open) => set({ isQueueOpen: open }),
+  setLyricsOpen: (open) => set({ isLyricsOpen: open }),
   setCrossfadeSeconds: (seconds) => {
     set({ crossfadeSeconds: seconds });
     try {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shuffle, SkipBack, SkipForward, Repeat, Repeat1, Keyboard, ListMusic, Maximize2 } from "lucide-react";
+import { Shuffle, SkipBack, SkipForward, Repeat, Repeat1, FileText, Keyboard, ListMusic, Maximize2 } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { PlayButton } from "@/components/player/play-button";
 import { WaveformProgress } from "@/components/player/waveform-progress";
@@ -24,6 +24,7 @@ export function DesktopPlayer() {
   const next = usePlayerStore((s) => s.next);
   const previous = usePlayerStore((s) => s.previous);
   const setQueueOpen = usePlayerStore((s) => s.setQueueOpen);
+  const setLyricsOpen = usePlayerStore((s) => s.setLyricsOpen);
   const accent = useDominantColor(track?.coverUrl);
 
   if (!track) return null;
@@ -111,6 +112,16 @@ export function DesktopPlayer() {
         />
         <SleepTimerMenu size="sm" />
         <VolumeControl />
+        {track.lyrics?.trim() && (
+          <button
+            onClick={() => setLyricsOpen(true)}
+            aria-label="Lyrics"
+            title="Lyrics (L)"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+          >
+            <FileText className="h-4 w-4" />
+          </button>
+        )}
         <button
           onClick={() => window.dispatchEvent(new Event(SHORTCUTS_EVENT))}
           aria-label="Keyboard shortcuts"

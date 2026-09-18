@@ -5,6 +5,7 @@ import { DesktopPlayer } from "@/components/player/desktop-player";
 import { MobileMiniPlayer } from "@/components/player/mobile-mini-player";
 import { NowPlayingSheet } from "@/components/player/now-playing-sheet";
 import { QueueSheet } from "@/components/player/queue-sheet";
+import { LyricsSheet } from "@/components/player/lyrics-sheet";
 import { PlayerError } from "@/components/player/player-error";
 import { RadioAutofill } from "@/components/player/radio-autofill";
 import { KeyboardShortcuts } from "@/components/player/keyboard-shortcuts";
@@ -25,6 +26,7 @@ export function PlayerShell() {
       <MobileMiniPlayer />
       <NowPlayingSheet />
       <QueueSheet />
+      <LyricsSheet />
     </>
   );
 }

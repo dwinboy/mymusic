@@ -97,6 +97,11 @@ export function KeyboardShortcuts() {
       case "q":
         store.setQueueOpen(!store.isQueueOpen);
         break;
+      case "l":
+        // Silently does nothing when the track has no lyrics, which is what
+        // the sheet itself decides.
+        store.setLyricsOpen(!store.isLyricsOpen);
+        break;
     }
   }, []);
 

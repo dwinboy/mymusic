@@ -31,6 +31,7 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: ["arrowdown"], label: "↓", description: "Volume down", group: "Sound", requiresVolume: true },
   { keys: ["m"], label: "M", description: "Mute or unmute", group: "Sound" },
   { keys: ["q"], label: "Q", description: "Show the queue", group: "Elsewhere" },
+  { keys: ["l"], label: "L", description: "Show lyrics", group: "Elsewhere" },
   { keys: ["/"], label: "/", description: "Search", group: "Elsewhere" },
   { keys: ["?"], label: "?", description: "This list", group: "Elsewhere" },
 ];

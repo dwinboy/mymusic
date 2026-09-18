@@ -140,6 +140,7 @@ export async function startTrackUpload(input: {
         originalSize: originalStored.size,
         originalFormat: ext,
         waveform,
+        loudnessLufs: processed.loudnessLufs,
         processingStatus: "READY",
         processingError: null,
       },
@@ -185,6 +186,7 @@ export async function processTrackAudio(trackId: string) {
       data: {
         duration: metadata.durationSeconds,
         waveform,
+        loudnessLufs: processed.loudnessLufs,
         streamingStorageKey: streamingKey,
         streamingFormat: processed.streamingFormat,
         streamingSize: processed.streamingBuffer.byteLength,

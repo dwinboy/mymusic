@@ -279,6 +279,10 @@ model Track {
   streamingStorageKey String?
   /// Loudness peaks (0–1) for drawing the track's waveform. Empty until computed.
   waveform            Float[]   @default([])
+  /// Integrated loudness in LUFS, measured at transcode. The player attenuates
+  /// louder tracks towards a common target so the catalogue plays evenly.
+  /// Null on tracks processed before this was measured: they play unchanged.
+  loudnessLufs        Float?
   downloadStorageKey  String?
   originalFormat      String?
   streamingFormat     String?

@@ -12,6 +12,11 @@ export interface ProcessedAudio {
   streamingFormat: "mp3";
   downloadBuffer?: Buffer;
   downloadFormat?: "mp3";
+  /**
+   * The master's integrated loudness in LUFS before levelling, or null if it
+   * couldn't be measured — in which case the copies are not levelled.
+   */
+  loudnessLufs: number | null;
 }
 
 export interface AudioProcessingService {
@@ -30,6 +35,70 @@ export interface AudioProcessingService {
 
 const STREAMING_BITRATE = "192k";
 const DOWNLOAD_BITRATE = "320k";
+
+/**
+ * Loudness normalization, to EBU R128 / the level streaming services target.
+ *
+ * Tracks arrive mastered at whatever level their creator chose, so a loud one
+ * next to a quiet one means reaching for the volume between songs. The
+ * encoded copies are levelled instead of the player adjusting volume at
+ * playback: iOS ignores an audio element's volume entirely, and an element
+ * can't amplify a quiet track above 1 anyway. The uploaded master is kept
+ * untouched in storage, so re-transcoding to a different target stays possible.
+ */
+const TARGET_LUFS = -14;
+const TARGET_TRUE_PEAK = -1;
+const TARGET_RANGE = 11;
+
+interface LoudnessMeasurement {
+  integratedLufs: number;
+  /** loudnorm's second-pass arguments, measured from this exact input. */
+  filter: string;
+}
+
+/**
+ * First loudnorm pass: measures the input. The numbers feed the second pass,
+ * which is what makes the correction linear — a single pass adjusts
+ * dynamically as it goes and audibly pumps.
+ */
+async function measureLoudness(ffmpeg: string, inputPath: string): Promise<LoudnessMeasurement | null> {
+  try {
+    // loudnorm prints its measurements to stderr; -f null discards the audio.
+    const { stderr } = await execFileAsync(ffmpeg, [
+      "-i",
+      inputPath,
+      "-vn",
+      "-af",
+      `loudnorm=I=${TARGET_LUFS}:TP=${TARGET_TRUE_PEAK}:LRA=${TARGET_RANGE}:print_format=json`,
+      "-f",
+      "null",
+      "-",
+    ]);
+    // The JSON block is the last thing printed, after the usual FFmpeg banner.
+    const start = stderr.lastIndexOf("{");
+    const end = stderr.lastIndexOf("}");
+    if (start === -1 || end <= start) return null;
+
+    const m = JSON.parse(stderr.slice(start, end + 1)) as Record<string, string>;
+    const integratedLufs = Number(m.input_i);
+    // Digital silence reports -inf, and every measurement has to be usable
+    // before the second pass can be trusted with them.
+    const measured = [m.input_i, m.input_tp, m.input_lra, m.input_thresh, m.target_offset].map(Number);
+    if (!measured.every(Number.isFinite)) return null;
+
+    return {
+      integratedLufs,
+      filter:
+        `loudnorm=I=${TARGET_LUFS}:TP=${TARGET_TRUE_PEAK}:LRA=${TARGET_RANGE}` +
+        `:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}` +
+        `:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
+    };
+  } catch {
+    // Never fail an upload over loudness: an unmeasured track is encoded
+    // unlevelled, exactly as every track was before this existed.
+    return null;
+  }
+}
 
 /**
  * Runs FFmpeg synchronously within the request. Fine for the AI-generated,
@@ -57,46 +126,39 @@ export class FfmpegAudioProcessingService implements AudioProcessingService {
       const inputPath = path.join(tmpDir, `input.${sourceExtension}`);
       await writeFile(inputPath, originalBuffer);
 
-      const streamingPath = path.join(tmpDir, "streaming.mp3");
-      await execFileAsync(ffmpegPath, [
-        "-y",
-        "-i",
-        inputPath,
-        "-vn",
-        "-codec:a",
-        "libmp3lame",
-        "-b:a",
-        STREAMING_BITRATE,
-        "-ar",
-        "44100",
-        streamingPath,
-      ]);
-      const streamingBuffer = await readFile(streamingPath);
+      // Measure once, from the master, and level both encodes with it.
+      const loudness = await measureLoudness(ffmpegPath, inputPath);
+      const levelling = loudness ? ["-af", loudness.filter] : [];
 
-      let downloadBuffer: Buffer | undefined;
-      if (createDownloadVersion) {
-        const downloadPath = path.join(tmpDir, "download.mp3");
-        await execFileAsync(ffmpegPath, [
+      const encode = async (outputPath: string, bitrate: string) => {
+        await execFileAsync(ffmpegPath!, [
           "-y",
           "-i",
           inputPath,
           "-vn",
+          ...levelling,
           "-codec:a",
           "libmp3lame",
           "-b:a",
-          DOWNLOAD_BITRATE,
+          bitrate,
           "-ar",
           "44100",
-          downloadPath,
+          outputPath,
         ]);
-        downloadBuffer = await readFile(downloadPath);
-      }
+        return readFile(outputPath);
+      };
+
+      const streamingBuffer = await encode(path.join(tmpDir, "streaming.mp3"), STREAMING_BITRATE);
+      const downloadBuffer = createDownloadVersion
+        ? await encode(path.join(tmpDir, "download.mp3"), DOWNLOAD_BITRATE)
+        : undefined;
 
       return {
         streamingBuffer,
         streamingFormat: "mp3",
         downloadBuffer,
         downloadFormat: downloadBuffer ? "mp3" : undefined,
+        loudnessLufs: loudness?.integratedLufs ?? null,
       };
     } finally {
       await rm(tmpDir, { recursive: true, force: true });

@@ -15,6 +15,19 @@ export const ACCENT = "#e3a857";
 const CANVAS = "#0a0a0b";
 
 let fontsPromise: Promise<[Buffer, Buffer]> | null = null;
+let markPromise: Promise<string> | null = null;
+
+/**
+ * The logo as a data URI. Satori has no network of its own during render, so
+ * the mark is read off disk and inlined rather than fetched by URL.
+ */
+function loadMark() {
+  markPromise ??= readFile(join(process.cwd(), "public/icons/icon-192.png")).then(
+    (buffer) => `data:image/png;base64,${buffer.toString("base64")}`
+  );
+  return markPromise;
+}
+
 function loadFonts() {
   fontsPromise ??= Promise.all([
     readFile(join(process.cwd(), "assets/fonts/PlusJakartaSans-Medium.ttf")),
@@ -116,10 +129,12 @@ function Cover({ artwork, size, radius }: { artwork: Artwork | null; size: numbe
   );
 }
 
-function Brand({ size }: { size: number }) {
+function Brand({ size, mark }: { size: number; mark: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: size * 0.6 }}>
-      <div style={{ width: size * 0.66, height: size * 0.66, borderRadius: size, background: ACCENT, display: "flex" }} />
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders
+          this to a PNG; next/image has no meaning here. */}
+      <img src={mark} width={size * 1.5} height={size * 1.5} style={{ borderRadius: size * 0.34 }} alt="" />
       <div style={{ fontSize: size, fontWeight: 700, letterSpacing: size * 0.25, color: "#f5f5f4", display: "flex" }}>VIBE BANGER</div>
     </div>
   );
@@ -152,6 +167,7 @@ const CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=6048
 
 /** 1200×630 link preview. */
 export async function songPreviewCard(track: ShareImageTrack, artworkUrl: string | null) {
+  const mark = await loadMark();
   const width = 1200;
   const height = 630;
   const artwork = await loadArtwork(artworkUrl, 470, { width, height });
@@ -169,7 +185,7 @@ export async function songPreviewCard(track: ShareImageTrack, artworkUrl: string
       <div style={{ display: "flex", alignItems: "center", width: "100%", height: "100%", padding: "80px", position: "relative" }}>
         <Cover artwork={artwork} size={470} radius={28} />
         <div style={{ display: "flex", flexDirection: "column", marginLeft: 60, flex: 1, height: 470, justifyContent: "space-between" }}>
-          <Brand size={24} />
+          <Brand size={24} mark={mark} />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: 4, color: ACCENT, textTransform: "uppercase", display: "flex" }}>{label(track)}</div>
             <div style={{ fontSize: titleSize, fontWeight: 700, color: "#fafaf9", lineHeight: 1.08, marginTop: 14, letterSpacing: -1, display: "flex" }}>{title}</div>
@@ -208,6 +224,7 @@ export async function songPreviewCard(track: ShareImageTrack, artworkUrl: string
  * link sticker.
  */
 export async function songStoryCard(track: ShareImageTrack, artworkUrl: string | null) {
+  const mark = await loadMark();
   const width = 1080;
   const height = 1920;
   const artwork = await loadArtwork(artworkUrl, 800, { width, height });
@@ -271,7 +288,7 @@ export async function songStoryCard(track: ShareImageTrack, artworkUrl: string |
             </div>
           </div>
           <div style={{ display: "flex", marginTop: 60 }}>
-            <Brand size={30} />
+            <Brand size={30} mark={mark} />
           </div>
         </div>
       </div>

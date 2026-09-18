@@ -23,21 +23,14 @@
       .wrap {
         max-width: 360px;
       }
-      .ring {
-        width: 56px;
-        height: 56px;
+      /* The service worker caches this icon as part of the app shell, so the
+         mark still draws with no connection. */
+      .mark {
+        width: 64px;
+        height: 64px;
         margin: 0 auto 20px;
-        border-radius: 999px;
-        border: 1.5px solid rgba(227, 168, 87, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: #e3a857;
+        border-radius: 14px;
+        display: block;
       }
       h1 {
         font-size: 19px;
@@ -78,7 +71,7 @@
   </head>
   <body>
     <div class="wrap">
-      <div class="ring"><span class="dot"></span></div>
+      <img class="mark" src="/icons/icon-192.png" alt="Vibe Banger" width="64" height="64" />
       <h1>You're offline</h1>
       <p>This page needs a connection. Songs you've downloaded still play.</p>
       <div class="actions">

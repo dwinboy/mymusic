@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSiteSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 import { UpdateBanner } from "@/components/pwa/update-banner";
+import { AppleSplash } from "@/components/pwa/apple-splash";
 import { getBuildId } from "@/lib/build-id";
 
 const display = Plus_Jakarta_Sans({
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full">
+        <AppleSplash />
         <Providers>
           <TooltipProvider delayDuration={200}>
             {children}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { UploadCloud, Music2, Loader2, ImagePlus, AlertTriangle, RotateCw } from "lucide-react";
+import { Music2, Loader2, ImagePlus, AlertTriangle, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { xhrUpload } from "@/lib/admin/xhr-upload";
 import { uploadImageToCloudinary } from "@/lib/admin/cloudinary-upload";
+import { TermPicker, type TermOption } from "@/components/discovery/term-picker";
+import type { TaxonomyKind } from "@/lib/generated/prisma/client";
 import { formatDuration, formatFileSize } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +34,21 @@ interface Album {
   id: string;
   title: string;
 }
-interface Genre {
-  id: string;
-  name: string;
-}
+/** The classification an admin can set, in the order the form presents it. */
+const CLASSIFY_KINDS: { kind: TaxonomyKind; label: string; hint?: string }[] = [
+  { kind: "GENRE", label: "Genres", hint: "What it sounds like" },
+  { kind: "MOOD", label: "Mood", hint: "How it feels" },
+  { kind: "ACTIVITY", label: "Perfect for — activities" },
+  { kind: "OCCASION", label: "Perfect for — occasions" },
+  { kind: "VOCAL", label: "Vocals" },
+  { kind: "LANGUAGE", label: "Language", hint: "If it has lyrics" },
+  { kind: "INSTRUMENT", label: "Instruments" },
+  { kind: "TAG", label: "Tags" },
+];
+
+const NO_TERMS: Record<TaxonomyKind, string[]> = {
+  GENRE: [], MOOD: [], ACTIVITY: [], OCCASION: [], INSTRUMENT: [], LANGUAGE: [], VOCAL: [], TAG: [],
+};
 
 export interface TrackFormInitial {
   id: string;
@@ -53,7 +66,8 @@ export interface TrackFormInitial {
   isPublished: boolean;
   isFeatured: boolean;
   downloadEnabled: boolean;
-  genreIds: string[];
+  /** Every term already on the track, so each picker opens on its real state. */
+  terms: { termId: string; kind: TaxonomyKind; isPrimary: boolean }[];
   coverUrl: string | null;
   duration: number;
   fileSize: number | null;
@@ -74,7 +88,7 @@ export function TrackForm({
 
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
+  const [taxonomy, setTaxonomy] = useState<Partial<Record<TaxonomyKind, TermOption[]>>>({});
 
   const [title, setTitle] = useState(initial.title);
   const [artistId, setArtistId] = useState(initial.artistId);
@@ -90,7 +104,14 @@ export function TrackForm({
   const [isPublished, setIsPublished] = useState(initial.isPublished);
   const [isFeatured, setIsFeatured] = useState(initial.isFeatured);
   const [downloadEnabled, setDownloadEnabled] = useState(initial.downloadEnabled);
-  const [genreIds, setGenreIds] = useState<Set<string>>(new Set(initial.genreIds));
+  const [terms, setTerms] = useState<Record<TaxonomyKind, string[]>>(() => {
+    const grouped = { ...NO_TERMS };
+    for (const t of initial.terms) grouped[t.kind] = [...grouped[t.kind], t.termId];
+    return grouped;
+  });
+  const [primaryGenreId, setPrimaryGenreId] = useState<string | null>(
+    initial.terms.find((t) => t.kind === "GENRE" && t.isPrimary)?.termId ?? null
+  );
 
   const [replaceAudioFile, setReplaceAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -109,10 +130,11 @@ export function TrackForm({
     fetch("/api/admin/artists")
       .then((r) => r.json())
       .then((d) => setArtists(d.artists ?? []));
-    // Genres are taxonomy terms; top-level ones are what tracks are tagged with here.
-    fetch("/api/admin/taxonomy?kind=GENRE")
+    // Every kind at once, active terms only — the same vocabulary creators
+    // classify with, so both routes into the catalogue agree.
+    fetch("/api/taxonomy")
       .then((r) => r.json())
-      .then((d) => setGenres((d.terms ?? []).filter((t: { parentId: string | null; isActive: boolean }) => !t.parentId && t.isActive)));
+      .then((d) => setTaxonomy(d.terms ?? {}));
   }, []);
 
   useEffect(() => {
@@ -130,13 +152,15 @@ export function TrackForm({
     if (file) setCoverPreview(URL.createObjectURL(file));
   }
 
-  function toggleGenre(id: string) {
-    setGenreIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+  function toggleTerm(kind: TaxonomyKind, id: string) {
+    setTerms((prev) => {
+      const has = prev[kind].includes(id);
+      const next = has ? prev[kind].filter((t) => t !== id) : [...prev[kind], id];
+      return { ...prev, [kind]: next };
     });
+    // Dropping the primary genre leaves the choice to the server, which falls
+    // back to the first one selected.
+    if (kind === "GENRE" && primaryGenreId === id) setPrimaryGenreId(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -167,7 +191,13 @@ export function TrackForm({
       formData.set("isPublished", String(isPublished));
       formData.set("isFeatured", String(isFeatured));
       formData.set("downloadEnabled", String(downloadEnabled));
-      genreIds.forEach((id) => formData.append("genreIds", id));
+      // Each kind is sent explicitly, including empty ones: the API replaces
+      // only the kinds present, so omitting one would silently keep old tags.
+      for (const { kind } of CLASSIFY_KINDS) {
+        formData.append(`terms:${kind}`, "");
+        terms[kind].forEach((id) => formData.append(`terms:${kind}`, id));
+      }
+      if (primaryGenreId) formData.set("primaryGenreId", primaryGenreId);
       if (replaceAudioFile) formData.set("audio", replaceAudioFile);
 
       if (coverFile) {
@@ -350,29 +380,24 @@ export function TrackForm({
         </div>
       </div>
 
-      <div>
-        <Label>Genres</Label>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {genres.map((genre) => {
-            const active = genreIds.has(genre.id);
-            return (
-              <button
-                key={genre.id}
-                type="button"
-                onClick={() => toggleGenre(genre.id)}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-sm transition-colors",
-                  active
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-border-strong text-foreground-muted hover:text-foreground"
-                )}
-              >
-                {genre.name}
-              </button>
-            );
-          })}
-          {genres.length === 0 && <p className="text-xs text-foreground-subtle">No genres yet.</p>}
+      <div className="flex flex-col gap-6 rounded-xl border border-border bg-surface/40 p-5">
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">Classification</h2>
+          <p className="mt-1 text-xs text-foreground-muted">
+            How this track is found: a category page lists a track only if it is tagged with that term.
+          </p>
         </div>
+        {CLASSIFY_KINDS.map(({ kind, label, hint }) => (
+          <TermPicker
+            key={kind}
+            label={label}
+            hint={hint}
+            options={taxonomy[kind] ?? []}
+            selected={terms[kind]}
+            onToggle={(id) => toggleTerm(kind, id)}
+            {...(kind === "GENRE" ? { primaryId: primaryGenreId, onPrimary: setPrimaryGenreId } : {})}
+          />
+        ))}
       </div>
 
       <div>

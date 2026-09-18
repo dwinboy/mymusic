@@ -310,6 +310,6 @@ function toFormInitial(track: {
 }): TrackFormInitial {
   return {
     ...track,
-    genreIds: [],
+    terms: [],
   };
 }

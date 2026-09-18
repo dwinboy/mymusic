@@ -38,7 +38,7 @@ export default async function EditTrackPage({ params }: { params: Promise<{ id: 
     isPublished: track.isPublished,
     isFeatured: track.isFeatured,
     downloadEnabled: track.downloadEnabled,
-    genreIds: track.terms.filter((t) => t.term.kind === "GENRE").map((t) => t.termId),
+    terms: track.terms.map((t) => ({ termId: t.termId, kind: t.term.kind, isPrimary: t.isPrimary })),
     coverUrl: track.coverUrl,
     duration: track.duration,
     fileSize: track.fileSize,

@@ -2,8 +2,9 @@
  * Lists the admin accounts on whichever database DATABASE_URL points at, and
  * sets an admin's password.
  *
- *   node scripts/set-admin-password.mjs                  # who are the admins?
- *   node scripts/set-admin-password.mjs <email>          # change that one
+ *   node scripts/set-admin-password.mjs                    # who are the admins?
+ *   node scripts/set-admin-password.mjs <email>            # change that one
+ *   node scripts/set-admin-password.mjs <email> --create   # create or promote
  *
  * Railway's Postgres has no public endpoint, so from a laptop this only
  * reaches the local database. To change the live password, run it inside the
@@ -85,7 +86,12 @@ async function listAdmins(db) {
 }
 
 async function main() {
-  const email = process.argv[2]?.toLowerCase().trim();
+  const args = process.argv.slice(2);
+  // Creating an admin is deliberate, never the fallback for a mistyped
+  // address: without --create an unknown email is an error, not an invitation.
+  const create = args.includes("--create");
+  const email = args.find((arg) => !arg.startsWith("--"))?.toLowerCase().trim();
+
   const db = new PrismaClient();
   try {
     if (!email) {
@@ -94,20 +100,22 @@ async function main() {
     }
 
     const user = await db.user.findUnique({ where: { email }, select: { id: true, email: true, role: true } });
-    if (!user) {
-      console.error(`No account with the email ${email} on this database.\n`);
+    if (!user && !create) {
+      console.error(`No account with the email ${email} on this database.`);
+      console.error(`Add --create to make it an admin account.\n`);
       await listAdmins(db);
       process.exitCode = 1;
       return;
     }
-    if (user.role !== "ADMIN") {
-      console.error(`${email} is not an admin. This script only changes an existing admin's password.\n`);
+    if (user && user.role !== "ADMIN" && !create) {
+      console.error(`${email} exists but is not an admin.`);
+      console.error(`Add --create to promote it.\n`);
       await listAdmins(db);
       process.exitCode = 1;
       return;
     }
 
-    const password = await readSecret(`New password for ${email}: `);
+    const password = await readSecret(`${user ? "New password for" : "Password for new admin"} ${email}: `);
     if (password.length < MIN_LENGTH) {
       console.error(`Too short — use at least ${MIN_LENGTH} characters.`);
       process.exitCode = 1;
@@ -122,8 +130,16 @@ async function main() {
       }
     }
 
-    await db.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(password, 12) } });
-    console.log(`Password updated for ${email}.`);
+    const passwordHash = await bcrypt.hash(password, 12);
+    const saved = await db.user.upsert({
+      where: { email },
+      create: { email, name: "Admin", role: "ADMIN", passwordHash },
+      update: { role: "ADMIN", passwordHash },
+    });
+
+    if (!user) console.log(`Created ${saved.email} as an admin.`);
+    else if (user.role !== "ADMIN") console.log(`Promoted ${saved.email} to admin and set its password.`);
+    else console.log(`Password updated for ${saved.email}.`);
   } finally {
     await db.$disconnect();
   }

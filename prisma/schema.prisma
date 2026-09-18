@@ -341,6 +341,10 @@ model Track {
   isExplicit        Boolean   @default(false)
   isPublished       Boolean   @default(false)
   isFeatured        Boolean   @default(false)
+  /// When it was featured. The homepage hero shows the most recently featured
+  /// track, so starring one puts it up immediately instead of waiting behind
+  /// whatever happens to have the latest release date.
+  featuredAt        DateTime?
   downloadEnabled   Boolean   @default(true)
   playCount         Int       @default(0)
   downloadCount     Int       @default(0)

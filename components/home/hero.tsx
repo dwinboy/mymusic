@@ -8,10 +8,16 @@ export function Hero({
   track,
   description,
   albumHref,
+  eyebrow = "Featured Release",
+  startAt,
 }: {
   track: PlayerTrack;
   description: string;
   albumHref?: string;
+  /** What the slot is: an editorial feature, or this listener's own music. */
+  eyebrow?: string;
+  /** Seconds to resume from, when the hero is picking up a part-heard track. */
+  startAt?: number;
 }) {
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border">
@@ -38,7 +44,7 @@ export function Hero({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">Featured Release</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{eyebrow}</p>
           <h1 className="mt-2 text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl md:text-5xl">
             {track.title}
           </h1>
@@ -48,7 +54,7 @@ export function Hero({
           <p className="mt-3 max-w-lg text-sm text-foreground-muted sm:text-base">{description}</p>
 
           <div className="mt-6 flex items-center gap-3">
-            <PlayButton track={track} size="lg" />
+            <PlayButton track={track} size="lg" startAt={startAt} />
             {albumHref && (
               <Button variant="secondary" size="lg" asChild>
                 <Link href={albumHref}>View album</Link>

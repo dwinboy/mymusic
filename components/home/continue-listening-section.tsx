@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/music/section-header";
 import { HorizontalScroller } from "@/components/music/horizontal-scroller";
 import { MusicCard } from "@/components/music/music-card";
 
-export async function ContinueListeningSection() {
+export async function ContinueListeningSection({ excludeTrackId }: { excludeTrackId?: string } = {}) {
   const session = await auth();
   if (!session?.user) return null;
 
@@ -20,7 +20,7 @@ export async function ContinueListeningSection() {
     select: { trackId: true },
   });
 
-  const trackIds = [...new Set(recent.map((h) => h.trackId))].slice(0, 12);
+  const trackIds = [...new Set(recent.map((h) => h.trackId))].filter((id) => id !== excludeTrackId).slice(0, 12);
   if (trackIds.length === 0) return null;
 
   const rows = await db.track.findMany({ where: { id: { in: trackIds } }, include: { artist: true, album: true } });

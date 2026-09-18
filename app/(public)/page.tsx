@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
 import { Hero } from "@/components/home/hero";
@@ -17,13 +18,45 @@ import { Music2 } from "lucide-react";
 // Rendered per request so newly published tracks appear without a redeploy.
 export const dynamic = "force-dynamic";
 
+/**
+ * What the hero slot shows. A listener who has heard something gets their own
+ * music back — the most premium thing the page can say is "carry on where you
+ * were". Everyone else gets the editorial feature, which is what the slot is
+ * for when there's nothing personal to show.
+ */
+async function resumeHero() {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const last = await db.listeningHistory.findFirst({
+    // A track unpublished since it was heard would sit here and fail to play.
+    where: { userId: session.user.id, track: { isPublished: true, processingStatus: "READY" } },
+    orderBy: { playedAt: "desc" },
+    select: { progressSeconds: true, track: { include: { artist: true, album: true } } },
+  });
+  if (!last) return null;
+
+  // Only offer to resume from a genuine middle. Near the start there's nothing
+  // to resume, and near the end it would drop someone into the fade-out.
+  // Proportional rather than a fixed number of seconds, which would leave no
+  // window at all on a short track and too wide a one on a long mix.
+  const { progressSeconds, track } = last;
+  const played = track.duration > 0 ? progressSeconds / track.duration : 0;
+  const midway = played > 0.05 && played < 0.9;
+  return { track, startAt: midway ? progressSeconds : 0, midway };
+}
+
 export default async function HomePage() {
+  const resume = await resumeHero();
+
   // Prefer an editorially featured release, but fall back to the newest one:
   // un-featuring everything shouldn't blank the homepage for every listener.
   const heroTrack =
     (await db.track.findFirst({
       where: { isPublished: true, processingStatus: "READY", isFeatured: true },
-      orderBy: { releaseDate: "desc" },
+      // Most recently featured first. Anything featured before the column
+      // existed falls back to its release date rather than jumping to the end.
+      orderBy: [{ featuredAt: { sort: "desc", nulls: "last" } }, { releaseDate: "desc" }],
       include: { artist: true, album: true },
     })) ??
     (await db.track.findFirst({
@@ -46,13 +79,17 @@ export default async function HomePage() {
     );
   }
 
-  const player = toPlayerTrack(heroTrack, "hero");
+  const player = toPlayerTrack(resume?.track ?? heroTrack, "hero");
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-12 px-4 py-6 sm:px-8 sm:py-8">
       <Hero
         track={player}
-        description={heroTrack.description ?? `The latest from ${player.artistName}.`}
+        eyebrow={resume ? (resume.midway ? "Pick up where you left off" : "Recently played") : "Featured Release"}
+        startAt={resume?.startAt}
+        description={
+          (resume?.track ?? heroTrack).description ?? `The latest from ${player.artistName}.`
+        }
         albumHref={player.albumSlug ? `/album/${player.albumSlug}` : undefined}
       />
 
@@ -61,7 +98,9 @@ export default async function HomePage() {
       </Suspense>
 
       <Suspense fallback={<RailSkeleton />}>
-        <ContinueListeningSection />
+        {/* The hero already shows the newest one; repeating it as the first
+            card in this row would read as a bug. */}
+        <ContinueListeningSection excludeTrackId={resume?.track.id} />
       </Suspense>
 
       <Suspense fallback={<RailSkeleton />}>

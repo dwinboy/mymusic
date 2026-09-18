@@ -78,6 +78,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (formData.has(bool)) data[bool] = formData.get(bool) === "true";
   }
 
+  // Featuring is an editorial act with a time attached: the homepage hero
+  // shows the most recently featured track, so starring one puts it up now.
+  // Re-saving a track that is already featured leaves its place alone —
+  // otherwise every edit would quietly promote it back to the top.
+  if (formData.has("isFeatured")) {
+    const featured = formData.get("isFeatured") === "true";
+    if (!featured) data.featuredAt = null;
+    else if (!existing.isFeatured || !existing.featuredAt) data.featuredAt = new Date();
+  }
+
   // Never let a track go live without playable audio — even if this same
   // request is also replacing the audio (that branch below re-derives
   // processingStatus itself once the new file finishes processing).

@@ -13,6 +13,7 @@ import { ShareMenu } from "@/components/music/share-menu";
 import { SleepTimerMenu } from "@/components/player/sleep-timer-menu";
 import { Badge } from "@/components/ui/badge";
 import { usePlayerStore } from "@/lib/stores/player-store";
+import { SyncedLyrics } from "@/components/player/synced-lyrics";
 import { useDominantColor } from "@/hooks/use-dominant-color";
 import { cn } from "@/lib/utils";
 
@@ -140,10 +141,8 @@ export function NowPlayingSheet() {
         <div className="flex flex-1 flex-col items-center justify-center gap-8">
           {showLyrics && hasLyrics ? (
             <div className="flex w-full max-w-sm flex-1 flex-col overflow-hidden">
-              <div data-scrollable className="-mx-2 flex-1 overflow-y-auto px-2 py-4">
-                <p className="whitespace-pre-line text-lg font-medium leading-loose text-foreground/90">
-                  {track.lyrics}
-                </p>
+              <div data-scrollable className="-mx-2 flex-1 overflow-y-auto px-2">
+                <SyncedLyrics lyrics={track.lyrics ?? ""} />
               </div>
             </div>
           ) : (

@@ -802,7 +802,8 @@ export function PublishFlow({
               <Input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="sm:w-56" />
             </Field>
             <Collapsible title="Lyrics & credits">
-              <Field label="Lyrics">
+              <Field label="Lyrics" hint="Timed lyrics supported">
+                <p className="mb-1.5 text-xs text-foreground-subtle">{"Paste LRC — lines like [00:12.30]Words — and the player follows along."}</p>
                 <Textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} rows={6} />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">

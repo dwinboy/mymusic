@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ViewTransition } from "react";
+import { parseLyrics } from "@/lib/lyrics";
 import { HERO_ART } from "@/components/music/artwork-morph-link";
 import Image from "next/image";
 import Link from "next/link";
@@ -234,7 +235,10 @@ export default async function SongPage({
           {track.lyrics && (
             <div>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Lyrics</h2>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-foreground-muted">{track.lyrics}</p>
+              {/* Words only — any LRC timings belong to the player, not the page. */}
+              <p className="whitespace-pre-line text-sm leading-relaxed text-foreground-muted">
+                {parseLyrics(track.lyrics).plain}
+              </p>
             </div>
           )}
           {(track.credits || track.composer || track.producer) && (

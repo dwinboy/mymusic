@@ -418,6 +418,7 @@ export function TrackForm({
 
       <div>
         <Label htmlFor="lyrics">Lyrics</Label>
+        <p className="mt-1 text-xs text-foreground-subtle">{"Paste LRC — lines like [00:12.30]Words — and the player follows along."}</p>
         <Textarea id="lyrics" className="mt-1.5" value={lyrics} onChange={(e) => setLyrics(e.target.value)} rows={5} />
       </div>
 

@@ -138,7 +138,7 @@ export function NowPlayingSheet() {
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-8">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
           {showLyrics && hasLyrics ? (
             <div className="flex w-full max-w-sm flex-1 flex-col overflow-hidden">
               <div data-scrollable className="-mx-2 flex-1 overflow-y-auto px-2">
@@ -146,18 +146,23 @@ export function NowPlayingSheet() {
               </div>
             </div>
           ) : (
-            <div
-              className={cn(
-                "relative aspect-square w-full max-w-sm overflow-hidden rounded-2xl transition-transform duration-700",
-                isPlaying ? "scale-100" : "scale-[0.97]"
-              )}
-              style={{ boxShadow: "0 24px 70px -20px color-mix(in srgb, var(--track-color) 70%, transparent)" }}
-            >
-              <TrackArt src={track.coverUrl} alt={track.title} className="h-full w-full" rounded="rounded-none" sizes="400px" />
+            // Sized from the height left over, not from the width: a short
+            // screen (mobile Safari with its chrome showing) otherwise pushed
+            // the controls below the fold, where they could not be reached.
+            <div className="flex min-h-0 w-full max-w-sm flex-1 items-center justify-center">
+              <div
+                className={cn(
+                  "relative aspect-square h-full max-h-96 w-auto max-w-full overflow-hidden rounded-2xl transition-transform duration-700",
+                  isPlaying ? "scale-100" : "scale-[0.97]"
+                )}
+                style={{ boxShadow: "0 24px 70px -20px color-mix(in srgb, var(--track-color) 70%, transparent)" }}
+              >
+                <TrackArt src={track.coverUrl} alt={track.title} className="h-full w-full" rounded="rounded-none" sizes="400px" />
+              </div>
             </div>
           )}
 
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">

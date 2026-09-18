@@ -101,3 +101,14 @@ export function categoryPhotoForSlug(slug: string): string | null {
   const match = Object.keys(PHOTOS).find((key) => key.endsWith(`:${slug}`));
   return match ? `/categories/${PHOTOS[match]}` : null;
 }
+
+/**
+ * The photo for a stored "KIND:slug" key, as tracks carry in artworkCategory.
+ * Unknown keys resolve to null, so a renamed or retired category degrades to
+ * no artwork rather than a broken image.
+ */
+export function categoryPhotoForKey(key: string | null | undefined): string | null {
+  if (!key) return null;
+  const file = PHOTOS[key];
+  return file ? `/categories/${file}` : null;
+}

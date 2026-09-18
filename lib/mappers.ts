@@ -1,7 +1,8 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import type { PlayerTrack } from "@/lib/types";
 import { getStreamingUrl, getDownloadUrl } from "@/lib/media/audio-service";
-import { resolveImageUrl, type ImageSize } from "@/lib/media/image-service";
+import { type ImageSize } from "@/lib/media/image-service";
+import { resolveTrackCoverUrl } from "@/lib/media/entity-images";
 
 const trackWithRelations = Prisma.validator<Prisma.TrackDefaultArgs>()({
   include: { artist: true, album: true },
@@ -10,13 +11,7 @@ const trackWithRelations = Prisma.validator<Prisma.TrackDefaultArgs>()({
 export type TrackWithRelations = Prisma.TrackGetPayload<typeof trackWithRelations>;
 
 export function toPlayerTrack(track: TrackWithRelations, coverSize: ImageSize = "medium"): PlayerTrack {
-  const cover = resolveImageUrl(
-    {
-      publicId: track.coverImagePublicId ?? track.album?.coverImagePublicId,
-      fallbackUrl: track.coverUrl ?? track.album?.coverUrl ?? null,
-    },
-    coverSize
-  );
+  const cover = resolveTrackCoverUrl(track, coverSize);
 
   return {
     id: track.id,

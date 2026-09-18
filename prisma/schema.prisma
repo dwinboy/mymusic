@@ -283,6 +283,10 @@ model Track {
   /// louder tracks towards a common target so the catalogue plays evenly.
   /// Null on tracks processed before this was measured: they play unchanged.
   loudnessLufs        Float?
+  /// "KIND:slug" of the category whose bundled photo stands in when the track
+  /// has no artwork of its own. Denormalized from the track's terms so every
+  /// listing can resolve it without joining the taxonomy.
+  artworkCategory     String?
   downloadStorageKey  String?
   originalFormat      String?
   streamingFormat     String?

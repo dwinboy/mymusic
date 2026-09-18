@@ -10,7 +10,7 @@ import { getAudioProcessingService } from "@/lib/media/processing-service";
 import { deleteCloudinaryImage, uploadImageLocally } from "@/lib/media/image-service";
 import { productionLocalStorageWarning } from "@/lib/media/production-guard";
 import { uniqueSlug } from "@/lib/slug";
-import { setTrackTermsForKind, TERM_SELECT } from "@/lib/taxonomy";
+import { setTrackTermsForKind, refreshTrackArtworkCategory, TERM_SELECT } from "@/lib/taxonomy";
 import { validateForSubmission } from "@/lib/tracks/submission";
 import type { AiDisclosure, EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
 
@@ -118,6 +118,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       for (const { kind, ids } of termWrites) {
         await setTrackTermsForKind(tx, id, kind, ids, kind === "GENRE" ? primaryGenreId : null);
       }
+      await refreshTrackArtworkCategory(tx, id);
     });
   }
 

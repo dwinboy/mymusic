@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireOwnedTrack, requireOwnedAlbum } from "@/lib/creator-guard";
-import { setTrackTermsForKind, TERM_SELECT } from "@/lib/taxonomy";
+import { setTrackTermsForKind, refreshTrackArtworkCategory, TERM_SELECT } from "@/lib/taxonomy";
 import { deleteTrackAudio } from "@/lib/media/audio-service";
 import { deleteCloudinaryImage } from "@/lib/media/image-service";
 import { uniqueSlug } from "@/lib/slug";
@@ -147,6 +147,7 @@ export async function PATCH(request: Request, { params }: Params) {
     for (const { kind, ids } of termWrites) {
       await setTrackTermsForKind(tx, id, kind, ids, kind === "GENRE" ? primaryGenreId : null);
     }
+    if (termWrites.length > 0) await refreshTrackArtworkCategory(tx, id);
     return tx.track.update({ where: { id }, data, include: DETAIL_INCLUDE });
   });
 

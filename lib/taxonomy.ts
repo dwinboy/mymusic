@@ -498,3 +498,33 @@ export async function setTrackTermsForKind(
     data: validIds.map((termId) => ({ trackId, termId, isPrimary: kind === "GENRE" && termId === primary })),
   });
 }
+
+/**
+ * Which category's photo stands in when a track has no artwork, most specific
+ * to the track first. Genre says the most about how a song looks; a mood or a
+ * moment is a reasonable second. Call after a track's terms have been written.
+ *
+ * Stored on the track rather than resolved per listing: track queries already
+ * fan out across twenty call sites, and none of them should have to join the
+ * taxonomy to draw a card.
+ */
+export async function refreshTrackArtworkCategory(tx: Prisma.TransactionClient, trackId: string) {
+  const rows = await tx.trackTerm.findMany({
+    where: { trackId, term: { isActive: true } },
+    select: { isPrimary: true, term: { select: { kind: true, slug: true } } },
+    orderBy: { isPrimary: "desc" },
+  });
+
+  const preference: TaxonomyKind[] = ["GENRE", "MOOD", "ACTIVITY", "OCCASION"];
+  let chosen: string | null = null;
+  for (const kind of preference) {
+    // isPrimary first, courtesy of the ordering above.
+    const match = rows.find((row) => row.term.kind === kind && categoryPhoto(kind, row.term.slug));
+    if (match) {
+      chosen = `${kind}:${match.term.slug}`;
+      break;
+    }
+  }
+
+  await tx.track.update({ where: { id: trackId }, data: { artworkCategory: chosen } });
+}

@@ -14,6 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatDuration, formatCompactNumber, cn } from "@/lib/utils";
 
+/** Compact enough to keep the row's actions on screen, year still visible. */
+function formatAdded(value: string): string {
+  return new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "2-digit" }).format(new Date(value));
+}
+
 interface AdminTrack {
   id: string;
   slug: string;
@@ -27,7 +32,9 @@ interface AdminTrack {
   createdAt: string;
   processingStatus: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
   processingError: string | null;
-  artist: { name: string };
+  // ownerId distinguishes a creator's own upload from catalogue the platform
+  // put there itself — seed data, or anything uploaded from this panel.
+  artist: { name: string; ownerId: string | null };
   album: { title: string } | null;
 }
 
@@ -211,10 +218,10 @@ export function TracksTable() {
 
       {visibleTracks && visibleTracks.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
+          <table className="w-full min-w-[820px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-border bg-surface text-left text-xs uppercase tracking-wide text-foreground-subtle">
-                <th className="w-10 px-4 py-3 font-medium">
+                <th className="w-10 px-3 py-3 font-medium">
                   <input
                     type="checkbox"
                     aria-label="Select all tracks"
@@ -225,13 +232,14 @@ export function TracksTable() {
                     }
                   />
                 </th>
-                <th className="px-4 py-3 font-medium">Track</th>
-                <th className="px-4 py-3 font-medium">Album</th>
-                <th className="px-4 py-3 font-medium">Duration</th>
-                <th className="px-4 py-3 font-medium">Plays</th>
-                <th className="px-4 py-3 font-medium">Downloads</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium text-right">Actions</th>
+                <th className="px-3 py-3 font-medium">Track</th>
+                <th className="px-3 py-3 font-medium">Album</th>
+                <th className="px-3 py-3 font-medium">Added</th>
+                <th className="px-3 py-3 font-medium">Duration</th>
+                <th className="px-3 py-3 font-medium">Plays</th>
+                <th className="px-3 py-3 font-medium">Downloads</th>
+                <th className="px-3 py-3 font-medium">Status</th>
+                <th className="px-3 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -243,7 +251,7 @@ export function TracksTable() {
                     selected.has(track.id) && "bg-accent/5"
                   )}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <input
                       type="checkbox"
                       aria-label={`Select ${track.title}`}
@@ -252,22 +260,28 @@ export function TracksTable() {
                       onChange={() => toggleSelected(track.id)}
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <div className="flex items-center gap-3">
                       <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-surface-active">
                         {track.coverUrl && <Image src={track.coverUrl} alt="" fill sizes="36px" className="object-cover" />}
                       </div>
                       <div className="min-w-0">
                         <p className="truncate font-medium text-foreground">{track.title}</p>
-                        <p className="truncate text-xs text-foreground-muted">{track.artist.name}</p>
+                        <p className="truncate text-xs text-foreground-muted">
+                          {track.artist.name}
+                          <span className="ml-1.5 text-foreground-subtle">
+                            · {track.artist.ownerId ? "Creator upload" : "Platform"}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-foreground-muted">{track.album?.title ?? "—"}</td>
-                  <td className="tabular px-4 py-3 text-foreground-muted">{formatDuration(track.duration)}</td>
-                  <td className="px-4 py-3 text-foreground-muted">{formatCompactNumber(track.playCount)}</td>
-                  <td className="px-4 py-3 text-foreground-muted">{formatCompactNumber(track.downloadCount)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 text-foreground-muted">{track.album?.title ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-foreground-muted">{formatAdded(track.createdAt)}</td>
+                  <td className="tabular px-3 py-3 text-foreground-muted">{formatDuration(track.duration)}</td>
+                  <td className="px-3 py-3 text-foreground-muted">{formatCompactNumber(track.playCount)}</td>
+                  <td className="px-3 py-3 text-foreground-muted">{formatCompactNumber(track.downloadCount)}</td>
+                  <td className="px-3 py-3">
                     <div className="flex items-center gap-1.5">
                       {track.processingStatus === "FAILED" ? (
                         <Badge variant="danger" title={track.processingError ?? "Processing failed"}>
@@ -285,7 +299,7 @@ export function TracksTable() {
                       {track.isFeatured && <Badge variant="accent">Featured</Badge>}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <IconAction label="Edit" onClick={undefined} href={`/admin/tracks/${track.id}`} icon={Pencil} />
                       <IconAction

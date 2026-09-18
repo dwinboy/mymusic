@@ -275,13 +275,30 @@ async function main() {
   ]);
 
   console.log("Seeding users...");
-  const adminPasswordHash = await bcrypt.hash("vibebanger-admin-2026", 12);
+  // Never a default: an admin password baked into a public repo is a published
+  // credential, and the upsert below used to reset the live one back to it on
+  // every run. Set SEED_ADMIN_PASSWORD when creating an admin from scratch;
+  // once one exists, its password is left alone — change it with
+  // scripts/set-admin-password.ts.
+  const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
   const demoPasswordHash = await bcrypt.hash("vibebanger-demo-2026", 12);
+
+  const existingAdmin = await db.user.findUnique({ where: { email: "admin@vibebanger.app" }, select: { id: true } });
+  if (!existingAdmin && !seedAdminPassword) {
+    throw new Error(
+      "No admin account exists and SEED_ADMIN_PASSWORD is not set. Re-run with SEED_ADMIN_PASSWORD=<password> to create one."
+    );
+  }
 
   const admin = await db.user.upsert({
     where: { email: "admin@vibebanger.app" },
-    create: { email: "admin@vibebanger.app", name: "Vibe Banger Admin", role: "ADMIN", passwordHash: adminPasswordHash },
-    update: { passwordHash: adminPasswordHash, role: "ADMIN" },
+    create: {
+      email: "admin@vibebanger.app",
+      name: "Vibe Banger Admin",
+      role: "ADMIN",
+      passwordHash: await bcrypt.hash(seedAdminPassword!, 12),
+    },
+    update: { role: "ADMIN" },
   });
   await db.user.upsert({
     where: { email: "demo@vibebanger.app" },

@@ -78,6 +78,8 @@ export function SearchBar({ className }: { className?: string }) {
           onFocus={() => setIsOpen(true)}
           onKeyDown={(e) => e.key === "Enter" && goToFullSearch()}
           placeholder="Search songs, artists, albums..."
+          // The "/" shortcut focuses whichever search box is on the page.
+          data-search-input=""
           className="h-10 w-full rounded-full border border-border-strong bg-surface pl-9 pr-9 text-sm text-foreground placeholder:text-foreground-subtle outline-none transition-colors focus:border-accent focus:ring-1 focus:ring-accent"
         />
         {query.length > 0 && (

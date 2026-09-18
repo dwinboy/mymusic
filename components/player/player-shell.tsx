@@ -7,6 +7,7 @@ import { NowPlayingSheet } from "@/components/player/now-playing-sheet";
 import { QueueSheet } from "@/components/player/queue-sheet";
 import { PlayerError } from "@/components/player/player-error";
 import { RadioAutofill } from "@/components/player/radio-autofill";
+import { KeyboardShortcuts } from "@/components/player/keyboard-shortcuts";
 
 export function PlayerShell() {
   const hasTrack = usePlayerStore((s) => !!s.currentTrack());
@@ -15,6 +16,7 @@ export function PlayerShell() {
     <>
       <PlayerError />
       <RadioAutofill />
+      <KeyboardShortcuts />
       {hasTrack && (
         <div className="fixed inset-x-0 bottom-0 z-30 hidden md:block">
           <DesktopPlayer />

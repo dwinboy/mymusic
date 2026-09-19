@@ -3,11 +3,18 @@ import { db } from "@/lib/db";
 export interface SiteSettings {
   siteName: string;
   accentColor: string;
+  /**
+   * Publish a creator's track the moment it meets the publishing rules,
+   * instead of holding it for an admin. Review can be switched back on here
+   * without a deploy — the rules themselves are unchanged either way.
+   */
+  autoPublish: boolean;
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   siteName: "Vibe Banger",
   accentColor: "#e3a857",
+  autoPublish: true,
 };
 
 export async function getSiteSettings(): Promise<SiteSettings> {

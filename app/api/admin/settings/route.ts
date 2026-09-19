@@ -15,10 +15,13 @@ export async function PATCH(request: Request) {
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const patch: { siteName?: string; accentColor?: string } = {};
+  const patch: { siteName?: string; accentColor?: string; autoPublish?: boolean } = {};
 
   if (typeof body.siteName === "string" && body.siteName.trim().length > 0) {
     patch.siteName = body.siteName.trim();
+  }
+  if (typeof body.autoPublish === "boolean") {
+    patch.autoPublish = body.autoPublish;
   }
   if (typeof body.accentColor === "string" && /^#[0-9a-fA-F]{6}$/.test(body.accentColor)) {
     patch.accentColor = body.accentColor;

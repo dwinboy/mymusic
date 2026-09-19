@@ -217,7 +217,8 @@ export function PublishFlow({
 
   // --- review
   const [problems, setProblems] = useState<{ field: string; message: string }[]>([]);
-  const [submitted, setSubmitted] = useState(false);
+  // null until submitted; then whether it went live and where to hear it.
+  const [submitted, setSubmitted] = useState<{ live: boolean; slug: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/taxonomy")
@@ -498,7 +499,7 @@ export function PublishFlow({
         setError(data.error ?? "Couldn't submit.");
         return;
       }
-      setSubmitted(true);
+      setSubmitted({ live: !!data.published, slug: data.track?.slug ?? "" });
       router.refresh();
     } finally {
       setSaving(false);
@@ -528,19 +529,31 @@ export function PublishFlow({
   // ---------------------------------------------------------------------------
 
   if (submitted) {
+    const { live, slug } = submitted;
     return (
       <div className="mx-auto flex max-w-lg flex-col items-center py-16 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-accent">
-          <Clock className="h-7 w-7" />
+          {live ? <Check className="h-7 w-7" /> : <Clock className="h-7 w-7" />}
         </div>
-        <h2 className="mt-6 text-2xl font-semibold tracking-tight text-foreground">Submitted for review</h2>
+        <h2 className="mt-6 text-2xl font-semibold tracking-tight text-foreground">
+          {live ? "It's live" : "Submitted for review"}
+        </h2>
         <p className="mt-3 text-foreground-muted">
-          <span className="text-foreground">{title}</span> will go live as soon as it&apos;s approved. You can follow its
-          status in your music, and you&apos;ll see a note here if anything needs changing.
+          {live ? (
+            <>
+              <span className="text-foreground">{title}</span> is on Vibe Banger now — anyone can play it, and it will
+              show up wherever it was classified.
+            </>
+          ) : (
+            <>
+              <span className="text-foreground">{title}</span> will go live as soon as it&apos;s approved. You can follow
+              its status in your music, and you&apos;ll see a note here if anything needs changing.
+            </>
+          )}
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild>
-            <Link href="/creator/music">View my music</Link>
+            <Link href={live && slug ? `/song/${slug}` : "/creator/music"}>{live ? "Listen to it" : "View my music"}</Link>
           </Button>
           <Button variant="secondary" asChild>
             <Link href="/creator/upload">Upload another</Link>

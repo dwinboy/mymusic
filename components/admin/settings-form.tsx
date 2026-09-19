@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import type { SiteSettings } from "@/lib/settings";
 
@@ -12,6 +13,7 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
   const { toast } = useToast();
   const [siteName, setSiteName] = useState(initial.siteName);
   const [accentColor, setAccentColor] = useState(initial.accentColor);
+  const [autoPublish, setAutoPublish] = useState(initial.autoPublish);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,7 +23,7 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
     const res = await fetch("/api/admin/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ siteName, accentColor }),
+      body: JSON.stringify({ siteName, accentColor, autoPublish }),
     });
 
     setSaving(false);
@@ -35,6 +37,19 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-md flex-col gap-5">
+      <div className="rounded-xl border border-border p-4">
+        <label className="flex cursor-pointer items-start justify-between gap-4">
+          <span>
+            <span className="block text-sm font-medium text-foreground">Publish automatically</span>
+            <span className="mt-1 block text-xs text-foreground-muted">
+              A creator&apos;s track goes live as soon as it meets the publishing rules — audio processed, artwork,
+              title, a genre and confirmed rights. Turn this off to check each one yourself in the review queue first.
+            </span>
+          </span>
+          <Switch checked={autoPublish} onCheckedChange={setAutoPublish} />
+        </label>
+      </div>
+
       <div>
         <Label htmlFor="siteName">Site name</Label>
         <Input id="siteName" className="mt-1.5" value={siteName} onChange={(e) => setSiteName(e.target.value)} />

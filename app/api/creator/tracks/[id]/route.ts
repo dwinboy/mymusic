@@ -6,6 +6,7 @@ import { deleteTrackAudio } from "@/lib/media/audio-service";
 import { deleteCloudinaryImage } from "@/lib/media/image-service";
 import { uniqueSlug } from "@/lib/slug";
 import { changesReviewedContent } from "@/lib/tracks/submission";
+import { getSiteSettings } from "@/lib/settings";
 import type { AiDisclosure, EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
 
 const TAXONOMY_KINDS: TaxonomyKind[] = ["GENRE", "MOOD", "ACTIVITY", "OCCASION", "INSTRUMENT", "LANGUAGE", "VOCAL", "TAG"];
@@ -130,10 +131,20 @@ export async function PATCH(request: Request, { params }: Params) {
     data.rightsConfirmedBy = owned.userId;
   }
 
+  // Changing what was approved — title, artwork, AI disclosure — normally
+  // sends a live track back to review, so approval can't be used as a
+  // one-time gate. With automatic publishing there is no queue to send it to:
+  // the rules are what approve a track, and they still hold after an edit, so
+  // it stays live and is re-stamped as approved.
   let returnedToReview = false;
   if (existing.moderationStatus === "APPROVED" && changesReviewedContent(existing, data)) {
-    Object.assign(data, { moderationStatus: "PENDING_REVIEW", isPublished: false, submittedAt: new Date(), moderationNote: null });
-    returnedToReview = true;
+    const { autoPublish } = await getSiteSettings();
+    if (autoPublish) {
+      Object.assign(data, { reviewedAt: new Date(), moderationNote: null });
+    } else {
+      Object.assign(data, { moderationStatus: "PENDING_REVIEW", isPublished: false, submittedAt: new Date(), moderationNote: null });
+      returnedToReview = true;
+    }
   }
 
   const termWrites: { kind: TaxonomyKind; ids: string[] }[] = [];

@@ -80,6 +80,8 @@ class AudioEngine {
   private lastSessionSave = 0;
   /** True until the restored session's first play attempt has been made. */
   private resumingSession = false;
+  /** A play() request is in flight; further ones would stack on top of it. */
+  private playPending = false;
 
   init() {
     if (this.initialized || typeof window === "undefined") return;
@@ -465,25 +467,36 @@ class AudioEngine {
   }
 
   private play(audio: HTMLAudioElement) {
-    // Whether this particular attempt is the one restoring a session, read
-    // now because the flag is cleared as soon as the attempt settles.
+    // One attempt at a time. Every store change runs reconcile, so without
+    // this a refused play stacks request on request — which is what a phone
+    // call leaves behind: the element is stopped by the system, the store
+    // still says playing, and the player flickers between the two.
+    if (this.playPending) return;
+
     const resuming = this.resumingSession;
     this.resumingSession = false;
+    this.playPending = true;
 
-    audio.play().catch((error: unknown) => {
-      // AbortError is routine: a pause or a new track interrupted this
-      // play() request. Only an autoplay refusal needs handling.
-      if (!(error instanceof DOMException) || error.name !== "NotAllowedError") return;
+    audio
+      .play()
+      .catch((error: unknown) => {
+        // AbortError is routine: a pause or a new track interrupted this
+        // request. A refusal is not, and has to be recorded.
+        if (!(error instanceof DOMException) || error.name !== "NotAllowedError") return;
 
-      if (resuming) {
+        // Whatever the reason, this is not playing. Saying so stops reconcile
+        // asking again, and stops the UI claiming playback that isn't there.
+        usePlayerStore.setState({ isPlaying: false });
+
         // A refused auto-resume is the browser's rule, not a failure the
         // listener needs told about — they never asked for it on this page.
-        // The track stays loaded and one tap away.
-        usePlayerStore.setState({ isPlaying: false });
-      } else {
-        usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
-      }
-    });
+        if (!resuming) {
+          usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
+        }
+      })
+      .finally(() => {
+        this.playPending = false;
+      });
   }
 
   getElement() {

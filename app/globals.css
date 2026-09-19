@@ -85,6 +85,16 @@ html {
   scroll-behavior: smooth;
 }
 
+/* A visible focus ring for anything focusable. The player is fully
+   keyboard-driven, so being unable to see where focus is makes it unusable by
+   keyboard — and this was previously left to whichever components remembered.
+   Controls that indicate focus another way (menu rows highlight themselves)
+   still opt out with focus-visible:outline-none. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 body {
   background: var(--color-canvas);
   color: var(--color-foreground);

@@ -110,9 +110,30 @@ export async function createPresignedGetUrl(key: string, expiresInSeconds = 300)
   return getSignedUrl(client, command, { expiresIn: expiresInSeconds });
 }
 
+/**
+ * Audio objects are written once per key and never rewritten: a replacement
+ * lands under a fresh `version` suffix (see audio-keys.ts) and the database
+ * pointer swaps to it. That invariant is what makes `immutable` honest here,
+ * rather than a guess that bites when a file changes under a cached URL.
+ *
+ * Without this, every object was served with no cache directive at all, so a
+ * listener replaying a song — or scrubbing back through one — re-downloaded
+ * it. It also gives a CDN something to honour if the bucket is ever put
+ * behind a custom domain, which is the only way R2 will cache at the edge.
+ */
+const AUDIO_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 export async function putObject(key: string, data: Buffer, contentType: string): Promise<number> {
   const { client, config } = getClient();
-  await client.send(new PutObjectCommand({ Bucket: config.bucket, Key: key, Body: data, ContentType: contentType }));
+  await client.send(
+    new PutObjectCommand({
+      Bucket: config.bucket,
+      Key: key,
+      Body: data,
+      ContentType: contentType,
+      CacheControl: AUDIO_CACHE_CONTROL,
+    })
+  );
   return data.byteLength;
 }
 

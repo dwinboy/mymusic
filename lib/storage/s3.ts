@@ -57,6 +57,10 @@ export class S3StorageDriver implements StorageDriver {
         Key: key,
         Body: data,
         ContentType: contentType,
+        // Same reasoning as r2-client's putObject: these objects are written
+        // once per key, so a stored file may be cached for as long as the
+        // client likes rather than re-fetched on every play.
+        CacheControl: "public, max-age=31536000, immutable",
       })
     );
 

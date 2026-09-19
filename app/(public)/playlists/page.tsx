@@ -36,6 +36,8 @@ export default async function PlaylistsPage() {
           icon={ListMusic}
           title="No playlists yet"
           description="Make one from any song's menu, and share it by making it public."
+          actionLabel="Browse songs"
+          actionHref="/songs"
           className="mt-10"
         />
       ) : (

@@ -45,11 +45,14 @@ export async function TermIndexPage({ kind }: { kind: BrowsableKind }) {
   const terms = await getTerms(kind);
   const counts = await countTracksPerTerm(kind);
 
-  // Populated terms first, so the page leads with somewhere to go; empty ones
-  // stay listed after them so the full shape of the taxonomy is visible.
+  // Populated first, so the page leads with somewhere to go — but every
+  // category is a card either way. Listing the empty ones as bare chips made
+  // sense for a full catalogue; on a young one it turned the best surface in
+  // the app into a wall of grey pills and hid the artwork entirely.
   const populated = terms.filter((t) => (counts.get(t.id) ?? 0) > 0);
   const empty = terms.filter((t) => (counts.get(t.id) ?? 0) === 0);
-  const artwork = await getTermArtwork(populated, "large");
+  const ordered = [...populated, ...empty];
+  const artwork = await getTermArtwork(ordered, "large");
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12">
@@ -62,7 +65,7 @@ export async function TermIndexPage({ kind }: { kind: BrowsableKind }) {
       ) : (
         <>
           <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-            {populated.map((term) => {
+            {ordered.map((term) => {
               const n = counts.get(term.id) ?? 0;
               return (
                 <TermCard
@@ -70,26 +73,15 @@ export async function TermIndexPage({ kind }: { kind: BrowsableKind }) {
                   href={termHref(kind, term.slug)!}
                   name={term.name}
                   imageUrl={artwork.get(term.id)}
-                  meta={`${n} ${n === 1 ? "track" : "tracks"}`}
+                  // Honest about being empty without hiding the category: the
+                  // page it opens says what to listen to instead.
+                  meta={n > 0 ? `${n} ${n === 1 ? "track" : "tracks"}` : "Coming soon"}
                   size="fill"
+                  className={n === 0 ? "opacity-70 transition-opacity hover:opacity-100" : undefined}
                 />
               );
             })}
           </div>
-
-          {empty.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Coming soon</h2>
-              <p className="mt-1 text-sm text-foreground-muted">No music has been classified here yet.</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {empty.map((term) => (
-                  <span key={term.id} className="rounded-full border border-border px-3.5 py-1.5 text-sm text-foreground-subtle">
-                    {term.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -82,8 +82,13 @@ export default async function AlbumsPage({ searchParams }: { searchParams: Promi
           <EmptyState
             icon={Disc3}
             title={filtered ? "No albums match those filters" : "No albums yet"}
-            actionLabel={filtered ? "Clear filters" : undefined}
-            actionHref={filtered ? "/albums" : undefined}
+            description={
+              filtered
+                ? "Try fewer filters, or browse everything."
+                : "Creators release singles first. There is music here — it just isn't grouped into albums yet."
+            }
+            actionLabel={filtered ? "Clear filters" : "Browse songs"}
+            actionHref={filtered ? "/albums" : "/songs"}
           />
         ) : (
           <PaginatedCardGrid key={params.toString()} type="albums" initialItems={list.items} initialCursor={list.nextCursor} query={params.toString()} />

@@ -41,7 +41,14 @@ export default async function ArtistsPage() {
       <p className="mt-1 max-w-xl text-sm text-foreground-muted">Independent creators publishing AI music on Vibe Banger.</p>
 
       {all.items.length === 0 ? (
-        <EmptyState icon={Mic2} title="No creators yet" className="mt-10" />
+        <EmptyState
+          icon={Mic2}
+          title="No creators yet"
+          description="Creator profiles appear here once someone publishes their first track."
+          actionLabel="Browse songs"
+          actionHref="/songs"
+          className="mt-10"
+        />
       ) : (
         <>
           <div className="mt-8 flex flex-col gap-10">

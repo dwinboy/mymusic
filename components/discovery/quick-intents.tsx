@@ -12,8 +12,13 @@ export async function QuickIntents({ title = "What are you listening for?", limi
   const featured = await getTerms("ACTIVITY", { featuredOnly: true });
   if (featured.length === 0) return null;
 
+  // Populated activities lead, but the row still appears before anything is
+  // classified — it was the best-looking section in the app and nobody had
+  // ever seen it, because every activity started empty.
   const counts = await countTracksPerTerm("ACTIVITY");
-  const intents = featured.filter((t) => (counts.get(t.id) ?? 0) > 0).slice(0, limit);
+  const withMusic = featured.filter((t) => (counts.get(t.id) ?? 0) > 0);
+  const withoutMusic = featured.filter((t) => (counts.get(t.id) ?? 0) === 0);
+  const intents = [...withMusic, ...withoutMusic].slice(0, limit);
   if (intents.length === 0) return null;
 
   const artwork = await getTermArtwork(intents, "large");

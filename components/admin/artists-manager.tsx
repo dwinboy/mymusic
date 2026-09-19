@@ -20,6 +20,7 @@ interface AdminArtist {
   name: string;
   bio: string | null;
   avatarUrl: string | null;
+  coverUrl: string | null;
   isFeatured: boolean;
   _count: { tracks: number; albums: number };
 }
@@ -114,6 +115,7 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
                 <button
                   onClick={() => setEditing(artist)}
                   title="Edit"
+                  aria-label={`Edit ${artist.name}`}
                   className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground"
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -121,6 +123,7 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
                 <button
                   onClick={() => toggleFeatured(artist)}
                   title={artist.isFeatured ? "Unfeature" : "Feature"}
+                  aria-label={`${artist.isFeatured ? "Unfeature" : "Feature"} ${artist.name}`}
                   className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-hover hover:text-foreground"
                 >
                   {artist.isFeatured ? <StarOff className="h-3.5 w-3.5" /> : <Star className="h-3.5 w-3.5" />}
@@ -171,6 +174,9 @@ function ArtistForm({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(artist?.avatarUrl ?? null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(artist?.coverUrl ?? null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -178,6 +184,11 @@ function ArtistForm({
   function handleAvatarChange(file: File | null) {
     setAvatarFile(file);
     if (file) setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  function handleCoverChange(file: File | null) {
+    setCoverFile(file);
+    if (file) setCoverPreview(URL.createObjectURL(file));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -198,6 +209,16 @@ function ArtistForm({
           fd.set("avatarImageUrl", uploaded.secureUrl);
         } else {
           fd.set("avatar", avatarFile);
+        }
+      }
+
+      if (coverFile) {
+        if (imageCloudinaryEnabled) {
+          const uploaded = await uploadImageToCloudinary(coverFile, "vibebanger/covers");
+          fd.set("coverImagePublicId", uploaded.publicId);
+          fd.set("coverImageUrl", uploaded.secureUrl);
+        } else {
+          fd.set("cover", coverFile);
         }
       }
 
@@ -248,6 +269,31 @@ function ArtistForm({
             accept="image/*"
             className="hidden"
             onChange={(e) => handleAvatarChange(e.target.files?.[0] ?? null)}
+          />
+        </div>
+
+        {/* The banner across the top of the artist's page. Without one the
+            page falls back to their artwork, blurred. */}
+        <div>
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            className="relative flex h-24 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border-strong bg-surface text-foreground-subtle transition-colors hover:border-accent"
+          >
+            {coverPreview ? (
+              <Image src={coverPreview} alt="" fill sizes="480px" className="object-cover" />
+            ) : (
+              <span className="flex items-center gap-2 text-xs">
+                <ImagePlus className="h-4 w-4" /> Cover image — wide, for the top of their page
+              </span>
+            )}
+          </button>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handleCoverChange(e.target.files?.[0] ?? null)}
           />
         </div>
         <div>

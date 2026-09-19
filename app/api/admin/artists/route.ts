@@ -52,8 +52,32 @@ export async function POST(request: Request) {
     }
   }
 
+  // The same treatment for the page banner. Without this a cover chosen
+  // while creating the profile was accepted by the form and quietly dropped.
+  let coverUrl: string | null = null;
+  let coverImagePublicId: string | null = null;
+
+  if (formData.has("coverImagePublicId")) {
+    coverImagePublicId = String(formData.get("coverImagePublicId") ?? "") || null;
+    coverUrl = String(formData.get("coverImageUrl") ?? "") || null;
+  } else {
+    const coverFile = formData.get("cover") as File | null;
+    if (coverFile && coverFile.size > 0) {
+      const prodWarning = productionLocalStorageWarning("image");
+      if (prodWarning) return NextResponse.json({ error: prodWarning }, { status: 500 });
+
+      const { url } = await uploadImageLocally({
+        folder: "covers",
+        filename: `${slug}-cover-${Date.now()}.${extFromType(coverFile.type)}`,
+        contentType: coverFile.type || "image/jpeg",
+        data: Buffer.from(await coverFile.arrayBuffer()),
+      });
+      coverUrl = url;
+    }
+  }
+
   const artist = await db.artist.create({
-    data: { name, slug, bio, isFeatured, avatarUrl, avatarImagePublicId },
+    data: { name, slug, bio, isFeatured, avatarUrl, avatarImagePublicId, coverUrl, coverImagePublicId },
   });
 
   return NextResponse.json({ artist }, { status: 201 });

@@ -85,6 +85,10 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
   const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ""}/artist/${artist.slug}`;
   const avatarImage = resolveArtistAvatarUrl(artist, "large");
   const coverImage = resolveArtistCoverUrl(artist, "hero");
+  // With no cover, the artist's own most-played artwork makes a far better
+  // backdrop than their avatar blurred to nothing — which left the header a
+  // near-black band on every profile that had never uploaded one.
+  const backdrop = coverImage ?? popularPlayerTracks.find((t) => t.coverUrl)?.coverUrl ?? avatarImage;
 
   return (
     <div>
@@ -99,11 +103,18 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
         }}
       />
       <div className="relative h-56 w-full overflow-hidden sm:h-72">
-        {coverImage ? (
-          <Image src={coverImage} alt="" fill sizes="100vw" className="object-cover" priority />
-        ) : avatarImage ? (
-          <Image src={avatarImage} alt="" fill sizes="100vw" className="scale-125 object-cover opacity-30 blur-2xl" priority />
-        ) : null}
+        {backdrop && (
+          <Image
+            src={backdrop}
+            alt=""
+            fill
+            sizes="100vw"
+            priority
+            // A real cover is shown as it is; anything standing in for one is
+            // blurred, because it was never framed to be a banner.
+            className={coverImage ? "object-cover" : "scale-125 object-cover opacity-60 blur-3xl"}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/60 to-canvas/20" />
       </div>
 

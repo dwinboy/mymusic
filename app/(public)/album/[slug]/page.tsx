@@ -15,6 +15,11 @@ import { TrackRow } from "@/components/music/track-row";
 import { formatDuration, formatDurationLong, formatReleaseDate } from "@/lib/utils";
 import { JsonLd } from "@/components/seo/json-ld";
 import { resolveAlbumCoverUrl } from "@/lib/media/entity-images";
+import { SectionHeader } from "@/components/music/section-header";
+import { HorizontalScroller } from "@/components/music/horizontal-scroller";
+import { AlbumCard } from "@/components/music/collection-cards";
+import { MusicCard } from "@/components/music/music-card";
+import { toAlbumCard } from "@/lib/catalog-cards";
 
 export async function generateMetadata({
   params,
@@ -59,6 +64,32 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     ? !!(await db.savedAlbum.findUnique({ where: { userId_albumId: { userId: session.user.id, albumId: album.id } }, select: { id: true } }))
     : false;
   const totalSeconds = album.tracks.reduce((sum, t) => sum + t.duration, 0);
+
+  // The page used to end with the track list, so finishing an album was the
+  // end of the session. Offer the rest of the artist's work, and their other
+  // songs when this is their only album.
+  const otherAlbums = await db.album.findMany({
+    where: { artistId: album.artistId, isPublished: true, id: { not: album.id }, tracks: { some: { isPublished: true } } },
+    orderBy: [{ releaseDate: "desc" }, { createdAt: "desc" }],
+    take: 8,
+    include: { artist: true },
+  });
+  const moreTracks =
+    otherAlbums.length > 0
+      ? []
+      : await db.track.findMany({
+          where: {
+            artistId: album.artistId,
+            isPublished: true,
+            processingStatus: "READY",
+            // Singles have no album at all, and `not` would drop them: in SQL
+            // `albumId <> 'x'` is NULL for a NULL row, not true.
+            OR: [{ albumId: null }, { albumId: { not: album.id } }],
+          },
+          orderBy: [{ playCount: "desc" }, { createdAt: "desc" }],
+          take: 10,
+          include: { artist: true, album: true },
+        });
   const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ""}/album/${album.slug}`;
   const firstTrack = playerTracks[0];
   const heroImage = resolveAlbumCoverUrl(album, "large");
@@ -135,6 +166,29 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       <p className="mt-6 text-xs text-foreground-subtle">
         {formatReleaseDate(album.releaseDate)} · {album.tracks.length} songs, {formatDuration(totalSeconds)}
       </p>
+
+      {otherAlbums.length > 0 && (
+        <section className="mt-12">
+          <SectionHeader title={`More from ${album.artist.name}`} href={`/artist/${album.artist.slug}`} />
+          <HorizontalScroller>
+            {otherAlbums.map((other) => (
+              <AlbumCard key={other.id} album={toAlbumCard(other, { showArtist: false })} />
+            ))}
+          </HorizontalScroller>
+        </section>
+      )}
+
+      {moreTracks.length > 0 && (
+        <section className="mt-12">
+          <SectionHeader title={`More from ${album.artist.name}`} href={`/artist/${album.artist.slug}`} />
+          <HorizontalScroller>
+            {moreTracks.map((t) => {
+              const player = toPlayerTrack(t);
+              return <MusicCard key={t.id} track={player} queue={moreTracks.map((x) => toPlayerTrack(x))} />;
+            })}
+          </HorizontalScroller>
+        </section>
+      )}
     </div>
   );
 }

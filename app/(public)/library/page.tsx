@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Heart, ListMusic, History, Disc3, Users } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -8,6 +7,7 @@ import { toPlayerTrack } from "@/lib/mappers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrackRow } from "@/components/music/track-row";
 import { EmptyState } from "@/components/states/empty-state";
+import { SignedOutLibrary } from "@/components/library/signed-out-library";
 import { CreatePlaylistButton } from "@/components/playlist/create-playlist-button";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { formatCompactNumber } from "@/lib/utils";
@@ -25,7 +25,9 @@ export default async function LibraryPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/library");
+  // Signed out, this page explains itself rather than bouncing someone to a
+  // login form that never says what they would be signing in for.
+  if (!session?.user) return <SignedOutLibrary />;
 
   const { tab } = await searchParams;
   const TABS = ["liked", "playlists", "history", "albums", "following"];

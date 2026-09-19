@@ -4,10 +4,14 @@ import type { PlayerTrack } from "@/lib/types";
  * What was playing, kept across a reload.
  *
  * Closing a tab and coming back to silence and an empty player is the kind of
- * small betrayal people notice; every established player restores the track,
- * paused, exactly where it stopped. Never restored playing: browsers block
- * autoplay, and starting sound on page load would be hostile even if they
- * didn't.
+ * small betrayal people notice; every established player restores the track
+ * exactly where it stopped.
+ *
+ * If it was playing moments ago — a reload, a link opened from elsewhere —
+ * playback is resumed too, because stopping there was never the listener's
+ * decision. Beyond a few minutes it comes back paused: returning to a tab
+ * tomorrow should not start sound at you. Browsers block autoplay without a
+ * gesture regardless, so a resume is an attempt, never a promise.
  *
  * This browser only, like the other player preferences.
  */
@@ -19,11 +23,18 @@ const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 /** Enough queue to keep next/previous meaningful, not enough to bloat storage. */
 const MAX_TRACKS = 60;
 
+/** Within this, a return counts as "still listening" and playback resumes. */
+const RESUME_WINDOW_MS = 10 * 60 * 1000;
+
 export interface PlayerSession {
   tracks: PlayerTrack[];
   currentIndex: number;
   currentTime: number;
   savedAt: number;
+  /** Whether the music was playing when this was written. */
+  wasPlaying: boolean;
+  /** Whether to try resuming — recent enough that stopping wasn't intended. */
+  shouldResume: boolean;
 }
 
 export function loadSession(): PlayerSession | null {
@@ -38,18 +49,21 @@ export function loadSession(): PlayerSession | null {
     if (!track?.id || !track.audioUrl) return null;
     if (!Number.isFinite(session.savedAt) || Date.now() - session.savedAt > MAX_AGE_MS) return null;
 
+    const wasPlaying = session.wasPlaying === true;
     return {
       tracks: session.tracks,
       currentIndex: session.currentIndex,
       currentTime: Number.isFinite(session.currentTime) ? Math.max(0, session.currentTime) : 0,
       savedAt: session.savedAt,
+      wasPlaying,
+      shouldResume: wasPlaying && Date.now() - session.savedAt < RESUME_WINDOW_MS,
     };
   } catch {
     return null;
   }
 }
 
-export function saveSession(tracks: PlayerTrack[], currentIndex: number, currentTime: number) {
+export function saveSession(tracks: PlayerTrack[], currentIndex: number, currentTime: number, isPlaying: boolean) {
   try {
     if (tracks.length === 0 || currentIndex < 0) {
       window.localStorage.removeItem(KEY);
@@ -69,6 +83,9 @@ export function saveSession(tracks: PlayerTrack[], currentIndex: number, current
       currentIndex: index,
       currentTime,
       savedAt: Date.now(),
+      wasPlaying: isPlaying,
+      // Derived on read; stored only so the shape stays self-describing.
+      shouldResume: isPlaying,
     };
     window.localStorage.setItem(KEY, JSON.stringify(session));
   } catch {

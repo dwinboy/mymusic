@@ -78,6 +78,8 @@ class AudioEngine {
   private lastQuality: AudioQuality = "standard";
   /** Throttles session writes: currentTime changes several times a second. */
   private lastSessionSave = 0;
+  /** True until the restored session's first play attempt has been made. */
+  private resumingSession = false;
 
   init() {
     if (this.initialized || typeof window === "undefined") return;
@@ -101,17 +103,29 @@ class AudioEngine {
       // Storage unavailable (private mode, disabled cookies) — fall back to defaults.
     }
 
-    // What was playing last time, restored paused and where it stopped. Only
-    // when nothing has been queued already: a page that starts something
-    // itself (a shared "listen from 1:24" link) must win over history.
+    // What was playing last time, restored where it stopped.
+    //
+    // Deferred by a turn so the tree has finished hydrating before the store
+    // changes underneath it. Components that render differently for the
+    // playing track hold the server's answer until then (see useHydrated in
+    // hooks/use-player.ts); this keeps the two from racing at all.
     const restored = loadSession();
     if (restored && usePlayerStore.getState().tracks.length === 0) {
-      usePlayerStore.setState({
-        tracks: restored.tracks,
-        currentIndex: restored.currentIndex,
-        currentTime: restored.currentTime,
-        isPlaying: false,
-      });
+      window.setTimeout(() => {
+        // Anything queued in the meantime — a shared "listen from 1:24" link,
+        // or a track someone pressed play on — wins over history.
+        if (usePlayerStore.getState().tracks.length > 0) return;
+        this.resumingSession = restored.shouldResume;
+        usePlayerStore.setState({
+          tracks: restored.tracks,
+          currentIndex: restored.currentIndex,
+          currentTime: restored.currentTime,
+          // Carries on if it was playing moments ago. The browser may refuse
+          // without a gesture, which is why a refusal is silent: the track is
+          // loaded and one tap away either way.
+          isPlaying: restored.shouldResume,
+        });
+      }, 0);
     }
 
     // Closing the tab or backgrounding the app on mobile is the last chance to
@@ -324,7 +338,7 @@ class AudioEngine {
     if (!force && now - this.lastSessionSave < 5000) return;
     this.lastSessionSave = now;
     const state = usePlayerStore.getState();
-    saveSession(state.tracks, state.currentIndex, state.currentTime);
+    saveSession(state.tracks, state.currentIndex, state.currentTime, state.isPlaying);
   }
 
   private baseVolume(state = usePlayerStore.getState()) {
@@ -451,10 +465,22 @@ class AudioEngine {
   }
 
   private play(audio: HTMLAudioElement) {
+    // Whether this particular attempt is the one restoring a session, read
+    // now because the flag is cleared as soon as the attempt settles.
+    const resuming = this.resumingSession;
+    this.resumingSession = false;
+
     audio.play().catch((error: unknown) => {
       // AbortError is routine: a pause or a new track interrupted this
-      // play() request. Only an autoplay refusal needs the listener.
-      if (error instanceof DOMException && error.name === "NotAllowedError") {
+      // play() request. Only an autoplay refusal needs handling.
+      if (!(error instanceof DOMException) || error.name !== "NotAllowedError") return;
+
+      if (resuming) {
+        // A refused auto-resume is the browser's rule, not a failure the
+        // listener needs told about — they never asked for it on this page.
+        // The track stays loaded and one tap away.
+        usePlayerStore.setState({ isPlaying: false });
+      } else {
         usePlayerStore.getState()._setError("Playback was blocked. Press play to try again.");
       }
     });

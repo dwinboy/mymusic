@@ -4,10 +4,12 @@ import { Pause, Play } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { Progress } from "@/components/ui/progress";
 import { usePlayerStore } from "@/lib/stores/player-store";
+import { useNextTrack } from "@/hooks/use-player";
 import { cn, formatDuration } from "@/lib/utils";
 
 export function MobileMiniPlayer() {
   const track = usePlayerStore((s) => s.currentTrack());
+  const next = useNextTrack();
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
@@ -28,7 +30,7 @@ export function MobileMiniPlayer() {
       aria-label="Open Now Playing"
     >
       <TrackArt src={track.coverUrl} alt={track.title} className="h-11 w-11" />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 leading-tight">
         <p className="truncate text-sm font-medium text-foreground">{track.title}</p>
         <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
           <span className="truncate">{track.artistName}</span>
@@ -39,6 +41,15 @@ export function MobileMiniPlayer() {
             {formatDuration(currentTime)} / {formatDuration(duration)}
           </span>
         </p>
+        {/* What's coming. Without it the only way to know was to open the
+            queue, which is two taps away from a bar you are already looking
+            at. Drops out silently at the end of the queue rather than
+            reserving an empty line. */}
+        {next && (
+          <p className="mt-0.5 truncate text-[11px] text-foreground-subtle">
+            <span className="uppercase tracking-[0.12em]">Next</span> · {next.title}
+          </p>
+        )}
       </div>
       <span
         onClick={(e) => {

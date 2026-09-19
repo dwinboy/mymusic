@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
-import { ChevronUp, ChevronDown, X, ListX } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GripVertical, X, ListX } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { Equalizer } from "@/components/music/equalizer";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/states/empty-state";
 import { usePlayerStore } from "@/lib/stores/player-store";
-import { formatDuration } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 import { CrossfadeSetting } from "@/components/player/crossfade-setting";
 import { QualitySetting } from "@/components/player/quality-setting";
 
@@ -23,6 +23,75 @@ export function QueuePanel() {
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const reorderQueue = usePlayerStore((s) => s.reorderQueue);
   const clearQueue = usePlayerStore((s) => s.clearQueue);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  /** The live drag, outside state so pointermove doesn't wait on a render. */
+  const dragRef = useRef<{ pointerId: number; index: number } | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  /** Row to restore focus to after a keyboard move re-renders the list. */
+  const focusAfterMove = useRef<number | null>(null);
+
+  useEffect(() => {
+    const target = focusAfterMove.current;
+    if (target === null) return;
+    focusAfterMove.current = null;
+    const rows = listRef.current?.querySelectorAll<HTMLElement>("[data-queue-row]");
+    rows?.[target]?.querySelector<HTMLButtonElement>("[data-drag-handle]")?.focus();
+  });
+
+  /** Which row the pointer is over, by row midpoints read fresh each move. */
+  const rowUnder = useCallback((clientY: number) => {
+    const rows = listRef.current?.querySelectorAll<HTMLElement>("[data-queue-row]");
+    if (!rows || rows.length === 0) return null;
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) return i;
+    }
+    return rows.length - 1;
+  }, []);
+
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>, absoluteIndex: number) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    // Stops the touch from scrolling the sheet instead of dragging the row.
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { pointerId: event.pointerId, index: absoluteIndex };
+    setDraggingIndex(absoluteIndex);
+  }
+
+  /** Reorders as the finger passes each row, so the list sorts under it. */
+  function onDragMove(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const row = rowUnder(event.clientY);
+    if (row === null) return;
+    const target = currentIndex + 1 + row;
+    if (target === drag.index) return;
+    reorderQueue(drag.index, target);
+    drag.index = target;
+    setDraggingIndex(target);
+  }
+
+  function endDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    dragRef.current = null;
+    setDraggingIndex(null);
+  }
+
+  /** The same move by keyboard, for anyone not using a pointer. */
+  function onHandleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, absoluteIndex: number, row: number) {
+    const delta = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
+    if (delta === 0) return;
+    const nextRow = row + delta;
+    if (nextRow < 0 || nextRow >= upcoming.length) return;
+    event.preventDefault();
+    reorderQueue(absoluteIndex, absoluteIndex + delta);
+    focusAfterMove.current = nextRow;
+  }
 
   if (!track) {
     return <EmptyState icon={ListX} title="Nothing queued" description="Play a song to start a queue." />;
@@ -57,42 +126,52 @@ export function QueuePanel() {
         {upcoming.length === 0 ? (
           <p className="py-6 text-center text-sm text-foreground-muted">Your queue is empty.</p>
         ) : (
-          <div className="flex flex-col gap-1">
+          <div ref={listRef} className="flex select-none flex-col gap-1">
             {upcoming.map((t, i) => {
               const absoluteIndex = currentIndex + 1 + i;
+              const isDragging = draggingIndex === absoluteIndex;
               return (
-                <div key={`${t.id}-${absoluteIndex}`} className="group flex items-center gap-3 rounded-lg p-2 hover:bg-surface-hover">
+                <div
+                  key={`${t.id}-${absoluteIndex}`}
+                  data-queue-row
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg p-2 transition-colors",
+                    isDragging ? "bg-surface-active shadow-elevated" : "hover:bg-surface-hover"
+                  )}
+                >
+                  {/* Always visible, never hover-gated: these used to appear
+                      only on hover, which meant a phone — where the queue is
+                      most useful — could not reorder or remove anything. */}
+                  <button
+                    data-drag-handle
+                    onPointerDown={(event) => startDrag(event, absoluteIndex)}
+                    onPointerMove={onDragMove}
+                    onPointerUp={endDrag}
+                    onPointerCancel={endDrag}
+                    onKeyDown={(event) => onHandleKeyDown(event, absoluteIndex, i)}
+                    aria-label={`Reorder ${t.title}. Position ${i + 1} of ${upcoming.length}. Use the up and down arrow keys to move it.`}
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 touch-none items-center justify-center rounded text-foreground-subtle transition-colors hover:text-foreground",
+                      isDragging ? "cursor-grabbing text-foreground" : "cursor-grab"
+                    )}
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </button>
+
                   <TrackArt src={t.coverUrl} alt={t.title} className="h-10 w-10" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-foreground">{t.title}</p>
                     <p className="truncate text-xs text-foreground-muted">{t.artistName}</p>
                   </div>
                   <span className="tabular text-xs text-foreground-subtle">{formatDuration(t.duration)}</span>
-                  <div className="hidden items-center gap-0.5 group-hover:flex">
-                    <button
-                      onClick={() => i > 0 && reorderQueue(absoluteIndex, absoluteIndex - 1)}
-                      disabled={i === 0}
-                      className="flex h-6 w-6 items-center justify-center rounded text-foreground-muted hover:text-foreground disabled:opacity-30"
-                      aria-label="Move up"
-                    >
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => i < upcoming.length - 1 && reorderQueue(absoluteIndex, absoluteIndex + 1)}
-                      disabled={i === upcoming.length - 1}
-                      className="flex h-6 w-6 items-center justify-center rounded text-foreground-muted hover:text-foreground disabled:opacity-30"
-                      aria-label="Move down"
-                    >
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => removeFromQueue(absoluteIndex)}
-                      className="flex h-6 w-6 items-center justify-center rounded text-foreground-muted hover:text-danger"
-                      aria-label="Remove from queue"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+
+                  <button
+                    onClick={() => removeFromQueue(absoluteIndex)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-foreground-subtle transition-colors hover:text-danger"
+                    aria-label={`Remove ${t.title} from the queue`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               );
             })}

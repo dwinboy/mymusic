@@ -48,7 +48,7 @@ export function TrackRow({
   return (
     <div
       className={cn(
-        "group grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-hover md:grid-cols-[32px_auto_1fr_minmax(0,1fr)_auto_auto]",
+        "group grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-hover md:grid-cols-[32px_auto_1fr_minmax(0,1fr)_auto_auto]",
         isCurrent && "bg-surface-hover/70",
         className
       )}
@@ -160,11 +160,18 @@ export function TrackRow({
         )}
       </div>
 
-      {/* Hidden as a whole on mobile, not just its children: leaving the
-          wrapper in the grid consumed the third column and bumped the
-          track menu onto a second row. */}
-      <div className="hidden items-center gap-1 md:flex md:gap-3">
-        {showLike && <LikeButton trackId={track.id} initialLiked={initiallyLiked} size="sm" />}
+      {/* The length shows at every width. On a phone it also anchors the right
+          end of the row: without it a short title left a long empty run before
+          the menu, and the rows read as unfinished rather than spacious. The
+          like button stays to wider screens, where there is room for a second
+          control beside the menu.
+
+          This wrapper is a grid cell, so the mobile grid declares four columns
+          to hold it — dropping one bumped the menu onto a second row. */}
+      <div className="flex items-center gap-1 md:gap-3">
+        {showLike && (
+          <LikeButton trackId={track.id} initialLiked={initiallyLiked} size="sm" className="hidden md:inline-flex" />
+        )}
         <span className="tabular text-xs text-foreground-subtle">{formatDuration(track.duration)}</span>
       </div>
 

@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function TrackRowSkeleton() {
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 px-2.5 py-2 md:grid-cols-[32px_auto_1fr_minmax(0,1fr)_auto_auto]">
+    <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-2.5 py-2 md:grid-cols-[32px_auto_1fr_minmax(0,1fr)_auto_auto]">
       <Skeleton className="hidden h-4 w-4 md:block" />
       <Skeleton className="h-11 w-11 rounded-md" />
       <div className="min-w-0 space-y-1.5">
@@ -10,7 +10,8 @@ export function TrackRowSkeleton() {
         <Skeleton className="h-3 w-20" />
       </div>
       <Skeleton className="hidden h-3 w-24 md:block" />
-      <Skeleton className="hidden h-3 w-8 md:block" />
+      {/* Matches the row's length cell, which now shows at every width. */}
+      <Skeleton className="h-3 w-8" />
       <Skeleton className="h-7 w-7 rounded-full" />
     </div>
   );

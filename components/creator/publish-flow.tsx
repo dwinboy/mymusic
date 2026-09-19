@@ -29,6 +29,7 @@ import { xhrPut } from "@/lib/upload/xhr-put";
 import { uploadImageToCloudinary } from "@/lib/admin/cloudinary-upload";
 import { cn, formatDuration, formatFileSize } from "@/lib/utils";
 import { TermPicker, type TermOption } from "@/components/discovery/term-picker";
+import { DuplicateWarning } from "@/components/music/duplicate-warning";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -772,6 +773,7 @@ export function PublishFlow({
                 maxLength={120}
                 placeholder="Moonlight Dreams"
               />
+              <DuplicateWarning artistId={artistId} title={title} excludeTrackId={track?.id} />
             </Field>
             <Field label="Album" hint="Optional">
               <div className="flex flex-col gap-2 sm:flex-row">

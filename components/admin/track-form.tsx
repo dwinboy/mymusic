@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { xhrUpload } from "@/lib/admin/xhr-upload";
 import { uploadImageToCloudinary } from "@/lib/admin/cloudinary-upload";
 import { TermPicker, type TermOption } from "@/components/discovery/term-picker";
+import { DuplicateWarning } from "@/components/music/duplicate-warning";
 import type { TaxonomyKind } from "@/lib/generated/prisma/client";
 import { formatDuration, formatFileSize } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -334,6 +335,7 @@ export function TrackForm({
             <div>
               <Label htmlFor="title">Track title</Label>
               <Input id="title" className="mt-1.5" value={title} onChange={(e) => setTitle(e.target.value)} required />
+              <DuplicateWarning artistId={artistId} title={title} excludeTrackId={initial.id} />
             </div>
             <div>
               <Label htmlFor="releaseDate">Release date</Label>

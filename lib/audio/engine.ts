@@ -6,6 +6,7 @@ import {
   setMediaSessionPosition,
 } from "./media-session";
 import { PlayTracker } from "./play-tracker";
+import { loadSession, saveSession } from "./session";
 import type { AudioQuality } from "@/lib/stores/player-store";
 import type { PlayerTrack } from "@/lib/types";
 
@@ -75,6 +76,8 @@ class AudioEngine {
   private canFade = true;
   /** The quality at the last reconcile, to notice a change mid-track. */
   private lastQuality: AudioQuality = "standard";
+  /** Throttles session writes: currentTime changes several times a second. */
+  private lastSessionSave = 0;
 
   init() {
     if (this.initialized || typeof window === "undefined") return;
@@ -98,9 +101,26 @@ class AudioEngine {
       // Storage unavailable (private mode, disabled cookies) — fall back to defaults.
     }
 
+    // What was playing last time, restored paused and where it stopped. Only
+    // when nothing has been queued already: a page that starts something
+    // itself (a shared "listen from 1:24" link) must win over history.
+    const restored = loadSession();
+    if (restored && usePlayerStore.getState().tracks.length === 0) {
+      usePlayerStore.setState({
+        tracks: restored.tracks,
+        currentIndex: restored.currentIndex,
+        currentTime: restored.currentTime,
+        isPlaying: false,
+      });
+    }
+
     // Closing the tab or backgrounding the app on mobile is the last chance to
-    // report how much of the current track was heard.
-    window.addEventListener("pagehide", () => this.tracker.flush(true));
+    // report how much of the current track was heard, and to record the
+    // position someone will come back to.
+    window.addEventListener("pagehide", () => {
+      this.tracker.flush(true);
+      this.persistSession(true);
+    });
 
     registerMediaSessionHandlers({
       play: () => usePlayerStore.getState().resume(),
@@ -244,6 +264,7 @@ class AudioEngine {
         if (state.isPlaying) this.play(audio);
         // Records the play (and listening history for signed-in users).
         this.tracker.start(track.id, track.duration);
+        this.persistSession(true);
       } else {
         this.tracker.flush();
         audio.removeAttribute("src");
@@ -280,6 +301,7 @@ class AudioEngine {
       audio.pause();
     }
 
+    this.persistSession();
     this.applyVolume(state);
     if (Math.abs(this.lastPersistedVolume - state.volume) > 0.001) {
       this.lastPersistedVolume = state.volume;
@@ -295,6 +317,15 @@ class AudioEngine {
   // Volume: the listener's setting, times the sleep timer fade, times any
   // crossfade ramp.
   // ---------------------------------------------------------------------------
+
+  /** Records what is playing, at most once every few seconds. */
+  private persistSession(force = false) {
+    const now = Date.now();
+    if (!force && now - this.lastSessionSave < 5000) return;
+    this.lastSessionSave = now;
+    const state = usePlayerStore.getState();
+    saveSession(state.tracks, state.currentIndex, state.currentTime);
+  }
 
   private baseVolume(state = usePlayerStore.getState()) {
     return (state.isMuted ? 0 : state.volume) * this.fade;

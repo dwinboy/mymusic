@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useHydrated } from "@/hooks/use-hydrated";
 import { formatDuration, cn } from "@/lib/utils";
 
 export interface QueueItem {
@@ -44,6 +45,10 @@ const QUICK_REASONS = [
   "The title or description needs correcting.",
 ];
 
+/**
+ * Rendered from the clock, so the server and the browser will not agree —
+ * see useSubmittedLabel, which holds a fixed date until hydration is done.
+ */
 function timeAgo(iso: string | null) {
   if (!iso) return "";
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -53,7 +58,15 @@ function timeAgo(iso: string | null) {
   return `${Math.round(hours / 24)}d ago`;
 }
 
+/** A stable date on the server, the friendlier relative time once mounted. */
+function useSubmittedLabel(iso: string | null) {
+  const hydrated = useHydrated();
+  if (!iso) return "";
+  return hydrated ? timeAgo(iso) : new Date(iso).toISOString().slice(0, 10);
+}
+
 function QueueCard({ item, onDone }: { item: QueueItem; onDone: (id: string) => void }) {
+  const submittedLabel = useSubmittedLabel(item.submittedAt);
   const { toast } = useToast();
   const [mode, setMode] = useState<"idle" | "rejecting">("idle");
   const [note, setNote] = useState("");
@@ -104,7 +117,7 @@ function QueueCard({ item, onDone }: { item: QueueItem; onDone: (id: string) => 
               </Badge>
             )}
             {item.isExplicit && <Badge variant="danger">Explicit</Badge>}
-            <span className="text-xs text-foreground-subtle">Submitted {timeAgo(item.submittedAt)}</span>
+            <span className="text-xs text-foreground-subtle">Submitted {submittedLabel}</span>
           </div>
           <h2 className="mt-2 truncate text-xl font-semibold tracking-tight text-foreground">{item.title}</h2>
           <p className="truncate text-sm text-foreground-muted">
@@ -161,7 +174,7 @@ function QueueCard({ item, onDone }: { item: QueueItem; onDone: (id: string) => 
         <div className="sm:col-span-2">
           <dt className="text-xs uppercase tracking-wide text-foreground-subtle">Rights</dt>
           <dd className={cn("mt-0.5", item.rightsConfirmedAt ? "text-foreground" : "text-danger")}>
-            {item.rightsConfirmedAt ? `Confirmed by the creator on ${new Date(item.rightsConfirmedAt).toLocaleDateString()}` : "Not confirmed"}
+            {item.rightsConfirmedAt ? `Confirmed by the creator on ${new Date(item.rightsConfirmedAt).toISOString().slice(0, 10)}` : "Not confirmed"}
           </dd>
         </div>
       </dl>

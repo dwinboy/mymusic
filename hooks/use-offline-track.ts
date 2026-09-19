@@ -23,16 +23,25 @@ export function useOfflineTrack(track: PlayerTrack) {
     };
   }, [track.id]);
 
-  const download = useCallback(async () => {
-    setStatus("downloading");
-    setProgress(0);
-    try {
-      await downloadTrackForOffline(track, setProgress);
-      setStatus("downloaded");
-    } catch {
-      setStatus("failed");
-    }
-  }, [track]);
+  /** Resolves true when the track is saved, false when it failed. */
+  const download = useCallback(
+    async (onProgress?: (percent: number) => void) => {
+      setStatus("downloading");
+      setProgress(0);
+      try {
+        await downloadTrackForOffline(track, (percent) => {
+          setProgress(percent);
+          onProgress?.(percent);
+        });
+        setStatus("downloaded");
+        return true;
+      } catch {
+        setStatus("failed");
+        return false;
+      }
+    },
+    [track]
+  );
 
   const remove = useCallback(async () => {
     await removeOfflineDownload(track);

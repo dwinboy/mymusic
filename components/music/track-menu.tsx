@@ -100,9 +100,18 @@ export function TrackMenu({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onSelect={async () => {
-                await download();
-                toast({ title: "Downloaded for offline listening" });
+              onSelect={() => {
+                // The menu closes as soon as this is chosen, so the download
+                // reports itself in a toast — and reports failure honestly.
+                // It used to announce success either way.
+                const progressToast = toast({ title: `Downloading ${track.title}`, description: "0%" });
+                void download((percent) => progressToast.update({ description: `${percent}%` })).then((saved) =>
+                  progressToast.update(
+                    saved
+                      ? { title: "Saved to this device", description: "Plays with no connection." }
+                      : { title: "Couldn't download that", description: "Check your connection and try again.", variant: "danger" }
+                  )
+                );
               }}
             >
               <Download className="h-4 w-4" /> Download

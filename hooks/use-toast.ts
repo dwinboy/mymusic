@@ -41,8 +41,18 @@ function scheduleRemoval(toastId: string) {
 
 function reducer(state: ToasterToast[], action: Action): ToasterToast[] {
   switch (action.type) {
-    case "ADD":
+    case "ADD": {
+      // An id that is already on screen is an update, not a second toast:
+      // update() dispatches ADD, and prepending would duplicate the React key
+      // and leave the original showing stale text beneath it.
+      const existing = state.findIndex((t) => t.id === action.toast.id);
+      if (existing !== -1) {
+        const next = [...state];
+        next[existing] = { ...next[existing], ...action.toast };
+        return next;
+      }
       return [action.toast, ...state].slice(0, TOAST_LIMIT);
+    }
     case "DISMISS":
       if (action.toastId) scheduleRemoval(action.toastId);
       else state.forEach((t) => scheduleRemoval(t.id));

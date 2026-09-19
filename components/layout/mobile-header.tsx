@@ -8,7 +8,7 @@ import { UserMenu } from "./user-menu";
 export function MobileHeader() {
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border bg-canvas/80 backdrop-blur-md md:hidden"
+      className="sticky top-0 z-40 border-b border-border bg-canvas/80 backdrop-blur-md lg:hidden"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)", viewTransitionName: "site-header" }}
     >
       <div className="flex h-14 items-center gap-3 px-4">

@@ -21,13 +21,13 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-40 hidden border-b border-border bg-canvas/80 backdrop-blur-md md:block"
+      className="sticky top-0 z-40 hidden border-b border-border bg-canvas/80 backdrop-blur-md lg:block"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)", viewTransitionName: "site-header" }}
     >
-      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-8 px-8">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-4 px-8 xl:gap-8">
         <Logo />
 
-        <nav className="flex items-center gap-1">
+        <nav className="flex shrink-0 items-center gap-1">
           {primaryNavLinks.map((link, i) => {
             const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
@@ -48,8 +48,9 @@ export function Header() {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-4">
-          <SearchBar className="w-72" />
+        <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-4">
+          {/* Shrinks rather than pushing the page wider than the window. */}
+          <SearchBar className="w-full max-w-72" />
           <UserMenu />
         </div>
       </div>

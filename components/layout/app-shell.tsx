@@ -30,8 +30,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           "flex-1",
           // Mobile: bottom nav (64px) + safe area, plus mini-player (64px) when a track is loaded.
           hasTrack ? "pb-[calc(128px+env(safe-area-inset-bottom,0px))]" : "pb-[calc(64px+env(safe-area-inset-bottom,0px))]",
-          // Desktop: persistent player bar (80px) when a track is loaded.
-          hasTrack ? "md:pb-20" : "md:pb-0"
+          // Desktop (lg and up, where the desktop chrome starts): player bar 80px.
+          hasTrack ? "lg:pb-20" : "lg:pb-0"
         )}
       >
         {children}

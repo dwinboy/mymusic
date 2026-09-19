@@ -3,6 +3,8 @@ import Image from "next/image";
 import { PlayButton } from "@/components/player/play-button";
 import { Button } from "@/components/ui/button";
 import type { PlayerTrack } from "@/lib/types";
+import type { TaxonomyKind } from "@/lib/generated/prisma/client";
+import { TermChips } from "@/components/discovery/term-links";
 
 export function Hero({
   track,
@@ -10,10 +12,16 @@ export function Hero({
   albumHref,
   eyebrow = "Featured Release",
   startAt,
+  terms = [],
+  meta = [],
 }: {
   track: PlayerTrack;
   description: string;
   albumHref?: string;
+  /** What the track is, as links into the catalogue. */
+  terms?: { id: string; kind: TaxonomyKind; name: string; slug: string }[];
+  /** Facts about the release, set against the right edge on wide screens. */
+  meta?: { label: string; value: string }[];
   /** What the slot is: an editorial feature, or this listener's own music. */
   eyebrow?: string;
   /** Seconds to resume from, when the hero is picking up a part-heard track. */
@@ -37,7 +45,7 @@ export function Hero({
       </div>
 
       <div className="relative flex flex-col gap-6 p-6 sm:p-10 md:flex-row md:items-end">
-        <div className="relative aspect-square w-44 shrink-0 overflow-hidden rounded-xl shadow-elevated sm:w-56 md:w-64">
+        <div className="relative aspect-square w-44 shrink-0 overflow-hidden rounded-xl shadow-elevated sm:w-56 md:w-64 xl:w-72">
           {track.coverUrl && (
             <Image src={track.coverUrl} alt={track.title} fill sizes="256px" className="object-cover" priority />
           )}
@@ -52,6 +60,7 @@ export function Hero({
             {track.artistName}
           </Link>
           <p className="mt-3 max-w-lg text-sm text-foreground-muted sm:text-base">{description}</p>
+          <TermChips terms={terms} className="mt-5" />
 
           <div className="mt-6 flex items-center gap-3">
             <PlayButton track={track} size="lg" startAt={startAt} />
@@ -62,6 +71,20 @@ export function Hero({
             )}
           </div>
         </div>
+
+        {/* Set against the right edge so the hero reads as one composition on
+            a wide screen instead of a column of text beside empty space.
+            Hidden on narrow screens, where there is no space to balance. */}
+        {meta.length > 0 && (
+          <dl className="hidden shrink-0 flex-col items-end gap-4 text-right lg:flex">
+            {meta.map((item) => (
+              <div key={item.label}>
+                <dt className="text-[11px] font-medium uppercase tracking-[0.18em] text-foreground-subtle">{item.label}</dt>
+                <dd className="mt-1 text-sm text-foreground-muted">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
     </section>
   );

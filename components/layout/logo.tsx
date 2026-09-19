@@ -21,7 +21,11 @@ export function Logo({ className }: { className?: string }) {
         priority
         className="h-8 w-8 shrink-0 rounded-lg transition-transform group-hover:scale-105"
       />
-      <span className="whitespace-nowrap font-semibold tracking-[0.18em] text-[15px] uppercase">Vibe Banger</span>
+      {/* Below ~380px the wordmark plus the header's own controls no longer fit,
+          and the mark alone still identifies the app. */}
+      <span className="hidden whitespace-nowrap font-semibold tracking-[0.18em] text-[15px] uppercase min-[380px]:inline">
+        Vibe Banger
+      </span>
     </Link>
   );
 }

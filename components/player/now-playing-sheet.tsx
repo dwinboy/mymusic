@@ -102,7 +102,7 @@ export function NowPlayingSheet() {
     <Sheet open={isOpen} onOpenChange={setOpen}>
       <SheetContent
         side="full"
-        className="flex flex-col px-6 pb-8 pt-2 md:hidden"
+        className="flex flex-col px-6 pb-8 pt-2 lg:hidden"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

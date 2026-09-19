@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
+import { formatDuration, formatReleaseDate } from "@/lib/utils";
 import { Hero } from "@/components/home/hero";
 import { ContinueListeningSection } from "@/components/home/continue-listening-section";
 import { MadeForYouSection } from "@/components/home/made-for-you-section";
@@ -32,7 +33,7 @@ async function resumeHero() {
     // A track unpublished since it was heard would sit here and fail to play.
     where: { userId: session.user.id, track: { isPublished: true, processingStatus: "READY" } },
     orderBy: { playedAt: "desc" },
-    select: { progressSeconds: true, track: { include: { artist: true, album: true } } },
+    select: { progressSeconds: true, track: { include: { artist: true, album: true, terms: { select: { isPrimary: true, term: { select: { id: true, kind: true, name: true, slug: true } } } } } } },
   });
   if (!last) return null;
 
@@ -57,12 +58,12 @@ export default async function HomePage() {
       // Most recently featured first. Anything featured before the column
       // existed falls back to its release date rather than jumping to the end.
       orderBy: [{ featuredAt: { sort: "desc", nulls: "last" } }, { releaseDate: "desc" }],
-      include: { artist: true, album: true },
+      include: { artist: true, album: true, terms: { select: { isPrimary: true, term: { select: { id: true, kind: true, name: true, slug: true } } } } },
     })) ??
     (await db.track.findFirst({
       where: { isPublished: true, processingStatus: "READY" },
       orderBy: { createdAt: "desc" },
-      include: { artist: true, album: true },
+      include: { artist: true, album: true, terms: { select: { isPrimary: true, term: { select: { id: true, kind: true, name: true, slug: true } } } } },
     }));
 
   if (!heroTrack) {
@@ -79,7 +80,18 @@ export default async function HomePage() {
     );
   }
 
-  const player = toPlayerTrack(resume?.track ?? heroTrack, "hero");
+  const shown = resume?.track ?? heroTrack;
+  const player = toPlayerTrack(shown, "hero");
+
+  // What the track is, as routes into the catalogue. The hero had a short
+  // sentence and half a screen of nothing beside it; these fill that with
+  // somewhere to go rather than decoration.
+  const KIND_ORDER = ["GENRE", "MOOD", "ACTIVITY", "OCCASION"] as const;
+  const heroTerms = KIND_ORDER.flatMap((kind) => {
+    const matching = shown.terms.filter((t) => t.term.kind === kind);
+    const primary = matching.find((t) => t.isPrimary) ?? matching[0];
+    return primary ? [primary.term] : [];
+  }).slice(0, 4);
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-12 px-4 py-6 sm:px-8 sm:py-8">
@@ -87,9 +99,17 @@ export default async function HomePage() {
         track={player}
         eyebrow={resume ? (resume.midway ? "Pick up where you left off" : "Recently played") : "Featured Release"}
         startAt={resume?.startAt}
-        description={
-          (resume?.track ?? heroTrack).description ?? `The latest from ${player.artistName}.`
-        }
+        description={shown.description ?? `The latest from ${player.artistName}.`}
+        terms={heroTerms}
+        meta={[
+          ...(shown.releaseDate
+            ? [{ label: "Released", value: formatReleaseDate(shown.releaseDate) }]
+            : []),
+          { label: "Length", value: formatDuration(shown.duration) },
+          ...(shown.aiDisclosure === "AI_GENERATED"
+            ? [{ label: "Made with", value: shown.aiTool ?? "AI" }]
+            : []),
+        ]}
         albumHref={player.albumSlug ? `/album/${player.albumSlug}` : undefined}
       />
 

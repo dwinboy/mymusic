@@ -22,11 +22,20 @@ interface AdminArtist {
   avatarUrl: string | null;
   coverUrl: string | null;
   isFeatured: boolean;
+  owner: { id: string; name: string | null; email: string } | null;
   _count: { tracks: number; albums: number };
+}
+
+/** An account a profile can be handed to. */
+interface AdminAccount {
+  id: string;
+  name: string | null;
+  email: string;
 }
 
 export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnabled: boolean }) {
   const [artists, setArtists] = useState<AdminArtist[] | null>(null);
+  const [accounts, setAccounts] = useState<AdminAccount[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<AdminArtist | null>(null);
   const { toast } = useToast();
@@ -34,7 +43,10 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
   function load() {
     fetch("/api/admin/artists")
       .then((r) => r.json())
-      .then((d) => setArtists(d.artists ?? []));
+      .then((d) => {
+        setArtists(d.artists ?? []);
+        setAccounts(d.accounts ?? []);
+      });
   }
 
   useEffect(load, []);
@@ -68,6 +80,7 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
           </DialogTrigger>
           <DialogContent>
             <ArtistForm
+              accounts={accounts}
               imageCloudinaryEnabled={imageCloudinaryEnabled}
               onSaved={() => {
                 setCreateOpen(false);
@@ -100,6 +113,12 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
                   <p className="truncate text-sm font-medium text-foreground">{artist.name}</p>
                   <p className="text-xs text-foreground-muted">
                     {artist._count.tracks} tracks · {artist._count.albums} albums
+                  </p>
+                  {/* Whose profile this is. Said here because an unassigned
+                      one is invisible in its owner's upload form, and there
+                      was nothing anywhere that showed the difference. */}
+                  <p className="truncate text-xs text-foreground-subtle">
+                    {artist.owner ? artist.owner.name ?? artist.owner.email : "No account assigned"}
                   </p>
                 </div>
               </div>
@@ -145,6 +164,7 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
         <DialogContent>
           {editing && (
             <ArtistForm
+              accounts={accounts}
               artist={editing}
               imageCloudinaryEnabled={imageCloudinaryEnabled}
               onSaved={() => {
@@ -161,16 +181,19 @@ export function ArtistsManager({ imageCloudinaryEnabled }: { imageCloudinaryEnab
 
 function ArtistForm({
   artist,
+  accounts,
   imageCloudinaryEnabled,
   onSaved,
 }: {
   artist?: AdminArtist;
+  accounts: AdminAccount[];
   imageCloudinaryEnabled: boolean;
   onSaved: () => void;
 }) {
   const isEdit = !!artist;
   const [name, setName] = useState(artist?.name ?? "");
   const [bio, setBio] = useState(artist?.bio ?? "");
+  const [ownerId, setOwnerId] = useState(artist?.owner?.id ?? "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(artist?.avatarUrl ?? null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -200,6 +223,7 @@ function ArtistForm({
     const fd = new FormData();
     fd.set("name", name.trim());
     fd.set("bio", bio.trim());
+    if (isEdit) fd.set("ownerId", ownerId);
 
     try {
       if (avatarFile) {
@@ -300,6 +324,30 @@ function ArtistForm({
           <Label htmlFor="artist-name">Name</Label>
           <Input id="artist-name" className="mt-1.5" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
+
+        {/* Only when editing: a profile has to exist before it can be handed
+            to anyone, and doing it in two steps keeps the create form short. */}
+        {isEdit && (
+          <div>
+            <Label htmlFor="artist-owner">Who records as this artist</Label>
+            <select
+              id="artist-owner"
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
+              className="mt-1.5 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground"
+            >
+              <option value="">Nobody — managed by admins</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name ? `${account.name} — ${account.email}` : account.email}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-foreground-muted">
+              Their upload form only offers profiles they own, so this is what puts this name in it.
+            </p>
+          </div>
+        )}
         <div>
           <Label htmlFor="artist-bio">Bio</Label>
           <Textarea id="artist-bio" className="mt-1.5" rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />

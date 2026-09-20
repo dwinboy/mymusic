@@ -32,6 +32,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (formData.has("isFeatured")) data.isFeatured = formData.get("isFeatured") === "true";
 
+  // Who records as this artist. Empty means nobody — an admin-managed profile,
+  // which is the default for one an admin created. Setting it is what makes
+  // the profile appear in that person's own upload flow.
+  if (formData.has("ownerId")) {
+    const ownerId = String(formData.get("ownerId") ?? "").trim();
+    if (!ownerId) {
+      data.ownerId = null;
+    } else {
+      const owner = await db.user.findUnique({ where: { id: ownerId }, select: { id: true } });
+      if (!owner) return NextResponse.json({ error: "That account doesn't exist." }, { status: 422 });
+      data.ownerId = owner.id;
+    }
+  }
+
   // Avatar: Cloudinary mode sends a reference (already uploaded directly from
   // the browser); local mode sends the raw file, same as before.
   if (formData.has("avatarImagePublicId")) {

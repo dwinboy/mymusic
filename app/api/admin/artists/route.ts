@@ -9,12 +9,23 @@ export async function GET() {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const artists = await db.artist.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { tracks: true, albums: true } } },
-  });
+  // Accounts come back with the artists so the admin can hand a profile to
+  // one. Without this there was no way, anywhere in the app, to connect an
+  // artist an admin had created to the person who actually records as them —
+  // and the creator upload flow only offers profiles you own, so their own
+  // name was missing from their own upload form.
+  const [artists, accounts] = await Promise.all([
+    db.artist.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        _count: { select: { tracks: true, albums: true } },
+        owner: { select: { id: true, name: true, email: true } },
+      },
+    }),
+    db.user.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true, email: true } }),
+  ]);
 
-  return NextResponse.json({ artists });
+  return NextResponse.json({ artists, accounts });
 }
 
 export async function POST(request: Request) {

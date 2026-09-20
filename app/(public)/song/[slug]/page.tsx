@@ -145,7 +145,11 @@ export default async function SongPage({
           <div className="mt-2 flex items-center gap-3">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{track.title}</h1>
             {track.isExplicit && <Badge variant="outline">Explicit</Badge>}
-            {track.isAiGenerated && <Badge variant="accent">AI Composed</Badge>}
+            {/* How the music was made is stated further down, with the other
+                facts about the track. An accent badge beside the title
+                announced it before anyone had heard a note, which is louder
+                than the fact deserves — it belongs where someone goes to
+                learn about a song, not in place of the song. */}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-muted">
             <Link href={`/artist/${track.artist.slug}`} className="font-medium text-foreground hover:underline">
@@ -230,7 +234,10 @@ export default async function SongPage({
         </div>
       )}
 
-      {(track.lyrics || track.credits || track.composer || track.producer) && (
+      {/* The disclosure counts towards showing this block: a track with no
+          lyrics and no credits still has something to say about how it was
+          made, and skipping the section would hide it entirely. */}
+      {(track.lyrics || track.credits || track.composer || track.producer || track.aiDisclosure !== "HUMAN_CREATED") && (
         <div className="mt-12 grid gap-8 sm:grid-cols-2">
           {track.lyrics && (
             <div>
@@ -241,10 +248,23 @@ export default async function SongPage({
               </p>
             </div>
           )}
-          {(track.credits || track.composer || track.producer) && (
+          {(track.credits || track.composer || track.producer || track.aiDisclosure !== "HUMAN_CREATED") && (
             <div>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Credits</h2>
               <dl className="space-y-1.5 text-sm">
+                {/* Still said plainly, and still here for anyone who looks —
+                    just stated rather than advertised. Named with the tool
+                    when the creator gave one, because "Suno" tells someone
+                    more than "AI" does. */}
+                {track.aiDisclosure !== "HUMAN_CREATED" && (
+                  <div className="flex gap-2">
+                    <dt className="text-foreground-muted">Made with</dt>
+                    <dd className="text-foreground">
+                      {track.aiDisclosure === "AI_ASSISTED" ? "AI assistance" : "AI"}
+                      {track.aiTool ? ` · ${track.aiTool}` : ""}
+                    </dd>
+                  </div>
+                )}
                 {track.composer && (
                   <div className="flex gap-2">
                     <dt className="text-foreground-muted">Composer</dt>

@@ -106,9 +106,9 @@ export default async function HomePage() {
             ? [{ label: "Released", value: formatReleaseDate(shown.releaseDate) }]
             : []),
           { label: "Length", value: formatDuration(shown.duration) },
-          ...(shown.aiDisclosure === "AI_GENERATED"
-            ? [{ label: "Made with", value: shown.aiTool ?? "AI" }]
-            : []),
+          // How it was made isn't a reason to press play, so it doesn't sit
+          // in the first thing anyone sees. It's on the song page, with the
+          // rest of the detail, for anyone who wants to know.
         ]}
         albumHref={player.albumSlug ? `/album/${player.albumSlug}` : undefined}
       />

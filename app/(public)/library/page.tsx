@@ -5,8 +5,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LibrarySectionActions } from "@/components/library/section-actions";
-import { TrackRow } from "@/components/music/track-row";
+import { LibraryTracks } from "@/components/library/library-tracks";
 import { EmptyState } from "@/components/states/empty-state";
 import { SignedOutLibrary } from "@/components/library/signed-out-library";
 import { CreatePlaylistButton } from "@/components/playlist/create-playlist-button";
@@ -99,29 +98,37 @@ export default async function LibraryPage({
               actionHref="/discover"
             />
           ) : (
-            <>
-              <LibrarySectionActions tracks={likedTracks} />
-              <div className="flex flex-col">
-                {likedTracks.map((track, i) => (
-                  <TrackRow key={track.id} track={track} index={i} queue={likedTracks} initiallyLiked />
-                ))}
-              </div>
-            </>
+            <LibraryTracks tracks={likedTracks} initiallyLiked />
           )}
         </TabsContent>
 
         <TabsContent value="playlists">
-          <div className="mb-6 flex justify-end">
-            <CreatePlaylistButton />
-          </div>
           {playlists.length === 0 ? (
-            <EmptyState
-              icon={ListMusic}
-              title="No playlists yet"
-              description="Create your first playlist to start organizing music."
-            />
+            // No header here: "0 playlists" above a panel that already says
+            // there are none is the count stating the obvious twice. The
+            // empty state carries its own way to make one.
+            <>
+              <EmptyState
+                icon={ListMusic}
+                title="No playlists yet"
+                description="Create your first playlist to start organizing music."
+              />
+              <div className="mt-4 flex justify-center">
+                <CreatePlaylistButton />
+              </div>
+            </>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            <>
+              {/* Count on the left, action on the right — the same shape the
+                  track tabs use, instead of a button floating alone above the
+                  grid with nothing to say how much is in it. */}
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-foreground-muted">
+                  {playlists.length} {playlists.length === 1 ? "playlist" : "playlists"}
+                </p>
+                <CreatePlaylistButton />
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {playlists.map((playlist) => (
                 <Link
                   key={playlist.id}
@@ -135,7 +142,8 @@ export default async function LibraryPage({
                   <p className="text-xs text-foreground-muted">{formatCompactNumber(playlist._count.tracks)} tracks</p>
                 </Link>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </TabsContent>
 
@@ -143,14 +151,7 @@ export default async function LibraryPage({
           {historyTracks.length === 0 ? (
             <EmptyState icon={History} title="No listening history yet" description="Tracks you play will show up here." />
           ) : (
-            <>
-              <LibrarySectionActions tracks={historyTracks} />
-              <div className="flex flex-col">
-                {historyTracks.map((track, i) => (
-                  <TrackRow key={track.id} track={track} index={i} queue={historyTracks} />
-                ))}
-              </div>
-            </>
+            <LibraryTracks tracks={historyTracks} recentLabel="Recently played" />
           )}
         </TabsContent>
 
@@ -164,11 +165,16 @@ export default async function LibraryPage({
               actionHref="/albums"
             />
           ) : (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {savedAlbums.map((saved) => (
-                <AlbumCard key={saved.id} album={toAlbumCard(saved.album)} className="w-full sm:w-full" />
-              ))}
-            </div>
+            <>
+              <p className="mb-4 text-sm text-foreground-muted">
+                {savedAlbums.length} {savedAlbums.length === 1 ? "album" : "albums"}
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {savedAlbums.map((saved) => (
+                  <AlbumCard key={saved.id} album={toAlbumCard(saved.album)} className="w-full sm:w-full" />
+                ))}
+              </div>
+            </>
           )}
         </TabsContent>
 
@@ -182,11 +188,16 @@ export default async function LibraryPage({
               actionHref="/artists"
             />
           ) : (
-            <div className="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-6">
-              {follows.map((follow) => (
-                <CreatorCard key={follow.id} creator={toCreatorCard(follow.artist)} className="w-full sm:w-full" />
-              ))}
-            </div>
+            <>
+              <p className="mb-4 text-sm text-foreground-muted">
+                Following {follows.length} {follows.length === 1 ? "creator" : "creators"}
+              </p>
+              <div className="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-6">
+                {follows.map((follow) => (
+                  <CreatorCard key={follow.id} creator={toCreatorCard(follow.artist)} className="w-full sm:w-full" />
+                ))}
+              </div>
+            </>
           )}
         </TabsContent>
       </Tabs>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Heart, ListMusic, History, Disc3, Users, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 /**
  * What a visitor sees at /library before they have an account.
@@ -38,6 +39,14 @@ export function SignedOutLibrary() {
           </Button>
         </div>
       </header>
+
+      {/* Installing needs no account, and this page is where someone looks
+          for the app side of things. Without it a signed-out visitor had
+          nowhere at all to install from until they'd listened for half a
+          minute. */}
+      <div className="mt-8">
+        <InstallPrompt />
+      </div>
 
       <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2">
         {HOLDS.map(({ icon: Icon, title, body }) => (

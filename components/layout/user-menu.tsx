@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles, Music4 } from "lucide-react";
+import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles, Music4, ArrowDownToLine } from "lucide-react";
+import { useInstallAvailability } from "@/hooks/use-install-availability";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,11 @@ import {
 
 export function UserMenu() {
   const { data: session, status } = useSession();
+  // Deliberately not gated on the 30-day dismissal the nudge respects:
+  // saying "not now" to a pop-up shouldn't remove the only way to install
+  // for a month. This is somewhere you go looking, not something that
+  // interrupts you.
+  const { method, promptInstall } = useInstallAvailability();
 
   if (status === "loading") {
     return <div className="h-9 w-9 animate-pulse rounded-full bg-surface-active" />;
@@ -69,6 +75,15 @@ export function UserMenu() {
             <Music4 className="h-4 w-4" /> Song requests
           </Link>
         </DropdownMenuItem>
+        {/* Only where the browser can actually do it in one tap. iOS has no
+            install API — it needs the Share-menu steps, which don't belong
+            in a dropdown — so those listeners get the card on the library
+            page and the nudge instead. */}
+        {method === "prompt" && (
+          <DropdownMenuItem onSelect={() => void promptInstall()}>
+            <ArrowDownToLine className="h-4 w-4" /> Install app
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         {/* Offered to every listener: the studio onboards anyone without a
             creator profile, so there's no separate "become a creator" step. */}

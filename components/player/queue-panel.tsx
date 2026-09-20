@@ -50,36 +50,46 @@ export function QueuePanel() {
     return rows.length - 1;
   }, []);
 
+  /**
+   * Listens on the window rather than capturing the pointer on the handle.
+   * Reordering replaces the row's DOM node, and a node that leaves the
+   * document loses any capture it held — after which moves only arrived while
+   * the pointer happened to be over another handle, and stopped the moment it
+   * crossed a gap or a title.
+   */
   function startDrag(event: React.PointerEvent<HTMLButtonElement>, absoluteIndex: number) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     // Stops the touch from scrolling the sheet instead of dragging the row.
     event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = { pointerId: event.pointerId, index: absoluteIndex };
     setDraggingIndex(absoluteIndex);
-  }
 
-  /** Reorders as the finger passes each row, so the list sorts under it. */
-  function onDragMove(event: React.PointerEvent<HTMLButtonElement>) {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const row = rowUnder(event.clientY);
-    if (row === null) return;
-    const target = currentIndex + 1 + row;
-    if (target === drag.index) return;
-    reorderQueue(drag.index, target);
-    drag.index = target;
-    setDraggingIndex(target);
-  }
+    const onMove = (moveEvent: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== moveEvent.pointerId) return;
+      moveEvent.preventDefault();
+      const row = rowUnder(moveEvent.clientY);
+      if (row === null) return;
+      const target = currentIndex + 1 + row;
+      if (target === drag.index) return;
+      reorderQueue(drag.index, target);
+      drag.index = target;
+      setDraggingIndex(target);
+    };
 
-  function endDrag(event: React.PointerEvent<HTMLButtonElement>) {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    dragRef.current = null;
-    setDraggingIndex(null);
+    const onEnd = (endEvent: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== endEvent.pointerId) return;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+      dragRef.current = null;
+      setDraggingIndex(null);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
   }
 
   /** The same move by keyboard, for anyone not using a pointer. */
@@ -145,9 +155,6 @@ export function QueuePanel() {
                   <button
                     data-drag-handle
                     onPointerDown={(event) => startDrag(event, absoluteIndex)}
-                    onPointerMove={onDragMove}
-                    onPointerUp={endDrag}
-                    onPointerCancel={endDrag}
                     onKeyDown={(event) => onHandleKeyDown(event, absoluteIndex, i)}
                     aria-label={`Reorder ${t.title}. Position ${i + 1} of ${upcoming.length}. Use the up and down arrow keys to move it.`}
                     className={cn(

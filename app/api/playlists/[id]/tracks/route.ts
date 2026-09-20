@@ -53,3 +53,52 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   return NextResponse.json({ removed: true });
 }
+
+/**
+ * Reorders the playlist. Takes the full list of track ids in the order they
+ * should sit, rather than a from/to pair: a drag that crosses several rows
+ * would otherwise need one request per row it passed, and any dropped request
+ * would leave the order half-applied.
+ *
+ * Positions are rewritten in one transaction so the list is never briefly
+ * missing an entry or holding two tracks at the same position.
+ */
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const playlist = await assertOwnership(id, session.user.id);
+  if (!playlist) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const body = await request.json().catch(() => null);
+  const trackIds: unknown = body?.trackIds;
+  if (!Array.isArray(trackIds) || trackIds.some((t) => typeof t !== "string")) {
+    return NextResponse.json({ error: "trackIds must be a list of ids." }, { status: 400 });
+  }
+
+  const existing = await db.playlistTrack.findMany({
+    where: { playlistId: id },
+    select: { trackId: true },
+  });
+
+  // The order sent has to be exactly what's in the playlist. A list that has
+  // gained or lost a track means the page was working from a stale copy, and
+  // applying it would silently drop whatever it didn't know about.
+  const sent = new Set(trackIds as string[]);
+  if (sent.size !== trackIds.length || sent.size !== existing.length || existing.some((t) => !sent.has(t.trackId))) {
+    return NextResponse.json({ error: "This playlist changed while you were reordering it. Reload and try again." }, { status: 409 });
+  }
+
+  await db.$transaction([
+    ...(trackIds as string[]).map((trackId, position) =>
+      db.playlistTrack.update({
+        where: { playlistId_trackId: { playlistId: id, trackId } },
+        data: { position },
+      })
+    ),
+    db.playlist.update({ where: { id }, data: { updatedAt: new Date() } }),
+  ]);
+
+  return NextResponse.json({ reordered: true });
+}

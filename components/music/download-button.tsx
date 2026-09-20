@@ -22,7 +22,10 @@ export function DownloadButton({
 
   const iconSize = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-6 w-6" }[size];
 
-  if (!track.downloadEnabled) return null;
+  // Not gated on downloadEnabled. This button saves the streaming encode into
+  // the app's own cache so the track plays with no connection — it hands out
+  // no file and leaves nothing outside the app. That flag governs the
+  // downloadable file URL, which is a different thing entirely.
 
   async function handleClick(e: React.MouseEvent) {
     e.preventDefault();

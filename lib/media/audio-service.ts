@@ -69,13 +69,15 @@ export function getDownloadUrl(track: TrackAudioRefs): string | null {
  * to play. Unlike getDownloadUrl this never falls back to the streaming file:
  * the caller needs to know whether a real upgrade exists.
  *
- * Gated on downloadEnabled like the download itself. A creator who has asked
- * for their master not to be handed out shouldn't have it served under
- * another name — the consequence being that turning downloads off also turns
- * off high-quality streaming for that track.
+ * No longer gated on downloadEnabled. It used to be, so that a creator who
+ * withheld the file wasn't serving it under another name — but the effect was
+ * that one switch about keeping a file silently dropped everyone listening to
+ * that track from 320k to 192k, which is not what anyone toggling it meant.
+ *
+ * The file this serves is a derived encode, not the master: the master is
+ * private and only ever reachable through a signed, time-limited URL.
  */
 export function getHighQualityUrl(track: TrackAudioRefs): string | null {
-  if (!track.downloadEnabled) return null;
   if (track.downloadStorageKey) return publicUrlForKey(track.downloadStorageKey);
   if (track.downloadAudioUrl) return track.downloadAudioUrl;
   return null;

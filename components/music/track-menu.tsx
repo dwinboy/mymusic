@@ -96,7 +96,12 @@ export function TrackMenu({
             </Link>
           </DropdownMenuItem>
         )}
-        {track.downloadEnabled && downloadStatus !== "downloaded" && (
+        {/* Saving for offline is offered on every track, whatever
+            downloadEnabled says. That flag is about handing out a file
+            someone keeps outside the app; this caches the ordinary streaming
+            encode so the track plays here with no connection, which is a
+            listener feature rather than a rights one. */}
+        {downloadStatus !== "downloaded" && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem

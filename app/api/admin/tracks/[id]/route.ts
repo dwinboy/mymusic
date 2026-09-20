@@ -187,7 +187,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const processed = await getAudioProcessingService().process({
           originalBuffer: buffer,
           sourceExtension: ext,
-          createDownloadVersion: (data.downloadEnabled as boolean | undefined) ?? existing.downloadEnabled,
+          // Always made — see lib/tracks/pipeline.ts. It backs high-quality
+          // streaming, not just the saved file.
+          createDownloadVersion: true,
         });
 
         const streamingKey = buildStreamingKey(id, processed.streamingFormat, version);

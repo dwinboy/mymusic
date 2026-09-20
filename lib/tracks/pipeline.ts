@@ -167,7 +167,10 @@ export async function processTrackAudio(trackId: string) {
     const processed = await getAudioProcessingService().process({
       originalBuffer,
       sourceExtension: track.originalFormat || "mp3",
-      createDownloadVersion: track.downloadEnabled,
+      // Always made. It is what high-quality streaming plays, so tying it to
+      // downloadEnabled meant a track could never be heard at 320k just
+      // because its file wasn't meant to be kept.
+      createDownloadVersion: true,
     });
 
     const streamingKey = buildStreamingKey(track.id, processed.streamingFormat);

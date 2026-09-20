@@ -432,7 +432,15 @@ export function TrackForm({
       <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2">
         <ToggleRow label="AI-generated disclosure" description="Shown publicly as an “AI Composed” badge." checked={isAiGenerated} onChange={setIsAiGenerated} />
         <ToggleRow label="Explicit content" description="Shows an explicit-content indicator." checked={isExplicit} onChange={setIsExplicit} />
-        <ToggleRow label="Downloads enabled" description="Allow listeners to download this track." checked={downloadEnabled} onChange={setDownloadEnabled} />
+        {/* Narrowed to what it actually does now. Offline listening and
+            high-quality streaming no longer depend on it, so turning this
+            off withholds the saved file and nothing else. */}
+        <ToggleRow
+          label="Allow saving the file"
+          description="Offline listening in the app stays available either way."
+          checked={downloadEnabled}
+          onChange={setDownloadEnabled}
+        />
         <ToggleRow label="Featured" description="Eligible for hero and featured placements." checked={isFeatured} onChange={setIsFeatured} />
         <ToggleRow
           label="Published"

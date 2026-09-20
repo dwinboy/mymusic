@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Clock,
+  Download,
   RotateCw,
   Plus,
 } from "lucide-react";
@@ -212,7 +213,6 @@ export function PublishFlow({
   const [aiTool, setAiTool] = useState(initialTrack?.aiTool ?? "");
   const [aiDetails, setAiDetails] = useState(initialTrack?.aiDetails ?? "");
   const [rightsAccepted, setRightsAccepted] = useState(!!initialTrack?.rightsConfirmedAt);
-  const [downloadEnabled, setDownloadEnabled] = useState(initialTrack?.downloadEnabled ?? true);
   const [explicit, setExplicit] = useState(initialTrack?.isExplicit ?? false);
 
   // --- review
@@ -443,7 +443,9 @@ export function PublishFlow({
         f.set("aiDisclosure", disclosure);
         f.set("aiTool", aiTool);
         f.set("aiDetails", aiDetails);
-        f.set("downloadEnabled", String(downloadEnabled));
+        // Not a choice in this flow any more: offline listening is part of
+        // what the app does, not something to switch off per track.
+        f.set("downloadEnabled", "true");
         f.set("isExplicit", String(explicit));
         if (rightsAccepted) f.set("rightsConfirmed", "true");
         return f;
@@ -973,13 +975,20 @@ export function PublishFlow({
             )}
 
             <div className="flex flex-col gap-4 rounded-2xl border border-border p-5">
-              <label className="flex items-center justify-between gap-4">
+              {/* This was a switch. Turning it off didn't only withhold a
+                  file — it removed offline listening and dropped everyone
+                  streaming the track to 192k, which nobody toggling
+                  "downloads" would expect. Offline is part of what the app
+                  is for, so it is no longer something to lose by accident. */}
+              <div className="flex items-start gap-3">
+                <Download className="mt-0.5 h-4 w-4 shrink-0 text-foreground-subtle" />
                 <span>
-                  <span className="block text-sm font-medium text-foreground">Allow downloads</span>
-                  <span className="block text-xs text-foreground-muted">Listeners can save it for offline listening.</span>
+                  <span className="block text-sm font-medium text-foreground">Offline listening is on</span>
+                  <span className="block text-xs text-foreground-muted">
+                    Listeners can save this to their device and play it with no connection.
+                  </span>
                 </span>
-                <Switch checked={downloadEnabled} onCheckedChange={setDownloadEnabled} />
-              </label>
+              </div>
               <label className="flex items-center justify-between gap-4">
                 <span>
                   <span className="block text-sm font-medium text-foreground">Explicit content</span>
@@ -1057,9 +1066,7 @@ export function PublishFlow({
                   ["Occasions", termNames("OCCASION").join(", ")],
                   ["Vocals", termNames("VOCAL").join(", ")],
                   ["Language", termNames("LANGUAGE").join(", ")],
-                  ["Energy", ENERGY.find((e) => e.value === energy)?.label ?? ""],
-                  ["Downloads", downloadEnabled ? "Allowed" : "Off"],
-                ] as const
+                  ["Energy", ENERGY.find((e) => e.value === energy)?.label ?? ""],                ] as const
               ).map(([k, v]) => (
                 <div key={k} className="border-t border-border pt-3">
                   <dt className="text-xs text-foreground-subtle">{k}</dt>

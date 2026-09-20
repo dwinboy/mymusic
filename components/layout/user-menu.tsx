@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles } from "lucide-react";
+import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles, Music4 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +62,11 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/downloads">
             <Download className="h-4 w-4" /> Downloads
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/requests">
+            <Music4 className="h-4 w-4" /> Song requests
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

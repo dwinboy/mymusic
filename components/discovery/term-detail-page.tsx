@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Compass } from "lucide-react";
 import { auth } from "@/auth";
+import { CommissionCta } from "@/components/requests/commission-cta";
 import { toPlayerTrack } from "@/lib/mappers";
 import { getLikedTrackIds } from "@/lib/favorites";
 import {
@@ -261,6 +262,11 @@ export async function TermDetailPage({
             )}
           </>
         )}
+
+        {/* Occasions only: someone who has just browsed a wedding or a
+            birthday and not found their song is exactly who this is for.
+            On a genre or a mood it would be an advert. */}
+        {kind === "OCCASION" && <CommissionCta occasion={node.name} />}
       </div>
     </div>
   );

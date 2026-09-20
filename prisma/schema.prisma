@@ -28,16 +28,18 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts          Account[]
-  sessions          Session[]
-  playlists         Playlist[]
-  favorites         Favorite[]
-  listeningHistory  ListeningHistory[]
-  downloads         Download[]
-  plays             Play[]
-  creatorProfiles   Artist[]
-  follows           Follow[]
-  savedAlbums       SavedAlbum[]
+  accounts            Account[]
+  sessions            Session[]
+  playlists           Playlist[]
+  favorites           Favorite[]
+  listeningHistory    ListeningHistory[]
+  downloads           Download[]
+  plays               Play[]
+  creatorProfiles     Artist[]
+  follows             Follow[]
+  savedAlbums         SavedAlbum[]
+  songRequests        SongRequest[]
+  songRequestMessages SongRequestMessage[]
 
   @@map("users")
 }
@@ -89,19 +91,19 @@ model VerificationToken {
 // ---------------------------------------------------------------------------
 
 model Artist {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  bio        String?  @db.Text
-  avatarUrl String?
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  bio                 String?  @db.Text
+  avatarUrl           String?
   avatarImagePublicId String?
-  coverUrl  String?
+  coverUrl            String?
   coverImagePublicId  String?
-  isFeatured Boolean @default(false)
+  isFeatured          Boolean  @default(false)
   /// Shown on the creator profile only if the creator chooses to disclose it.
-  location  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  location            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   /// The account that runs this creator profile. Null for profiles an admin
   /// created on the platform's behalf. Being a creator isn't a role: any
@@ -120,21 +122,21 @@ model Artist {
 }
 
 model Album {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  artistId    String
-  coverUrl    String?
+  id                 String    @id @default(cuid())
+  title              String
+  slug               String    @unique
+  artistId           String
+  coverUrl           String?
   coverImagePublicId String?
-  description String?   @db.Text
-  releaseDate DateTime?
-  isPublished Boolean   @default(false)
-  isFeatured  Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  description        String?   @db.Text
+  releaseDate        DateTime?
+  isPublished        Boolean   @default(false)
+  isFeatured         Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  artist Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  tracks Track[]
+  artist  Artist       @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tracks  Track[]
   savedBy SavedAlbum[]
 
   @@index([artistId])
@@ -193,6 +195,9 @@ model TaxonomyTerm {
   parent   TaxonomyTerm?  @relation("TermHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children TaxonomyTerm[] @relation("TermHierarchy")
   tracks   TrackTerm[]
+
+  requestOccasions SongRequest[]     @relation("SongRequestOccasion")
+  requestTerms     SongRequestTerm[]
 
   /// Canonical per kind — prevents "sleep" / "Sleep" / "sleep-music" drifting
   /// into separate categories.
@@ -254,31 +259,31 @@ enum AiDisclosure {
 }
 
 model Track {
-  id                String    @id @default(cuid())
-  title             String
-  slug              String    @unique
-  artistId          String
-  albumId           String?
-  trackNumber       Int?
-  description       String?   @db.Text
-  duration          Int       @default(0) // seconds
+  id          String  @id @default(cuid())
+  title       String
+  slug        String  @unique
+  artistId    String
+  albumId     String?
+  trackNumber Int?
+  description String? @db.Text
+  duration    Int     @default(0) // seconds
 
   /// Legacy/local-driver URL fields. Populated directly when STORAGE_DRIVER=local
   /// (or for tracks uploaded before the R2 migration). MediaService prefers the
   /// *StorageKey fields below and falls back to these when a key is absent, so
   /// old rows keep working without a forced backfill.
-  audioUrl          String?
-  originalAudioUrl  String?
-  downloadAudioUrl  String?
-  fileSize          Int?
-  mimeType          String?
+  audioUrl         String?
+  originalAudioUrl String?
+  downloadAudioUrl String?
+  fileSize         Int?
+  mimeType         String?
 
   /// R2 object keys — the source of truth once set. Never store presigned
   /// URLs here; MediaService derives an access URL from the key on demand.
   originalStorageKey  String?
   streamingStorageKey String?
   /// Loudness peaks (0–1) for drawing the track's waveform. Empty until computed.
-  waveform            Float[]   @default([])
+  waveform            Float[] @default([])
   /// Integrated loudness in LUFS, measured at transcode. The player attenuates
   /// louder tracks towards a common target so the catalogue plays evenly.
   /// Null on tracks processed before this was measured: they play unchanged.
@@ -305,19 +310,19 @@ model Track {
   coverImageWidth    Int?
   coverImageHeight   Int?
 
-  releaseDate        DateTime?
-  lyrics            String?   @db.Text
-  credits           String?   @db.Text
-  composer          String?
-  producer          String?
+  releaseDate   DateTime?
+  lyrics        String?      @db.Text
+  credits       String?      @db.Text
+  composer      String?
+  producer      String?
   /// Retained so existing queries and the public "AI Composed" badge keep
   /// working; `aiDisclosure` is the richer replacement and the two are kept
   /// consistent on write.
-  isAiGenerated     Boolean   @default(true)
-  aiDisclosure      AiDisclosure @default(AI_GENERATED)
+  isAiGenerated Boolean      @default(true)
+  aiDisclosure  AiDisclosure @default(AI_GENERATED)
   /// Free text, creator-supplied: generation tool, human editing, vocals.
-  aiTool            String?
-  aiDetails         String?   @db.Text
+  aiTool        String?
+  aiDetails     String?      @db.Text
 
   /// Set when the creator accepts the rights confirmation at publish time.
   /// Null means it has never been accepted for this track.
@@ -328,37 +333,39 @@ model Track {
   /// what sets `isPublished`. Public queries keep filtering on `isPublished`
   /// alone, so nothing pending or rejected can surface on any page — without
   /// every query needing to remember a second condition.
-  moderationStatus  ModerationStatus @default(NONE)
+  moderationStatus ModerationStatus @default(NONE)
   /// Why a track was rejected, shown to its creator so they can fix it.
-  moderationNote    String?   @db.Text
-  submittedAt       DateTime?
-  reviewedAt        DateTime?
-  reviewedBy        String?
+  moderationNote   String?          @db.Text
+  submittedAt      DateTime?
+  reviewedAt       DateTime?
+  reviewedBy       String?
 
-  energy            EnergyLevel?
-  tempoBpm          Int?
+  energy   EnergyLevel?
+  tempoBpm Int?
 
-  isExplicit        Boolean   @default(false)
-  isPublished       Boolean   @default(false)
-  isFeatured        Boolean   @default(false)
+  isExplicit      Boolean   @default(false)
+  isPublished     Boolean   @default(false)
+  isFeatured      Boolean   @default(false)
   /// When it was featured. The homepage hero shows the most recently featured
   /// track, so starring one puts it up immediately instead of waiting behind
   /// whatever happens to have the latest release date.
-  featuredAt        DateTime?
-  downloadEnabled   Boolean   @default(true)
-  playCount         Int       @default(0)
-  downloadCount     Int       @default(0)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  featuredAt      DateTime?
+  downloadEnabled Boolean   @default(true)
+  playCount       Int       @default(0)
+  downloadCount   Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  artist  Artist        @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  album   Album?        @relation(fields: [albumId], references: [id], onDelete: SetNull)
-  terms   TrackTerm[]
-  playlistTracks    PlaylistTrack[]
-  favorites         Favorite[]
-  listeningHistory  ListeningHistory[]
-  downloads         Download[]
-  plays             Play[]
+  artist           Artist             @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  album            Album?             @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  terms            TrackTerm[]
+  playlistTracks   PlaylistTrack[]
+  favorites        Favorite[]
+  listeningHistory ListeningHistory[]
+  downloads        Download[]
+  plays            Play[]
+  /// Set when this track was made to fill a commission.
+  songRequest      SongRequest?       @relation("SongRequestDelivery")
 
   @@index([artistId])
   @@index([albumId])
@@ -369,7 +376,6 @@ model Track {
   @@index([moderationStatus, submittedAt])
   @@map("tracks")
 }
-
 
 // ---------------------------------------------------------------------------
 // Playlists & library
@@ -387,16 +393,16 @@ enum PlaylistKind {
 }
 
 model Playlist {
-  id          String   @id @default(cuid())
-  title       String
-  slug        String   @unique
-  description String?  @db.Text
-  coverUrl    String?
+  id                 String   @id @default(cuid())
+  title              String
+  slug               String   @unique
+  description        String?  @db.Text
+  coverUrl           String?
   coverImagePublicId String?
-  isPublic    Boolean  @default(false)
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPublic           Boolean  @default(false)
+  userId             String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   kind       PlaylistKind @default(USER)
   isFeatured Boolean      @default(false)
@@ -427,8 +433,8 @@ model PlaylistTrack {
 
   @@unique([playlistId, trackId])
   @@index([playlistId, position])
-  @@map("playlist_tracks")
   @@index([addedAt])
+  @@map("playlist_tracks")
 }
 
 model Favorite {
@@ -441,8 +447,8 @@ model Favorite {
   track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([userId, trackId])
-  @@map("favorites")
   @@index([createdAt])
+  @@map("favorites")
 }
 
 model ListeningHistory {
@@ -469,8 +475,8 @@ model Download {
   track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([userId, trackId])
-  @@map("downloads")
   @@index([createdAt])
+  @@map("downloads")
 }
 
 // ---------------------------------------------------------------------------
@@ -491,8 +497,8 @@ model Play {
   user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([trackId, createdAt])
-  @@map("plays")
   @@index([createdAt])
+  @@map("plays")
 }
 
 // ---------------------------------------------------------------------------
@@ -537,4 +543,136 @@ model SavedAlbum {
   @@unique([userId, albumId])
   @@index([userId, createdAt])
   @@map("saved_albums")
+}
+
+/// Where a commission has got to.
+///
+/// The happy path is SUBMITTED -> QUOTED -> ACCEPTED -> IN_PRODUCTION ->
+/// DELIVERED. Payment happens off-platform today, so ACCEPTED means "the
+/// requester agreed the price and paid by whatever means you arranged" and is
+/// set by an admin, not by a payment webhook. When a real checkout arrives it
+/// sets the same state, and nothing downstream has to change.
+enum SongRequestStatus {
+  SUBMITTED
+  QUOTED
+  ACCEPTED
+  IN_PRODUCTION
+  DELIVERED
+  DECLINED
+  CANCELLED
+}
+
+/// A commission: someone asking for a song to be written for them.
+///
+/// The brief is deliberately explicit rather than one free-text box. A song
+/// for a named person fails in specific ways — the wrong name, the wrong
+/// pronouns, the one memory they wanted in it left out — and a form that asks
+/// for those separately is what stops that happening.
+model SongRequest {
+  id        String @id @default(cuid())
+  /// Short human-readable code (VB-7K2Q) to quote in an email or a message,
+  /// because nobody reads a cuid down the phone.
+  reference String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The occasion, as a taxonomy term where one fits, so a request can be
+  /// read against the catalogue that already exists for that occasion.
+  occasionTermId String?
+  occasionTerm   TaxonomyTerm? @relation("SongRequestOccasion", fields: [occasionTermId], references: [id], onDelete: SetNull)
+  /// Free text when no term fits, or to qualify the one chosen.
+  occasionNote   String?
+
+  /// Who it is for. Pronouns are asked for outright: guessing them from a
+  /// name is how lyrics end up misgendering the person they celebrate.
+  recipientName String?
+  relationship  String?
+  pronouns      String?
+
+  /// What they would say if they could write it themselves.
+  story       String  @db.Text
+  /// Names, dates and phrases that must appear verbatim.
+  mustInclude String? @db.Text
+
+  /// Requested sound, as taxonomy terms plus anything they couldn't express
+  /// that way.
+  terms        SongRequestTerm[]
+  language     String?
+  referenceUrl String?
+  soundNote    String?           @db.Text
+
+  /// When they need it. Null means no deadline; a date in the near future is
+  /// what sorts a request to the top of the queue.
+  neededBy DateTime?
+
+  /// Off unless they say otherwise. A song written for someone's mother is
+  /// not catalogue unless the person who commissioned it says it is.
+  publishConsent Boolean @default(false)
+
+  status SongRequestStatus @default(SUBMITTED)
+
+  /// The quote, in minor units of the currency, so no float ever touches a
+  /// price. Null until an admin quotes it.
+  priceAmount   Int?
+  priceCurrency String?
+  /// Free text: how and when they paid, recorded by whoever confirmed it.
+  paymentNote   String?
+  /// When the requester agreed to the quote. Distinct from ACCEPTED, which
+  /// means the money arrived: with payment arranged off-platform those are
+  /// two events, sometimes days apart, and collapsing them would either claim
+  /// payment that hasn't landed or hide a commitment that has been made.
+  quoteAcceptedAt DateTime?
+
+  /// Why it was turned down, shown to the requester.
+  declineReason String? @db.Text
+
+  /// The finished song. An ordinary Track, unpublished unless consent was
+  /// given, so it gets artwork, loudness, waveform and offline for free.
+  deliveredTrackId String?   @unique
+  deliveredTrack   Track?    @relation("SongRequestDelivery", fields: [deliveredTrackId], references: [id], onDelete: SetNull)
+  deliveredAt      DateTime?
+
+  messages SongRequestMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@index([neededBy])
+  @@map("song_requests")
+}
+
+/// A taxonomy term attached to a request — the moods and genres asked for.
+model SongRequestTerm {
+  requestId String
+  termId    String
+
+  request SongRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  term    TaxonomyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, termId])
+  @@index([termId])
+  @@map("song_request_terms")
+}
+
+/// One message on a request. The same table carries both sides of the
+/// conversation and the admin's private notes; `isInternal` is what keeps the
+/// notes out of the requester's view.
+model SongRequestMessage {
+  id        String      @id @default(cuid())
+  requestId String
+  request   SongRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  body       String  @db.Text
+  isInternal Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId, createdAt])
+  @@map("song_request_messages")
 }

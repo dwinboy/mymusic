@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LibrarySectionActions } from "@/components/library/section-actions";
 import { TrackRow } from "@/components/music/track-row";
 import { EmptyState } from "@/components/states/empty-state";
 import { SignedOutLibrary } from "@/components/library/signed-out-library";
@@ -76,11 +77,15 @@ export default async function LibraryPage({
       </div>
 
       <Tabs defaultValue={defaultTab} className="mt-8">
+        {/* Short labels: under a heading that already says "Your Library",
+            "Recently Played" and "Saved Albums" say nothing that "History"
+            and "Albums" don't, and the words were what pushed the strip
+            past the width of a phone. */}
         <TabsList>
-          <TabsTrigger value="liked">Liked Songs</TabsTrigger>
+          <TabsTrigger value="liked">Liked</TabsTrigger>
           <TabsTrigger value="playlists">Playlists</TabsTrigger>
-          <TabsTrigger value="history">Recently Played</TabsTrigger>
-          <TabsTrigger value="albums">Saved Albums</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="albums">Albums</TabsTrigger>
           <TabsTrigger value="following">Following</TabsTrigger>
         </TabsList>
 
@@ -94,11 +99,14 @@ export default async function LibraryPage({
               actionHref="/discover"
             />
           ) : (
-            <div className="flex flex-col">
-              {likedTracks.map((track, i) => (
-                <TrackRow key={track.id} track={track} index={i} queue={likedTracks} initiallyLiked />
-              ))}
-            </div>
+            <>
+              <LibrarySectionActions tracks={likedTracks} />
+              <div className="flex flex-col">
+                {likedTracks.map((track, i) => (
+                  <TrackRow key={track.id} track={track} index={i} queue={likedTracks} initiallyLiked />
+                ))}
+              </div>
+            </>
           )}
         </TabsContent>
 
@@ -135,11 +143,14 @@ export default async function LibraryPage({
           {historyTracks.length === 0 ? (
             <EmptyState icon={History} title="No listening history yet" description="Tracks you play will show up here." />
           ) : (
-            <div className="flex flex-col">
-              {historyTracks.map((track, i) => (
-                <TrackRow key={track.id} track={track} index={i} queue={historyTracks} />
-              ))}
-            </div>
+            <>
+              <LibrarySectionActions tracks={historyTracks} />
+              <div className="flex flex-col">
+                {historyTracks.map((track, i) => (
+                  <TrackRow key={track.id} track={track} index={i} queue={historyTracks} />
+                ))}
+              </div>
+            </>
           )}
         </TabsContent>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Download, WifiOff } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
 import { PlayButton } from "@/components/player/play-button";
 import { Button } from "@/components/ui/button";
@@ -58,15 +58,15 @@ export function OfflineDownloadsList() {
     );
   }
 
-  const totalBytes = records.reduce((sum, r) => sum + r.byteSize, 0);
   const queue = records.map(offlinePlayerTrack);
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-xs text-foreground-subtle">
-          <WifiOff className="h-3.5 w-3.5" /> {formatFileSize(totalBytes)} stored on this device
-        </p>
+      {/* The size used to be stated here too. StorageSummary above says it
+          alongside the space left and whether the browser may clear it, and
+          two different totals sitting one line apart only invited the
+          question of which one to believe. */}
+      <div className="mb-4 flex items-center justify-end">
         <Button variant="ghost" size="sm" onClick={removeAll} className="text-foreground-muted">
           Remove all
         </Button>

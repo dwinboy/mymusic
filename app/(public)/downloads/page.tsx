@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { OfflineDownloadsList } from "@/components/downloads/offline-downloads-list";
+import { StorageSummary } from "@/components/downloads/storage-summary";
 
 export const metadata: Metadata = {
   title: "Downloads",
@@ -13,6 +14,8 @@ export default function DownloadsPage() {
       <p className="mt-2 text-sm text-foreground-muted">
         Tracks saved for offline listening on this device — they&apos;ll keep playing even without a connection.
       </p>
+
+      <StorageSummary className="mt-6" />
 
       <div className="mt-8">
         <OfflineDownloadsList />

@@ -2,6 +2,7 @@ import type { PlayerTrack } from "@/lib/types";
 import { putOfflineTrack, removeOfflineTrack, getOfflineTrack } from "./db";
 import { cacheAudioResponse, removeCachedAudio } from "./audio-cache";
 import { warmOfflinePages } from "./warm";
+import { ensurePersistentStorage } from "./persistence";
 
 export type DownloadStatus = "idle" | "downloading" | "downloaded" | "failed";
 
@@ -16,6 +17,11 @@ export async function downloadTrackForOffline(
   track: PlayerTrack,
   onProgress?: (percent: number) => void
 ): Promise<void> {
+  // Ask before writing, so what we save is protected from the moment it
+  // lands. A refusal is not a reason to stop: an unprotected download still
+  // plays, it just isn't safe from an automatic clear-out.
+  void ensurePersistentStorage();
+
   const response = await fetch(track.audioUrl);
   if (!response.ok || !response.body) {
     throw new Error("Couldn't fetch this track's audio.");

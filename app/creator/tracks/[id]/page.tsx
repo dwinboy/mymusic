@@ -39,6 +39,8 @@ export default async function CreatorTrackPage({ params }: { params: Promise<{ i
     isExplicit: track.isExplicit,
     downloadEnabled: track.downloadEnabled,
     aiDisclosure: track.aiDisclosure,
+
+    lyricsAuthor: track.lyricsAuthor,
     aiTool: track.aiTool,
     aiDetails: track.aiDetails,
     energy: track.energy,

@@ -7,10 +7,11 @@ import { deleteCloudinaryImage } from "@/lib/media/image-service";
 import { uniqueSlug } from "@/lib/slug";
 import { changesReviewedContent } from "@/lib/tracks/submission";
 import { getSiteSettings } from "@/lib/settings";
-import type { AiDisclosure, EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
+import type { AiDisclosure, EnergyLevel, LyricsAuthor, TaxonomyKind } from "@/lib/generated/prisma/client";
 
 const TAXONOMY_KINDS: TaxonomyKind[] = ["GENRE", "MOOD", "ACTIVITY", "OCCASION", "INSTRUMENT", "LANGUAGE", "VOCAL", "TAG"];
 const AI_DISCLOSURES: AiDisclosure[] = ["AI_GENERATED", "AI_ASSISTED", "HUMAN_CREATED"];
+const LYRICS_AUTHORS: LyricsAuthor[] = ["ARTIST", "AI", "INSTRUMENTAL"];
 const ENERGY_LEVELS: EnergyLevel[] = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
 
 const DETAIL_INCLUDE = {
@@ -84,6 +85,13 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!AI_DISCLOSURES.includes(disclosure)) return NextResponse.json({ error: "Invalid AI disclosure." }, { status: 400 });
     data.aiDisclosure = disclosure;
     data.isAiGenerated = disclosure !== "HUMAN_CREATED";
+  }
+  // Who wrote the words. Its own field: a track can be produced with AI and
+  // still have lyrics the creator wrote, and that is what listeners ask.
+  if (form.has("lyricsAuthor")) {
+    const author = String(form.get("lyricsAuthor")) as LyricsAuthor;
+    if (!LYRICS_AUTHORS.includes(author)) return NextResponse.json({ error: "Invalid lyrics author." }, { status: 400 });
+    data.lyricsAuthor = author;
   }
   if (form.has("energy")) {
     const energy = String(form.get("energy"));

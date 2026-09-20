@@ -76,6 +76,7 @@ export interface TrackFormInitial {
   processingStatus: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
   /** Format of the streaming copy, so the form can say what it would replace. */
   streamingFormat: string | null;
+  lyricsAuthor: "ARTIST" | "AI" | "INSTRUMENTAL";
   processingError: string | null;
 }
 
@@ -103,6 +104,7 @@ export function TrackForm({
   const [producer, setProducer] = useState(initial.producer ?? "");
   const [releaseDate, setReleaseDate] = useState(initial.releaseDate?.slice(0, 10) ?? "");
   const [isAiGenerated, setIsAiGenerated] = useState(initial.isAiGenerated);
+  const [lyricsAuthor, setLyricsAuthor] = useState(initial.lyricsAuthor);
   const [isExplicit, setIsExplicit] = useState(initial.isExplicit);
   const [isPublished, setIsPublished] = useState(initial.isPublished);
   const [isFeatured, setIsFeatured] = useState(initial.isFeatured);
@@ -190,6 +192,7 @@ export function TrackForm({
       formData.set("producer", producer);
       if (releaseDate) formData.set("releaseDate", releaseDate);
       formData.set("isAiGenerated", String(isAiGenerated));
+      formData.set("lyricsAuthor", lyricsAuthor);
       formData.set("isExplicit", String(isExplicit));
       formData.set("isPublished", String(isPublished));
       formData.set("isFeatured", String(isFeatured));
@@ -451,6 +454,23 @@ export function TrackForm({
       <div>
         <Label htmlFor="credits">Credits</Label>
         <Textarea id="credits" className="mt-1.5" value={credits} onChange={(e) => setCredits(e.target.value)} rows={3} />
+      </div>
+
+      <div className="mb-4 rounded-xl border border-border bg-surface p-4">
+        <Label htmlFor="track-lyrics-author">Who wrote the lyrics</Label>
+        <p className="mt-0.5 text-xs text-foreground-muted">
+          Separate from how the music was made. Shown under Credits on the song page.
+        </p>
+        <select
+          id="track-lyrics-author"
+          value={lyricsAuthor}
+          onChange={(e) => setLyricsAuthor(e.target.value as typeof lyricsAuthor)}
+          className="mt-2 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-foreground sm:w-72"
+        >
+          <option value="ARTIST">The artist wrote them</option>
+          <option value="AI">AI wrote them</option>
+          <option value="INSTRUMENTAL">No lyrics</option>
+        </select>
       </div>
 
       <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2">

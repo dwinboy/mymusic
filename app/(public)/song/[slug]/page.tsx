@@ -237,7 +237,12 @@ export default async function SongPage({
       {/* The disclosure counts towards showing this block: a track with no
           lyrics and no credits still has something to say about how it was
           made, and skipping the section would hide it entirely. */}
-      {(track.lyrics || track.credits || track.composer || track.producer || track.aiDisclosure !== "HUMAN_CREATED") && (
+      {(track.lyrics ||
+        track.credits ||
+        track.composer ||
+        track.producer ||
+        track.aiDisclosure !== "HUMAN_CREATED" ||
+        track.lyricsAuthor !== "INSTRUMENTAL") && (
         <div className="mt-12 grid gap-8 sm:grid-cols-2">
           {track.lyrics && (
             <div>
@@ -248,7 +253,11 @@ export default async function SongPage({
               </p>
             </div>
           )}
-          {(track.credits || track.composer || track.producer || track.aiDisclosure !== "HUMAN_CREATED") && (
+          {(track.credits ||
+            track.composer ||
+            track.producer ||
+            track.aiDisclosure !== "HUMAN_CREATED" ||
+            track.lyricsAuthor !== "INSTRUMENTAL") && (
             <div>
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">Credits</h2>
               <dl className="space-y-1.5 text-sm">
@@ -256,11 +265,24 @@ export default async function SongPage({
                     just stated rather than advertised. Named with the tool
                     when the creator gave one, because "Suno" tells someone
                     more than "AI" does. */}
+                {/* Two separate facts, said separately. Who wrote the words
+                    is the one listeners ask about, and on this catalogue the
+                    answer is usually a person even though the music was
+                    produced with AI — which one combined line could never
+                    say. */}
+                {track.lyricsAuthor !== "INSTRUMENTAL" && (
+                  <div className="flex gap-2">
+                    <dt className="text-foreground-muted">Words</dt>
+                    <dd className="text-foreground">
+                      {track.lyricsAuthor === "ARTIST" ? `Written by ${track.artist.name}` : "Written with AI"}
+                    </dd>
+                  </div>
+                )}
                 {track.aiDisclosure !== "HUMAN_CREATED" && (
                   <div className="flex gap-2">
-                    <dt className="text-foreground-muted">Made with</dt>
+                    <dt className="text-foreground-muted">Music</dt>
                     <dd className="text-foreground">
-                      {track.aiDisclosure === "AI_ASSISTED" ? "AI assistance" : "AI"}
+                      {track.aiDisclosure === "AI_ASSISTED" ? "Composed with AI" : "Composed by AI"}
                       {track.aiTool ? ` · ${track.aiTool}` : ""}
                     </dd>
                   </div>

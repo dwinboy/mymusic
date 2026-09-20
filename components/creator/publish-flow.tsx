@@ -39,6 +39,7 @@ import { DuplicateWarning } from "@/components/music/duplicate-warning";
 type Kind = "GENRE" | "MOOD" | "ACTIVITY" | "OCCASION" | "INSTRUMENT" | "LANGUAGE" | "VOCAL" | "TAG";
 type Energy = "VERY_LOW" | "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
 type Disclosure = "AI_GENERATED" | "AI_ASSISTED" | "HUMAN_CREATED";
+type LyricsAuthor = "ARTIST" | "AI" | "INSTRUMENTAL";
 
 export interface CreatorProfileOption {
   id: string;
@@ -59,6 +60,7 @@ export interface PublishTrack {
   isExplicit: boolean;
   downloadEnabled: boolean;
   aiDisclosure: Disclosure;
+  lyricsAuthor: LyricsAuthor;
   aiTool: string | null;
   aiDetails: string | null;
   energy: Energy | null;
@@ -91,6 +93,18 @@ const DISCLOSURES: { value: Disclosure; title: string; body: string }[] = [
   { value: "AI_GENERATED", title: "AI-generated", body: "The music was created by an AI system, with little or no human performance." },
   { value: "AI_ASSISTED", title: "AI-assisted", body: "A person created the music with meaningful help from AI tools." },
   { value: "HUMAN_CREATED", title: "Human-created", body: "Made by people without generative AI." },
+];
+
+/**
+ * Who wrote the words — asked separately from how the music was made,
+ * because they are separate facts and listeners care about this one. A song
+ * composed with AI tools whose lyrics somebody wrote out of their own life is
+ * not the same thing as a song where the words were generated too.
+ */
+const LYRICS_AUTHORS: { value: LyricsAuthor; title: string; body: string }[] = [
+  { value: "ARTIST", title: "I wrote them", body: "The words are yours, whatever tools produced the music." },
+  { value: "AI", title: "AI wrote them", body: "The words were generated, including if you edited them afterwards." },
+  { value: "INSTRUMENTAL", title: "No lyrics", body: "The track has no words." },
 ];
 
 const ACCEPTED_AUDIO = "audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/flac,audio/x-flac,audio/mp4,audio/m4a,audio/x-m4a,audio/aac";
@@ -210,6 +224,7 @@ export function PublishFlow({
 
   // --- rights & disclosure
   const [disclosure, setDisclosure] = useState<Disclosure>(initialTrack?.aiDisclosure ?? "AI_ASSISTED");
+  const [lyricsAuthor, setLyricsAuthor] = useState<LyricsAuthor>(initialTrack?.lyricsAuthor ?? "ARTIST");
   const [aiTool, setAiTool] = useState(initialTrack?.aiTool ?? "");
   const [aiDetails, setAiDetails] = useState(initialTrack?.aiDetails ?? "");
   const [rightsAccepted, setRightsAccepted] = useState(!!initialTrack?.rightsConfirmedAt);
@@ -441,6 +456,7 @@ export function PublishFlow({
         return f;
       case "Rights":
         f.set("aiDisclosure", disclosure);
+        f.set("lyricsAuthor", lyricsAuthor);
         f.set("aiTool", aiTool);
         f.set("aiDetails", aiDetails);
         // Not a choice in this flow any more: offline listening is part of
@@ -963,6 +979,31 @@ export function PublishFlow({
               </div>
             </Field>
 
+            <Field label="Who wrote the lyrics?">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {LYRICS_AUTHORS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setLyricsAuthor(option.value)}
+                    aria-pressed={lyricsAuthor === option.value}
+                    className={cn(
+                      "rounded-2xl border p-4 text-left transition-colors",
+                      lyricsAuthor === option.value ? "border-accent bg-accent/10" : "border-border-strong hover:border-foreground-subtle"
+                    )}
+                  >
+                    <span className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">{option.title}</span>
+                      <span className={cn("flex h-4 w-4 items-center justify-center rounded-full border", lyricsAuthor === option.value ? "border-accent bg-accent" : "border-border-strong")}>
+                        {lyricsAuthor === option.value && <Check className="h-2.5 w-2.5 text-accent-foreground" />}
+                      </span>
+                    </span>
+                    <span className="mt-1.5 block text-xs text-foreground-muted">{option.body}</span>
+                  </button>
+                ))}
+              </div>
+            </Field>
+
             {disclosure !== "HUMAN_CREATED" && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="AI tools used" hint="Optional">
@@ -1066,7 +1107,8 @@ export function PublishFlow({
                   ["Occasions", termNames("OCCASION").join(", ")],
                   ["Vocals", termNames("VOCAL").join(", ")],
                   ["Language", termNames("LANGUAGE").join(", ")],
-                  ["Energy", ENERGY.find((e) => e.value === energy)?.label ?? ""],                ] as const
+                  ["Energy", ENERGY.find((e) => e.value === energy)?.label ?? ""],
+                  ["Lyrics", LYRICS_AUTHORS.find((l) => l.value === lyricsAuthor)?.title ?? ""],                ] as const
               ).map(([k, v]) => (
                 <div key={k} className="border-t border-border pt-3">
                   <dt className="text-xs text-foreground-subtle">{k}</dt>

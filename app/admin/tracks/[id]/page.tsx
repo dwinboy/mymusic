@@ -45,6 +45,7 @@ export default async function EditTrackPage({ params }: { params: Promise<{ id: 
     mimeType: track.mimeType,
     processingStatus: track.processingStatus,
     streamingFormat: track.streamingFormat,
+    lyricsAuthor: track.lyricsAuthor,
     processingError: track.processingError,
   };
 

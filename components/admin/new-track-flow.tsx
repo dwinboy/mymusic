@@ -308,10 +308,12 @@ function toFormInitial(track: {
   processingStatus: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
   processingError: string | null;
   streamingFormat?: string | null;
+  lyricsAuthor?: "ARTIST" | "AI" | "INSTRUMENTAL";
 }): TrackFormInitial {
   return {
     ...track,
     streamingFormat: track.streamingFormat ?? null,
+    lyricsAuthor: track.lyricsAuthor ?? "ARTIST",
     terms: [],
   };
 }

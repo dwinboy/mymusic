@@ -258,6 +258,20 @@ enum AiDisclosure {
   HUMAN_CREATED
 }
 
+/// Who wrote the words, which is a different question from how the music was
+/// produced. A track can be composed with AI tools and still have lyrics a
+/// person wrote out of their own life — on this catalogue that is the usual
+/// case, and collapsing the two into one disclosure hid the part listeners
+/// care about most.
+enum LyricsAuthor {
+  /// The creator wrote them.
+  ARTIST
+  /// Generated, whatever the creator then edited.
+  AI
+  /// There are none.
+  INSTRUMENTAL
+}
+
 model Track {
   id          String  @id @default(cuid())
   title       String
@@ -324,6 +338,9 @@ model Track {
   /// AI_GENERATED — "little or no human performance" — was the old default,
   /// and it was claiming less human authorship than the work involves.
   aiDisclosure  AiDisclosure @default(AI_ASSISTED)
+  /// Who wrote the words. Separate from aiDisclosure, which is about how the
+  /// music itself was made.
+  lyricsAuthor  LyricsAuthor @default(ARTIST)
   /// Free text, creator-supplied: generation tool, human editing, vocals.
   aiTool        String?
   aiDetails     String?      @db.Text

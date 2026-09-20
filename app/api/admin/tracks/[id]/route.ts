@@ -12,10 +12,11 @@ import { productionLocalStorageWarning } from "@/lib/media/production-guard";
 import { uniqueSlug } from "@/lib/slug";
 import { setTrackTermsForKind, refreshTrackArtworkCategory, TERM_SELECT } from "@/lib/taxonomy";
 import { validateForSubmission } from "@/lib/tracks/submission";
-import type { AiDisclosure, EnergyLevel, TaxonomyKind } from "@/lib/generated/prisma/client";
+import type { AiDisclosure, EnergyLevel, LyricsAuthor, TaxonomyKind } from "@/lib/generated/prisma/client";
 
 const TAXONOMY_KINDS: TaxonomyKind[] = ["GENRE", "MOOD", "ACTIVITY", "OCCASION", "INSTRUMENT", "LANGUAGE", "VOCAL", "TAG"];
 const AI_DISCLOSURES: AiDisclosure[] = ["AI_GENERATED", "AI_ASSISTED", "HUMAN_CREATED"];
+const LYRICS_AUTHORS: LyricsAuthor[] = ["ARTIST", "AI", "INSTRUMENTAL"];
 const ENERGY_LEVELS: EnergyLevel[] = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
 
 const TRACK_DETAIL_INCLUDE = {
@@ -140,6 +141,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       // existing queries still read it.
       data.isAiGenerated = disclosure !== "HUMAN_CREATED";
     }
+  }
+  if (formData.has("lyricsAuthor")) {
+    const author = String(formData.get("lyricsAuthor")) as LyricsAuthor;
+    if (LYRICS_AUTHORS.includes(author)) data.lyricsAuthor = author;
   }
   if (formData.has("aiTool")) strField("aiTool", true);
   if (formData.has("aiDetails")) strField("aiDetails", true);

@@ -32,7 +32,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/albums`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/artists`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/playlists`, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${SITE_URL}/search`, changeFrequency: "monthly", priority: 0.3 },
+    // The commission page is a destination in its own right, not a utility
+    // route — it is what someone searching for a song written to order would
+    // be looking for.
+    { url: `${SITE_URL}/request`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${SITE_URL}/contact`, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${SITE_URL}/commission-terms`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+    // Listed on purpose despite the low priority: someone looking for how to
+    // report a track needs to be able to find this without asking us first.
+    { url: `${SITE_URL}/copyright`, changeFrequency: "yearly", priority: 0.3 },
     ...BROWSABLE_KINDS.map((kind) => ({
       url: `${SITE_URL}${kindIndexHref(kind)}`,
       changeFrequency: "weekly" as const,

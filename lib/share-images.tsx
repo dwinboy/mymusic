@@ -297,3 +297,64 @@ export async function songStoryCard(track: ShareImageTrack, artworkUrl: string |
     CACHE
   );
 }
+
+/**
+ * The 1200×630 card for pages that are not about one song — the homepage,
+ * the commission page, About. Without it, sharing any of those on WhatsApp
+ * or Facebook produced a preview with no picture at all, which on the links
+ * most likely to be passed between people is the worst place to have none.
+ *
+ * Deliberately typographic rather than artwork-led: these pages describe the
+ * catalogue rather than any single release, so picking one cover would
+ * misrepresent them and would go stale the moment that track changed.
+ */
+export async function brandPreviewCard({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle: string }) {
+  const mark = await loadMark();
+  const width = 1200;
+  const height = 630;
+
+  return render(
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        width: "100%",
+        height: "100%",
+        background: CANVAS,
+        fontFamily: "Jakarta",
+        padding: 80,
+        position: "relative",
+      }}
+    >
+      {/* A single linear gradient, set as backgroundImage. Satori draws one
+          gradient this way reliably; the two stacked radial ones it was given
+          first rendered as nothing at all, leaving a flat black rectangle. */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "linear-gradient(135deg, rgba(227,168,87,0.20) 0%, rgba(227,168,87,0.04) 38%, rgba(10,10,11,0) 62%)",
+          display: "flex",
+        }}
+      />
+      <div style={{ display: "flex", position: "relative" }}>
+        <Brand size={26} mark={mark} />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", position: "relative" }}>
+        <div style={{ display: "flex", width: 64, height: 5, background: ACCENT, borderRadius: 999, marginBottom: 26 }} />
+        <div style={{ fontSize: 24, fontWeight: 500, letterSpacing: 5, color: ACCENT, textTransform: "uppercase", display: "flex" }}>
+          {eyebrow}
+        </div>
+        <div style={{ fontSize: title.length > 34 ? 66 : 78, fontWeight: 700, color: "#fafaf9", lineHeight: 1.05, marginTop: 18, letterSpacing: -1.5, display: "flex" }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 30, fontWeight: 500, color: "rgba(250,250,249,0.7)", marginTop: 22, lineHeight: 1.35, display: "flex", maxWidth: 900 }}>
+          {subtitle}
+        </div>
+      </div>
+    </div>,
+    { width, height },
+    CACHE
+  );
+}

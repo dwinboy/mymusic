@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
 import { formatDuration, formatReleaseDate } from "@/lib/utils";
 import { Hero } from "@/components/home/hero";
+import { SiteJsonLd } from "@/components/seo/site-json-ld";
 import { WhatThisIs } from "@/components/home/what-this-is";
 import { ContinueListeningSection } from "@/components/home/continue-listening-section";
 import { MadeForYouSection } from "@/components/home/made-for-you-section";
@@ -19,6 +21,15 @@ import { Music2 } from "lucide-react";
 
 // Rendered per request so newly published tracks appear without a redeploy.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  // The layout's title template appends the site name; the homepage is the
+  // one page that should read as the name itself.
+  title: { absolute: "Vibe Banger — Songs with somebody's life in them" },
+  description:
+    "Original songs written from real experience. Stream them, keep them offline, or have a song made for someone who matters to you.",
+  alternates: { canonical: "/" },
+};
 
 /**
  * What the hero slot shows. A listener who has heard something gets their own
@@ -96,6 +107,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-12 px-4 py-6 sm:px-8 sm:py-8">
+      <SiteJsonLd />
       <Hero
         track={player}
         eyebrow={resume ? (resume.midway ? "Pick up where you left off" : "Recently played") : "Featured Release"}

@@ -7,7 +7,21 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/api", "/library", "/downloads"],
+      // Everything here is either private to one person or useless in a
+      // result. /requests holds commission briefs, which describe people who
+      // never signed up; it is behind a login, and it should not be crawled
+      // either.
+      disallow: [
+        "/admin",
+        "/api",
+        "/library",
+        "/downloads",
+        "/requests",
+        "/creator",
+        "/login",
+        "/register",
+        "/search",
+      ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

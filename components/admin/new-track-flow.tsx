@@ -307,9 +307,11 @@ function toFormInitial(track: {
   mimeType: string | null;
   processingStatus: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
   processingError: string | null;
+  streamingFormat?: string | null;
 }): TrackFormInitial {
   return {
     ...track,
+    streamingFormat: track.streamingFormat ?? null,
     terms: [],
   };
 }

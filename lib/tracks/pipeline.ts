@@ -108,21 +108,22 @@ export async function startTrackUpload(input: {
       createDownloadVersion: true,
     });
     // Decorative, so a failure here never fails the upload.
-    const waveform = await computeWaveform(processed.streamingBuffer, "mp3").catch(() => []);
+    const waveform = await computeWaveform(processed.streamingBuffer, processed.streamingFormat).catch(() => []);
     const streamStored = await storage.put({
       folder: "audio",
-      filename: `${buildStreamingKey(track.id).split("/").pop()}`,
-      contentType: "audio/mpeg",
+      filename: `${buildStreamingKey(track.id, processed.streamingFormat).split("/").pop()}`,
+      contentType: processed.streamingContentType,
       data: processed.streamingBuffer,
     });
-    const downloadStored = processed.downloadBuffer
-      ? await storage.put({
-          folder: "audio-download",
-          filename: `${buildDownloadKey(track.id, "mp3").split("/").pop()}`,
-          contentType: "audio/mpeg",
-          data: processed.downloadBuffer,
-        })
-      : null;
+    const downloadStored =
+      processed.downloadBuffer && processed.downloadFormat
+        ? await storage.put({
+            folder: "audio-download",
+            filename: `${buildDownloadKey(track.id, processed.downloadFormat).split("/").pop()}`,
+            contentType: processed.downloadContentType ?? "audio/mpeg",
+            data: processed.downloadBuffer,
+          })
+        : null;
 
     const updated = await db.track.update({
       where: { id: track.id },
@@ -132,11 +133,11 @@ export async function startTrackUpload(input: {
         originalAudioUrl: originalStored.url,
         downloadAudioUrl: downloadStored?.url,
         fileSize: streamStored.size,
-        mimeType: "audio/mpeg",
+        mimeType: processed.streamingContentType,
         streamingSize: streamStored.size,
-        streamingFormat: "mp3",
+        streamingFormat: processed.streamingFormat,
         downloadSize: downloadStored?.size,
-        downloadFormat: downloadStored ? "mp3" : null,
+        downloadFormat: downloadStored ? processed.downloadFormat ?? null : null,
         originalSize: originalStored.size,
         originalFormat: ext,
         waveform,
@@ -174,15 +175,15 @@ export async function processTrackAudio(trackId: string) {
     });
 
     const streamingKey = buildStreamingKey(track.id, processed.streamingFormat);
-    await putObject(streamingKey, processed.streamingBuffer, "audio/mpeg");
+    await putObject(streamingKey, processed.streamingBuffer, processed.streamingContentType);
 
     let downloadKey: string | null = null;
     if (processed.downloadBuffer && processed.downloadFormat) {
       downloadKey = buildDownloadKey(track.id, processed.downloadFormat);
-      await putObject(downloadKey, processed.downloadBuffer, "audio/mpeg");
+      await putObject(downloadKey, processed.downloadBuffer, processed.downloadContentType ?? "audio/mpeg");
     }
     // Decorative, so a failure here never fails processing.
-    const waveform = await computeWaveform(processed.streamingBuffer, "mp3").catch(() => []);
+    const waveform = await computeWaveform(processed.streamingBuffer, processed.streamingFormat).catch(() => []);
 
     return await db.track.update({
       where: { id: trackId },
@@ -190,6 +191,9 @@ export async function processTrackAudio(trackId: string) {
         duration: metadata.durationSeconds,
         waveform,
         loudnessLufs: processed.loudnessLufs,
+        // Describes the streaming copy, alongside the other streaming*
+        // fields. Left at audio/mpeg it would outlive the format it named.
+        mimeType: processed.streamingContentType,
         streamingStorageKey: streamingKey,
         streamingFormat: processed.streamingFormat,
         streamingSize: processed.streamingBuffer.byteLength,

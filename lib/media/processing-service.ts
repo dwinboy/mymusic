@@ -9,9 +9,12 @@ const execFileAsync = promisify(execFile);
 
 export interface ProcessedAudio {
   streamingBuffer: Buffer;
-  streamingFormat: "mp3";
+  streamingFormat: "m4a";
+  /** What to serve it as. The format is no longer always MP3. */
+  streamingContentType: string;
   downloadBuffer?: Buffer;
   downloadFormat?: "mp3";
+  downloadContentType?: string;
   /**
    * The master's integrated loudness in LUFS before levelling, or null if it
    * couldn't be measured — in which case the copies are not levelled.
@@ -33,7 +36,19 @@ export interface AudioProcessingService {
   }): Promise<ProcessedAudio>;
 }
 
-const STREAMING_BITRATE = "192k";
+/**
+ * Streaming is AAC in an MP4 container; downloads stay MP3.
+ *
+ * AAC-LC at 160k is about the same to listen to as MP3 at 192k and roughly a
+ * sixth smaller — which on a phone paying for data is the difference people
+ * actually feel, along with a track that starts sooner. Every browser that
+ * can play audio at all can play AAC.
+ *
+ * The download copy stays MP3 because it leaves the app: it gets put on
+ * cheap players, in cars, and into other people's software, and MP3 is the
+ * format all of those agree on.
+ */
+const STREAMING_BITRATE = "160k";
 const DOWNLOAD_BITRATE = "320k";
 
 /**
@@ -130,15 +145,14 @@ export class FfmpegAudioProcessingService implements AudioProcessingService {
       const loudness = await measureLoudness(ffmpegPath, inputPath);
       const levelling = loudness ? ["-af", loudness.filter] : [];
 
-      const encode = async (outputPath: string, bitrate: string) => {
+      const encode = async (outputPath: string, bitrate: string, codec: string[]) => {
         await execFileAsync(ffmpegPath!, [
           "-y",
           "-i",
           inputPath,
           "-vn",
           ...levelling,
-          "-codec:a",
-          "libmp3lame",
+          ...codec,
           "-b:a",
           bitrate,
           "-ar",
@@ -148,16 +162,26 @@ export class FfmpegAudioProcessingService implements AudioProcessingService {
         return readFile(outputPath);
       };
 
-      const streamingBuffer = await encode(path.join(tmpDir, "streaming.mp3"), STREAMING_BITRATE);
+      // faststart moves the index to the front of the file. Without it a
+      // browser has to fetch the whole thing before it can play a second of
+      // it, which would undo the point of the smaller file.
+      const streamingBuffer = await encode(path.join(tmpDir, "streaming.m4a"), STREAMING_BITRATE, [
+        "-codec:a",
+        "aac",
+        "-movflags",
+        "+faststart",
+      ]);
       const downloadBuffer = createDownloadVersion
-        ? await encode(path.join(tmpDir, "download.mp3"), DOWNLOAD_BITRATE)
+        ? await encode(path.join(tmpDir, "download.mp3"), DOWNLOAD_BITRATE, ["-codec:a", "libmp3lame"])
         : undefined;
 
       return {
         streamingBuffer,
-        streamingFormat: "mp3",
+        streamingFormat: "m4a",
+        streamingContentType: "audio/mp4",
         downloadBuffer,
         downloadFormat: downloadBuffer ? "mp3" : undefined,
+        downloadContentType: downloadBuffer ? "audio/mpeg" : undefined,
         loudnessLufs: loudness?.integratedLufs ?? null,
       };
     } finally {

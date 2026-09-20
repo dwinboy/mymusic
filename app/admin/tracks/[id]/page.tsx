@@ -44,6 +44,7 @@ export default async function EditTrackPage({ params }: { params: Promise<{ id: 
     fileSize: track.fileSize,
     mimeType: track.mimeType,
     processingStatus: track.processingStatus,
+    streamingFormat: track.streamingFormat,
     processingError: track.processingError,
   };
 

@@ -74,6 +74,8 @@ export interface TrackFormInitial {
   fileSize: number | null;
   mimeType: string | null;
   processingStatus: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+  /** Format of the streaming copy, so the form can say what it would replace. */
+  streamingFormat: string | null;
   processingError: string | null;
 }
 
@@ -267,6 +269,28 @@ export function TrackForm({
           {processingStatus === "FAILED" && (
             <RetryProcessingButton trackId={initial.id} onRetried={(status) => setProcessingStatus(status)} />
           )}
+        </div>
+      )}
+
+      {processingStatus === "READY" && (
+        // Re-encodes from the stored master, so it picks up whatever the
+        // pipeline produces today — which is how a track uploaded before the
+        // streaming format changed gets the newer one. No quality is lost:
+        // the source is the original upload, not the copy being replaced.
+        <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">
+              Streaming copy: {initial.streamingFormat ? initial.streamingFormat.toUpperCase() : "unknown"}
+            </p>
+            <p className="mt-0.5 text-xs text-foreground-muted">
+              Re-encode to rebuild it from the original upload in the current format.
+            </p>
+          </div>
+          <RetryProcessingButton
+            trackId={initial.id}
+            label="Re-encode"
+            onRetried={(status) => setProcessingStatus(status)}
+          />
         </div>
       )}
 
@@ -486,9 +510,11 @@ export function TrackForm({
 function RetryProcessingButton({
   trackId,
   onRetried,
+  label = "Retry",
 }: {
   trackId: string;
   onRetried: (status: "READY" | "PROCESSING" | "FAILED") => void;
+  label?: string;
 }) {
   const [retrying, setRetrying] = useState(false);
   const { toast } = useToast();
@@ -510,7 +536,7 @@ function RetryProcessingButton({
   return (
     <Button type="button" size="sm" variant="secondary" onClick={retry} disabled={retrying}>
       {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
-      Retry
+      {label}
     </Button>
   );
 }

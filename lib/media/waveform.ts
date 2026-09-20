@@ -89,14 +89,16 @@ async function readStreamingAudio(track: { streamingStorageKey: string | null; a
 export async function getOrComputeWaveform(trackId: string): Promise<number[] | null> {
   const track = await db.track.findFirst({
     where: { id: trackId, isPublished: true, processingStatus: "READY" },
-    select: { id: true, waveform: true, streamingStorageKey: true, audioUrl: true },
+    select: { id: true, waveform: true, streamingStorageKey: true, audioUrl: true, streamingFormat: true },
   });
   if (!track) return null;
   if (track.waveform.length > 0) return track.waveform;
 
   const audio = await readStreamingAudio(track);
   if (!audio) return [];
-  const waveform = await computeWaveform(audio, "mp3");
+  // The streaming copy isn't always MP3 any more; ffmpeg needs the extension
+  // to pick a demuxer for the temporary file it reads.
+  const waveform = await computeWaveform(audio, track.streamingFormat || "mp3");
   if (waveform.length > 0) {
     await db.track.update({ where: { id: track.id }, data: { waveform } });
   }

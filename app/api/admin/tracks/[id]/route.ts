@@ -193,12 +193,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         });
 
         const streamingKey = buildStreamingKey(id, processed.streamingFormat, version);
-        await putObject(streamingKey, processed.streamingBuffer, "audio/mpeg");
+        await putObject(streamingKey, processed.streamingBuffer, processed.streamingContentType);
 
         let downloadKey: string | null = null;
         if (processed.downloadBuffer && processed.downloadFormat) {
           downloadKey = buildDownloadKey(id, processed.downloadFormat, version);
-          await putObject(downloadKey, processed.downloadBuffer, "audio/mpeg");
+          await putObject(downloadKey, processed.downloadBuffer, processed.downloadContentType ?? "audio/mpeg");
         }
 
         data.duration = metadata.durationSeconds;

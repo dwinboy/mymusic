@@ -319,7 +319,11 @@ model Track {
   /// working; `aiDisclosure` is the richer replacement and the two are kept
   /// consistent on write.
   isAiGenerated Boolean      @default(true)
-  aiDisclosure  AiDisclosure @default(AI_GENERATED)
+  /// Defaults to AI_ASSISTED, which is what this catalogue actually is: the
+  /// words are written by people and the music is produced with AI tools.
+  /// AI_GENERATED — "little or no human performance" — was the old default,
+  /// and it was claiming less human authorship than the work involves.
+  aiDisclosure  AiDisclosure @default(AI_ASSISTED)
   /// Free text, creator-supplied: generation tool, human editing, vocals.
   aiTool        String?
   aiDetails     String?      @db.Text

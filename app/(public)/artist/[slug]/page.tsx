@@ -130,7 +130,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
             )}
           </div>
           <div className="min-w-0 pb-1">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground-subtle">AI Music Creator</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground-subtle">Creator</p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{artist.name}</h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-muted">
               <span className="tabular">{stats.releases}</span> {stats.releases === 1 ? "release" : "releases"}

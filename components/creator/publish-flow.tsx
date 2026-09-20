@@ -209,7 +209,7 @@ export function PublishFlow({
   const [dismissedSuggestions, setDismissedSuggestions] = useState(false);
 
   // --- rights & disclosure
-  const [disclosure, setDisclosure] = useState<Disclosure>(initialTrack?.aiDisclosure ?? "AI_GENERATED");
+  const [disclosure, setDisclosure] = useState<Disclosure>(initialTrack?.aiDisclosure ?? "AI_ASSISTED");
   const [aiTool, setAiTool] = useState(initialTrack?.aiTool ?? "");
   const [aiDetails, setAiDetails] = useState(initialTrack?.aiDetails ?? "");
   const [rightsAccepted, setRightsAccepted] = useState(!!initialTrack?.rightsConfirmedAt);

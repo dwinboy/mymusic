@@ -430,7 +430,12 @@ export function TrackForm({
       </div>
 
       <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2">
-        <ToggleRow label="AI-generated disclosure" description="Shown publicly as an “AI Composed” badge." checked={isAiGenerated} onChange={setIsAiGenerated} />
+        <ToggleRow
+          label="Involves AI"
+          description="Kept in step with the disclosure below. Stated under Credits on the song page, not as a badge."
+          checked={isAiGenerated}
+          onChange={setIsAiGenerated}
+        />
         <ToggleRow label="Explicit content" description="Shows an explicit-content indicator." checked={isExplicit} onChange={setIsExplicit} />
         {/* Narrowed to what it actually does now. Offline listening and
             high-quality streaming no longer depend on it, so turning this

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrackRow } from "@/components/music/track-row";
+import { LyricSnippet } from "@/components/search/lyric-snippet";
 import type { PlayerTrack } from "@/lib/types";
 
 /**
@@ -16,12 +17,16 @@ export function PaginatedTrackList({
   initialCursor,
   query,
   likedIds = [],
+  lyricQuery,
   pageSize = 24,
 }: {
   initialTracks: PlayerTrack[];
   initialCursor: string | null;
   query: string;
   likedIds?: string[];
+  /** When these results came from a search, the words that were searched for,
+      so a song matched on its lyrics can show the line. */
+  lyricQuery?: string;
   pageSize?: number;
 }) {
   const [tracks, setTracks] = useState(initialTracks);
@@ -79,7 +84,10 @@ export function PaginatedTrackList({
     <div>
       <div className="flex flex-col">
         {tracks.map((track, i) => (
-          <TrackRow key={track.id} track={track} index={i} queue={tracks} initiallyLiked={liked.has(track.id)} />
+          <div key={track.id}>
+            <TrackRow track={track} index={i} queue={tracks} initiallyLiked={liked.has(track.id)} />
+            {lyricQuery && <LyricSnippet query={lyricQuery} track={track} />}
+          </div>
         ))}
       </div>
 

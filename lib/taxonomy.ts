@@ -382,6 +382,10 @@ export function buildTrackWhere(filter: TrackFilter): Prisma.TrackWhereInput {
         { title: { contains: q, mode: "insensitive" } },
         { artist: { name: { contains: q, mode: "insensitive" } } },
         { album: { title: { contains: q, mode: "insensitive" } } },
+        // The words themselves. People remember a line long after they've
+        // forgotten what a song was called, and on a catalogue built out of
+        // what the songs say, that is the likeliest thing they'll type.
+        { lyrics: { contains: q, mode: "insensitive" } },
       ],
     });
   }

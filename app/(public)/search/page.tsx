@@ -9,6 +9,7 @@ import { toPlayerTrack } from "@/lib/mappers";
 import { getLikedTrackIds } from "@/lib/favorites";
 import { toAlbumCard, toCreatorCard, toPlaylistCard } from "@/lib/catalog-cards";
 import { TrackRow } from "@/components/music/track-row";
+import { LyricSnippet } from "@/components/search/lyric-snippet";
 import { SectionHeader } from "@/components/music/section-header";
 import { HorizontalScroller } from "@/components/music/horizontal-scroller";
 import { AlbumCard, CreatorCard, PlaylistCard } from "@/components/music/collection-cards";
@@ -183,7 +184,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               <SectionHeader title="Songs" href={`/songs?${results.songsQuery}`} />
               <div className="flex flex-col">
                 {songs.map((track, i) => (
-                  <TrackRow key={track.id} track={track} index={i} queue={songs} initiallyLiked={liked.has(track.id)} />
+                  <div key={track.id}>
+                    <TrackRow track={track} index={i} queue={songs} initiallyLiked={liked.has(track.id)} />
+                    <LyricSnippet query={query} track={track} />
+                  </div>
                 ))}
               </div>
               {results.songTotal > songs.length && (
@@ -243,6 +247,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                 initialCursor={songsTab.cursor}
                 query={results.songsQuery}
                 likedIds={[...liked]}
+                lyricQuery={query}
                 pageSize={30}
               />
             ) : (

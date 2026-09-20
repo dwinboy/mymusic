@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
 import { formatDuration, formatReleaseDate } from "@/lib/utils";
 import { Hero } from "@/components/home/hero";
+import { WhatThisIs } from "@/components/home/what-this-is";
 import { ContinueListeningSection } from "@/components/home/continue-listening-section";
 import { MadeForYouSection } from "@/components/home/made-for-you-section";
 import { NewReleasesSection } from "@/components/home/new-releases-section";
@@ -72,7 +73,7 @@ export default async function HomePage() {
         <EmptyState
           icon={Music2}
           title="The catalogue is warming up"
-          description="New AI music will appear here as soon as creators publish it."
+          description="New music will appear here as soon as creators publish it."
           actionLabel="Explore Discover"
           actionHref="/discover"
         />
@@ -162,6 +163,8 @@ export default async function HomePage() {
       <Suspense fallback={<RailSkeleton count={8} />}>
         <FeaturedArtistsSection />
       </Suspense>
+
+      <WhatThisIs />
     </div>
   );
 }

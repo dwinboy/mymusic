@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "Vibe Banger — Independent Sound",
     short_name: "Vibe Banger",
-    description: "An original catalogue of AI-composed music, streamed in premium quality.",
+    description: "Original songs written from real experience. Stream them, keep them offline, or have a song made for someone who matters to you.",
     start_url: "/",
     scope: "/",
     display: "standalone",

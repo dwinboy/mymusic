@@ -25,12 +25,15 @@ export function AuthShell({
         <div className="relative flex h-full flex-col justify-between p-12">
           <Logo />
           <div className="max-w-sm">
+            {/* Leads with what the music is about rather than how it is
+                produced. The method is a fact about each track, stated on
+                its own page; it was never the reason anyone presses play. */}
             <p className="text-3xl font-semibold leading-tight text-foreground">
-              An independent catalogue of AI-composed sound.
+              Songs with somebody&apos;s life in them.
             </p>
             <p className="mt-4 text-sm text-foreground-muted">
-              Stream, download, and organize an evolving library of original music — crafted end to end
-              by artificial intelligence.
+              Original music written from real experience — the words are ours, and the stories behind
+              them are true. Stream it, keep it offline, or have a song made for someone you love.
             </p>
           </div>
         </div>

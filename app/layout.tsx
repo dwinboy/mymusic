@@ -23,20 +23,20 @@ export const metadata: Metadata = {
     default: "Vibe Banger — Independent Sound",
     template: "%s — Vibe Banger",
   },
-  description: "An original catalogue of AI-composed music, streamed in premium quality.",
+  description: "Original songs written from real experience. Stream them, keep them offline, or have a song made for someone who matters to you.",
   applicationName: "Vibe Banger",
   manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
     siteName: "Vibe Banger",
     title: "Vibe Banger — Independent Sound",
-    description: "An original catalogue of AI-composed music, streamed in premium quality.",
+    description: "Original songs written from real experience. Stream them, keep them offline, or have a song made for someone who matters to you.",
     url: SITE_URL,
   },
   twitter: {
     card: "summary_large_image",
     title: "Vibe Banger — Independent Sound",
-    description: "An original catalogue of AI-composed music, streamed in premium quality.",
+    description: "Original songs written from real experience. Stream them, keep them offline, or have a song made for someone who matters to you.",
   },
   appleWebApp: {
     capable: true,

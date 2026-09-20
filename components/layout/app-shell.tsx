@@ -4,6 +4,7 @@ import { usePlayerStore } from "@/lib/stores/player-store";
 import { Header } from "@/components/layout/header";
 import { MobileHeader } from "@/components/layout/mobile-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { Footer } from "@/components/layout/footer";
 import { PlayerShell } from "@/components/player/player-shell";
 import { InstallNudge } from "@/components/pwa/install-nudge";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       >
         {children}
+        {/* Inside main, so it sits above the bottom nav and the player rather
+            than behind them — that padding is what keeps it reachable. */}
+        <Footer />
       </main>
       <BottomNav />
       <PlayerShell />

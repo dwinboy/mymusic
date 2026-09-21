@@ -110,16 +110,23 @@ export default function PrivacyPage() {
 
       <Section title="Getting a copy, or getting it deleted">
         <p>
-          Email{" "}
+          You can delete your account yourself, at any time, from your{" "}
+          <Link href="/account" className="font-medium text-foreground underline">
+            account page
+          </Link>
+          . It happens immediately.
+        </p>
+        <p>
+          For anything else — a copy of what we hold, or a correction — email{" "}
           <a href={`mailto:${LEGAL.contactEmail}`} className="font-medium text-foreground underline">
             {LEGAL.contactEmail}
           </a>{" "}
-          from the address on your account and ask. You can ask for a copy of what we hold, a correction, or deletion of
-          your account and everything attached to it. We will do it and confirm when it is done.
+          from the address on your account and ask. We will do it and confirm when it is done.
         </p>
         <p>
-          Deleting your account removes your profile, playlists, likes, history and requests. Music you published stays
-          only if you ask us to keep it up; otherwise it comes down with the account.
+          Deleting removes your profile, playlists, likes, history, downloads, follows and requests. Music you published
+          comes off the site; the recordings stay in our storage until we remove them, so tell us if you want them
+          destroyed too. Play counts stay with the creators you listened to, carrying nothing that identifies you.
         </p>
       </Section>
 

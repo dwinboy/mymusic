@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles, Music4, ArrowDownToLine } from "lucide-react";
+import { LayoutDashboard, LogOut, User as UserIcon, Download, Heart, Sparkles, Music4, ArrowDownToLine, Settings } from "lucide-react";
 import { useInstallAvailability } from "@/hooks/use-install-availability";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,11 @@ export function UserMenu() {
             <ArrowDownToLine className="h-4 w-4" /> Install app
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild>
+          <Link href="/account">
+            <Settings className="h-4 w-4" /> Account
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* Offered to every listener: the studio onboards anyone without a
             creator profile, so there's no separate "become a creator" step. */}

@@ -67,8 +67,8 @@ const TARGET_RANGE = 11;
 
 interface LoudnessMeasurement {
   integratedLufs: number;
-  /** loudnorm's second-pass arguments, measured from this exact input. */
-  filter: string;
+  /** The gain to apply, or null when the track is already close enough. */
+  filter: string | null;
 }
 
 /**
@@ -101,12 +101,30 @@ async function measureLoudness(ffmpeg: string, inputPath: string): Promise<Loudn
     const measured = [m.input_i, m.input_tp, m.input_lra, m.input_thresh, m.target_offset].map(Number);
     if (!measured.every(Number.isFinite)) return null;
 
+    // A single gain, not loudnorm's second pass.
+    //
+    // loudnorm was asked for linear=true, but linear is a request rather than
+    // a guarantee: whenever the gain it needs would push the true peak past
+    // the target, it silently switches to dynamic mode and rides the gain
+    // through the track. On a real upload here that compressed the loudness
+    // range from 3.30 LU to 2.10 — a third of the dynamics gone, which is
+    // what "it doesn't sound like the original" is.
+    //
+    // Matching loudness never required touching dynamics. One offset does it,
+    // capped by the headroom the peak leaves, so the result can pump or clip
+    // by construction rather than by luck. A master louder than the target —
+    // which is nearly all of them — is attenuated and lands exactly on it; an
+    // already-quiet one with peaks near full scale stays slightly under
+    // rather than being squashed to get there.
+    const wanted = TARGET_LUFS - integratedLufs;
+    const headroom = TARGET_TRUE_PEAK - Number(m.input_tp);
+    const gainDb = Math.min(wanted, headroom);
+
     return {
       integratedLufs,
-      filter:
-        `loudnorm=I=${TARGET_LUFS}:TP=${TARGET_TRUE_PEAK}:LRA=${TARGET_RANGE}` +
-        `:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}` +
-        `:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
+      // Below a quarter of a decibel nobody can hear it, and re-encoding
+      // without a filter is one less thing done to the audio.
+      filter: Math.abs(gainDb) < 0.25 ? null : `volume=${gainDb.toFixed(2)}dB`,
     };
   } catch {
     // Never fail an upload over loudness: an unmeasured track is encoded
@@ -143,7 +161,7 @@ export class FfmpegAudioProcessingService implements AudioProcessingService {
 
       // Measure once, from the master, and level both encodes with it.
       const loudness = await measureLoudness(ffmpegPath, inputPath);
-      const levelling = loudness ? ["-af", loudness.filter] : [];
+      const levelling = loudness?.filter ? ["-af", loudness.filter] : [];
 
       const encode = async (outputPath: string, bitrate: string, codec: string[]) => {
         await execFileAsync(ffmpegPath!, [

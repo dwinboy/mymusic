@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
-import { usePlayerStore } from "@/lib/stores/player-store";
 
 const CHECK_EVERY_MS = 30 * 60 * 1000;
 const MIN_GAP_MS = 5 * 60 * 1000;
@@ -12,13 +11,11 @@ const MIN_GAP_MS = 5 * 60 * 1000;
  * stay open for days — that a newer version is live. Checked when the app
  * comes back to the foreground or reconnects, and every half hour.
  *
- * Never interrupts listening: the prompt waits until nothing is playing, and
- * only reloads when asked.
+ * Only ever reloads when asked.
  */
 export function UpdateBanner({ buildId }: { buildId: string }) {
   const [available, setAvailable] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const lastCheck = useRef(0);
 
   useEffect(() => {
@@ -49,7 +46,13 @@ export function UpdateBanner({ buildId }: { buildId: string }) {
     };
   }, [buildId]);
 
-  if (!available || dismissed || isPlaying) return null;
+  // Deliberately not hidden while a track is playing. This is a music app:
+  // something is playing most of the time, so that condition meant a listener
+  // in the installed app was never told an update existed and could sit on a
+  // build from days ago. It is a small pill under the header — it interrupts
+  // nothing, and refreshing stays their choice. The player restores what was
+  // playing after a reload.
+  if (!available || dismissed) return null;
 
   return (
     <div

@@ -35,7 +35,10 @@ const POINTS = [
 
 export function WhatThisIs() {
   return (
-    <section className="rounded-2xl border border-border bg-surface/40 p-6 sm:p-8">
+    // Sits on the page rather than in a card. Boxed, it read as an
+    // advertisement dropped onto the end of the homepage; the rails above it
+    // carry no border either, so a panel here broke the rhythm of the page.
+    <section className="border-t border-border pt-8">
       <div className="max-w-2xl">
         <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
           Music that carries somebody&apos;s story
@@ -46,7 +49,7 @@ export function WhatThisIs() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-3">
+      <div className="mt-8 grid gap-x-8 gap-y-7 sm:grid-cols-3">
         {POINTS.map(({ icon: Icon, title, body }) => (
           <div key={title}>
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent">

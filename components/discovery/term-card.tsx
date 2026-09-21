@@ -30,7 +30,13 @@ export function TermCard({
     <Link
       href={href}
       className={cn(
-        "group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-xl border border-border bg-surface p-4 transition-[border-color,transform] duration-300 hover:border-border-strong active:scale-[0.99]",
+        // Gold on hover rather than a grey border: on a pointer device the
+        // card lifts a little and its edge warms, which is the moment the
+        // interface answers back. Gated on can-hover so a phone — where
+        // every card would otherwise sit in a permanent hover state after a
+        // tap — is left alone, and the press feedback below is what touch
+        // gets instead.
+        "card-lift group relative flex shrink-0 flex-col justify-end overflow-hidden rounded-xl border border-border bg-surface p-4 transition-[border-color] duration-300 active:scale-[0.99]",
         size === "sm" && "h-24 w-40 sm:w-44",
         size === "md" && "aspect-[4/3] w-44 sm:w-56",
         size === "lg" && "aspect-[16/10] w-72 sm:w-80",

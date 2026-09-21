@@ -270,3 +270,35 @@ html:has(.embed-root) body::before {
     animation-delay: 0s !important;
   }
 }
+
+/* Card hover, on pointer devices only.
+   Written here rather than as utilities because the interesting part is a
+   color-mix inside a box-shadow: as an arbitrary Tailwind value that parsed
+   into a transparent shadow and a border rule that never applied, which is
+   the sort of failure that looks like nothing at all. `translate` is in the
+   transition on purpose — Tailwind v4 lifts with the translate property, not
+   transform, so a transition listing only transform lets the lift snap. */
+@media (hover: hover) and (pointer: fine) {
+  .card-lift {
+    transition:
+      translate 300ms ease-out,
+      border-color 300ms ease-out,
+      box-shadow 300ms ease-out;
+  }
+
+  .card-lift:hover {
+    translate: 0 -2px;
+    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+    box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+
+  /* Artwork-led cards carry no border of their own, so the warmth is the
+     shadow alone. */
+  .art-lift {
+    transition: box-shadow 300ms ease-out;
+  }
+
+  .group:hover .art-lift {
+    box-shadow: 0 14px 36px -16px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+}

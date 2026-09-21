@@ -18,7 +18,9 @@ export function MusicCard({
   return (
     <div className={cn("group w-40 shrink-0 sm:w-44", className)}>
       <ArtworkMorphLink href={`/song/${track.slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-surface shadow-sm transition-shadow group-hover:shadow-elevated">
+        {/* Same warmth as the category cards, so a rail of songs and a rail
+            of moods behave alike under the cursor. */}
+        <div className="art-lift relative aspect-square overflow-hidden rounded-lg bg-surface shadow-sm">
           <TrackArt src={track.coverUrl} alt={track.title} className="h-full w-full" rounded="rounded-none" sizes="176px" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <PlayButton

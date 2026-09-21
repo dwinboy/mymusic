@@ -55,7 +55,22 @@ export async function TermIndexPage({ kind }: { kind: BrowsableKind }) {
   const artwork = await getTermArtwork(ordered, "large");
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12">
+    <div className="relative mx-auto max-w-[1600px] px-4 py-8 sm:px-8 sm:py-12">
+      {/* These are landing pages — people arrive on them from search, not by
+          walking through the app — and they opened as three lines of type
+          above a grid. A warm band gives each one a threshold to cross
+          before the cards start.
+
+          Behind the type and bounded in height, so the grid below stays on
+          the page's own ground and the artwork keeps its contrast. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64"
+        style={{
+          background:
+            "radial-gradient(ellipse 800px 300px at 15% 0%, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent 70%)",
+        }}
+      />
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{copy.eyebrow}</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">{copy.title}</h1>
       <p className="mt-3 max-w-xl text-base text-foreground-muted">{copy.description}</p>

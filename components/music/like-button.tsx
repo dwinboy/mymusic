@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Heart } from "lucide-react";
+import { markLiked } from "@/hooks/use-liked-tracks";
 import { cn } from "@/lib/utils";
 
 export function LikeButton({
@@ -35,6 +36,9 @@ export function LikeButton({
 
     const next = !liked;
     setLiked(next);
+    // Tell everything else showing this track — the mini player especially,
+    // which has no server-rendered answer of its own.
+    markLiked(trackId, next);
 
     startTransition(async () => {
       try {
@@ -49,6 +53,7 @@ export function LikeButton({
         if (!res.ok) throw new Error();
       } catch {
         setLiked(!next);
+        markLiked(trackId, !next);
       }
     });
   }

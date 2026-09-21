@@ -1,11 +1,17 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { useRef } from "react";
+import { Pause, Play, SkipForward } from "lucide-react";
 import { TrackArt } from "@/components/player/track-art";
+import { LikeButton } from "@/components/music/like-button";
 import { Progress } from "@/components/ui/progress";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useNextTrack } from "@/hooks/use-player";
-import { cn, formatDuration } from "@/lib/utils";
+import { useIsLiked } from "@/hooks/use-liked-tracks";
+import { cn } from "@/lib/utils";
+
+/** A drag this far across the bar is a skip; anything less is a tap. */
+const SWIPE_THRESHOLD = 60;
 
 export function MobileMiniPlayer() {
   const track = usePlayerStore((s) => s.currentTrack());
@@ -14,7 +20,14 @@ export function MobileMiniPlayer() {
   const currentTime = usePlayerStore((s) => s.currentTime);
   const duration = usePlayerStore((s) => s.duration);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
+  const playNext = usePlayerStore((s) => s.next);
+  const playPrevious = usePlayerStore((s) => s.previous);
   const setNowPlayingOpen = usePlayerStore((s) => s.setNowPlayingOpen);
+  const liked = useIsLiked(track?.id);
+
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  /** Set when a drag turned into a skip, so the click it becomes is ignored. */
+  const swiped = useRef(false);
 
   if (!track) return null;
 
@@ -22,7 +35,31 @@ export function MobileMiniPlayer() {
 
   return (
     <button
-      onClick={() => setNowPlayingOpen(true)}
+      onClick={() => {
+        // A swipe ends in a click. Opening the full player after someone just
+        // skipped would be the opposite of what they asked for.
+        if (swiped.current) {
+          swiped.current = false;
+          return;
+        }
+        setNowPlayingOpen(true);
+      }}
+      onPointerDown={(e) => {
+        swipe.current = { x: e.clientX, y: e.clientY };
+        swiped.current = false;
+      }}
+      onPointerUp={(e) => {
+        const start = swipe.current;
+        swipe.current = null;
+        if (!start) return;
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        // Horizontal only: a vertical drag is the page being scrolled.
+        if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
+        swiped.current = true;
+        if (dx < 0) playNext();
+        else playPrevious();
+      }}
       className={cn(
         "fixed inset-x-0 z-30 flex h-16 w-full items-center gap-3 border-t border-border bg-canvas-raised/85 px-3 text-left shadow-player backdrop-blur-xl lg:hidden"
       )}
@@ -32,25 +69,28 @@ export function MobileMiniPlayer() {
       <TrackArt src={track.coverUrl} alt={track.title} className="h-11 w-11" />
       <div className="min-w-0 flex-1 leading-tight">
         <p className="truncate text-sm font-medium text-foreground">{track.title}</p>
-        <p className="flex items-center gap-1.5 text-xs text-foreground-muted">
-          <span className="truncate">{track.artistName}</span>
-          <span className="shrink-0 text-foreground-subtle" aria-hidden>
-            ·
-          </span>
-          <span className="tabular shrink-0 text-foreground-subtle">
-            {formatDuration(currentTime)} / {formatDuration(duration)}
-          </span>
-        </p>
-        {/* What's coming. Without it the only way to know was to open the
-            queue, which is two taps away from a bar you are already looking
-            at. Drops out silently at the end of the queue rather than
-            reserving an empty line. */}
+        {/* The elapsed/total readout used to sit here. The progress line above
+            already shows position, and the exact seconds are in the full
+            player — trading them for two real controls is the better use of
+            a 390px bar. */}
+        <p className="truncate text-xs text-foreground-muted">{track.artistName}</p>
         {next && (
           <p className="mt-0.5 truncate text-[11px] text-foreground-subtle">
             <span className="uppercase tracking-[0.12em]">Next</span> · {next.title}
           </p>
         )}
       </div>
+
+      {/* Every control sits inside the bar's own button, so each one has to
+          stop the click from also opening the full player. LikeButton already
+          does; the others do it here. */}
+      <LikeButton
+        key={track.id}
+        trackId={track.id}
+        initialLiked={liked}
+        size="sm"
+        className="h-9 w-9 shrink-0"
+      />
       <span
         onClick={(e) => {
           e.stopPropagation();
@@ -62,6 +102,18 @@ export function MobileMiniPlayer() {
       >
         {isPlaying ? <Pause className="h-5 w-5" fill="currentColor" /> : <Play className="h-5 w-5 translate-x-[1px]" fill="currentColor" />}
       </span>
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          playNext();
+        }}
+        role="button"
+        aria-label="Next track"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-foreground-muted transition-colors hover:text-foreground"
+      >
+        <SkipForward className="h-[18px] w-[18px]" fill="currentColor" />
+      </span>
+
       <Progress value={progressPercent} className="absolute inset-x-0 top-0 h-[2px] rounded-none" />
     </button>
   );

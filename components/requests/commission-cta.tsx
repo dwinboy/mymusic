@@ -11,7 +11,17 @@ import { Button } from "@/components/ui/button";
  */
 export function CommissionCta({ occasion }: { occasion?: string }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-surface/40 p-6 sm:p-8">
+    // Warmed deliberately. As a plain surface panel it read as a notice at
+    // the end of the page; gold makes it an offer, which is what it is. The
+    // gradient runs off to the right so the text sits on the strongest part
+    // and the card doesn't become a solid block of colour.
+    <section
+      className="overflow-hidden rounded-2xl border border-accent/25 p-6 sm:p-8"
+      style={{
+        backgroundImage:
+          "linear-gradient(115deg, color-mix(in srgb, var(--color-accent) 16%, transparent) 0%, color-mix(in srgb, var(--color-accent) 5%, transparent) 42%, transparent 78%)",
+      }}
+    >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 max-w-xl">
           <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-accent">

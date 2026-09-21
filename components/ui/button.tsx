@@ -4,11 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-[background-color,color,box-shadow,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-[background-color,color,box-shadow,transform,filter] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-foreground hover:bg-accent-hover active:scale-[0.98]",
+        // Gold as a surface rather than a filled shape: a highlight along the
+        // top and a shade at the bottom is what makes a button look like an
+        // object you can press. bg-accent stays underneath so the button is
+        // still correct if the gradient doesn't paint.
+        //
+        // Hover brightens rather than swapping gradients — browsers don't
+        // interpolate between two gradients, so a swap would snap while
+        // everything else on the button eases.
+        primary:
+          "bg-accent text-accent-foreground [background-image:linear-gradient(180deg,color-mix(in_srgb,var(--color-accent)_86%,white)_0%,var(--color-accent)_52%,color-mix(in_srgb,var(--color-accent)_95%,black)_100%)] hover:brightness-[1.06] active:scale-[0.98]",
         secondary:
           "bg-surface text-foreground border border-border-strong hover:bg-surface-hover active:scale-[0.98]",
         ghost: "text-foreground hover:bg-surface active:scale-[0.98]",

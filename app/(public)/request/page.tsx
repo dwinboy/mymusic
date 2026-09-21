@@ -28,7 +28,21 @@ export default async function RequestPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-8 sm:py-14">
+    <div className="relative mx-auto max-w-3xl px-4 py-10 sm:px-8 sm:py-14">
+      {/* The one page here whose job is to persuade, and it opened as plain
+          text on the wash every page shares. A gold bloom behind the headline
+          gives it a moment of its own — bounded and behind the type, so it
+          reads as light in the room rather than a coloured panel.
+          -z-10 keeps it under the form; pointer-events-none keeps it out of
+          the way of the fields. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80"
+        style={{
+          background:
+            "radial-gradient(ellipse 700px 320px at 20% 0%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 68%)",
+        }}
+      />
       <header className="max-w-2xl">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">Commissions</p>
         <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">

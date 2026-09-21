@@ -1,4 +1,5 @@
 import { TermCard } from "@/components/discovery/term-card";
+import { HorizontalScroller } from "@/components/music/horizontal-scroller";
 import { getTerms, getTermArtwork, countTracksPerTerm, termHref } from "@/lib/taxonomy";
 
 /**
@@ -26,18 +27,21 @@ export async function QuickIntents({ title = "What are you listening for?", limi
   return (
     <section>
       <h2 className="mb-4 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* A scrolling row rather than a grid. As a grid it laid every activity
+          out at once, which on a phone filled the screen before anyone had
+          reached the music — the row shows a few, hints at more by cutting
+          the next card at the edge, and takes a fraction of the height. */}
+      <HorizontalScroller>
         {intents.map((term) => (
           <TermCard
             key={term.id}
             href={termHref("ACTIVITY", term.slug)!}
             name={term.name}
             imageUrl={artwork.get(term.id)}
-            size="fill"
-            className="lg:aspect-[3/4]"
+            size="lg"
           />
         ))}
-      </div>
+      </HorizontalScroller>
     </section>
   );
 }

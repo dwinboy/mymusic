@@ -126,10 +126,10 @@ export default async function HomePage() {
         albumHref={player.albumSlug ? `/album/${player.albumSlug}` : undefined}
       />
 
-      <Suspense fallback={<RailSkeleton />}>
-        <QuickIntents />
-      </Suspense>
-
+      {/* Order on purpose, and it matters most on a phone where one screen
+          is all you get: pick up what you were playing, then what you're in
+          the mood for, then what's new. Everything below is for browsing
+          rather than for getting to music quickly. */}
       <Suspense fallback={<RailSkeleton />}>
         {/* The hero already shows the newest one; repeating it as the first
             card in this row would read as a bug. */}
@@ -137,11 +137,15 @@ export default async function HomePage() {
       </Suspense>
 
       <Suspense fallback={<RailSkeleton />}>
-        <MadeForYouSection />
+        <QuickIntents />
       </Suspense>
 
       <Suspense fallback={<RailSkeleton />}>
         <NewReleasesSection />
+      </Suspense>
+
+      <Suspense fallback={<RailSkeleton />}>
+        <MadeForYouSection />
       </Suspense>
 
       <Suspense

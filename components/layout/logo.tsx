@@ -42,20 +42,19 @@ export function Logo({ className, variant = "header" }: { className?: string; va
           hero ? "h-16 sm:h-20" : "h-9 lg:h-11"
         )}
       />
-      {/* The wordmark waits until there is room for it beside the mark and the
-          header's own controls — measured at 420px, where a signed-out header
-          carrying Log in and Sign up still leaves a comfortable gap. It used
-          to appear from 390px, against a mark half this width; at this size
-          the two collided on exactly the phones that breakpoint existed to
-          serve, with the wordmark painting over the search icon. The mark
-          alone identifies the app, and now does it far better than the boxed
-          one did. The sign-in page has a column to itself and never drops it. */}
+      {/* The wordmark has to share a 390px phone with the mark, a search icon
+          and — signed out, which is the widest case — Log in and Sign up. It
+          fits there only at a smaller size, so it steps up rather than
+          switching on: tighter and a shade smaller on a phone, full size once
+          there is room for it. Hiding it below 390px keeps the 375px phones
+          that never had space from having the mark squeezed. The sign-in page
+          has a column to itself and never drops it. */}
       <span
         className={cn(
           "whitespace-nowrap font-semibold uppercase",
           hero
             ? "text-xl tracking-[0.2em] sm:text-2xl"
-            : "hidden text-[15px] tracking-[0.18em] min-[420px]:inline lg:text-lg"
+            : "hidden text-[13px] tracking-[0.1em] min-[390px]:inline min-[412px]:text-[15px] min-[412px]:tracking-[0.18em] lg:text-lg lg:tracking-[0.18em]"
         )}
       >
         Vibe Banger

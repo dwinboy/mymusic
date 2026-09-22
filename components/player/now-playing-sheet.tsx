@@ -13,7 +13,7 @@ import { ShareMenu } from "@/components/music/share-menu";
 import { SleepTimerMenu } from "@/components/player/sleep-timer-menu";
 import { Badge } from "@/components/ui/badge";
 import { usePlayerStore } from "@/lib/stores/player-store";
-import { SyncedLyrics } from "@/components/player/synced-lyrics";
+import { LyricsPanel } from "@/components/player/lyrics-panel";
 import { useDominantColor } from "@/hooks/use-dominant-color";
 import { cn } from "@/lib/utils";
 
@@ -118,7 +118,7 @@ export function NowPlayingSheet() {
             : "--track-color 900ms ease-out, transform 280ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <div className="flex items-center justify-between py-3">
+        <div className={cn("flex items-center justify-between", showLyrics ? "py-1.5" : "py-3")}>
           <button
             onClick={() => setOpen(false)}
             aria-label="Minimize"
@@ -138,18 +138,35 @@ export function NowPlayingSheet() {
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
-          {showLyrics && hasLyrics ? (
-            <div className="flex w-full max-w-sm flex-1 flex-col overflow-hidden">
-              <div data-scrollable className="-mx-2 flex-1 overflow-y-auto px-2">
-                <SyncedLyrics lyrics={track.lyrics ?? ""} />
+        {/* Lyrics are a view of their own rather than a swap for the artwork:
+            sharing the screen with the full control stack left them a third
+            of it, and nothing on screen said how to get back. */}
+        {showLyrics && hasLyrics ? (
+          <div className="flex min-h-0 flex-1 flex-col pt-1">
+            <LyricsPanel track={track} onClose={() => setShowLyrics(false)} className="mx-auto max-w-sm flex-1" />
+
+            {/* -mb-4 reclaims part of the sheet's own bottom padding: with a
+                close button of its own right at the top, the lyrics want every
+                pixel between the two. */}
+            <div data-no-swipe className="mx-auto -mb-4 mt-3 w-full max-w-sm shrink-0">
+              <WaveformProgress />
+              <div className="mt-2.5 flex items-center justify-center gap-8">
+                <button onClick={previous} aria-label="Previous" className="flex h-11 w-11 items-center justify-center rounded-full text-foreground">
+                  <SkipBack className="h-6 w-6" fill="currentColor" />
+                </button>
+                <PlayButton track={track} size="lg" />
+                <button onClick={next} aria-label="Next" className="flex h-11 w-11 items-center justify-center rounded-full text-foreground">
+                  <SkipForward className="h-6 w-6" fill="currentColor" />
+                </button>
               </div>
             </div>
-          ) : (
-            // Sized from the height left over, not from the width: a short
-            // screen (mobile Safari with its chrome showing) otherwise pushed
-            // the controls below the fold, where they could not be reached.
-            <div className="flex min-h-0 w-full max-w-sm flex-1 items-center justify-center">
+          </div>
+        ) : (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
+          {/* Sized from the height left over, not from the width: a short
+              screen (mobile Safari with its chrome showing) otherwise pushed
+              the controls below the fold, where they could not be reached. */}
+          <div className="flex min-h-0 w-full max-w-sm flex-1 items-center justify-center">
               <div
                 className={cn(
                   "relative aspect-square h-full max-h-96 w-auto max-w-full overflow-hidden rounded-2xl transition-transform duration-700",
@@ -159,8 +176,7 @@ export function NowPlayingSheet() {
               >
                 <TrackArt src={track.coverUrl} alt={track.title} className="h-full w-full" rounded="rounded-none" sizes="400px" />
               </div>
-            </div>
-          )}
+          </div>
 
           <div className="w-full max-w-sm shrink-0">
             <div className="flex items-start justify-between gap-4">
@@ -238,6 +254,7 @@ export function NowPlayingSheet() {
             </div>
           </div>
         </div>
+        )}
       </SheetContent>
     </Sheet>
   );

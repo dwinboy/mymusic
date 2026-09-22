@@ -39,7 +39,7 @@ export function Logo({ className, variant = "header" }: { className?: string; va
         priority
         className={cn(
           "w-auto shrink-0 transition-transform group-hover:scale-105",
-          hero ? "h-16 sm:h-20" : "h-10 lg:h-12"
+          hero ? "h-16 sm:h-20" : "h-9 lg:h-11"
         )}
       />
       {/* The wordmark waits until there is room for it beside the mark and the

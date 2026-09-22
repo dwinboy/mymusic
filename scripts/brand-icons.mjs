@@ -57,6 +57,53 @@ async function splash(width, height, out) {
 }
 
 /**
+ * The mark with its ground taken away, for use inside the app itself.
+ *
+ * Every other output here is composited onto black on purpose — a glowing
+ * mark needs a dark ground, and platforms paint their own backgrounds behind
+ * an app icon. In the app's own chrome that ground is already there, so the
+ * black square was just a square: visible against the near-black header and
+ * boxing in a mark that should sit on the bar directly.
+ *
+ * The artwork is light emitted on black, so brightness is opacity: the
+ * strongest channel becomes alpha and the colour is left exactly as it is.
+ * Dividing the colour back out by that alpha — the textbook way to recover
+ * straight alpha — turns the faint outer glow into coloured speckle, because
+ * at an alpha of two or three it is amplifying compression noise a hundred
+ * times. Left alone, the pixels are already the right colour for compositing
+ * over a dark ground, which is the only ground the app ever puts it on.
+ *
+ * Anything dimmer than the noise floor is dropped outright, then the result
+ * is trimmed so the file is the mark and nothing else — which is what makes
+ * a CSS height mean the height of what you can actually see.
+ */
+const GLOW_NOISE_FLOOR = 14;
+
+async function transparentMark(out) {
+  const { data, info } = await sharp(MASTER).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info;
+  const rgba = Buffer.alloc(width * height * 4);
+
+  for (let i = 0, o = 0; i < data.length; i += channels, o += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const alpha = Math.max(r, g, b);
+    if (alpha < GLOW_NOISE_FLOOR) continue; // Buffer.alloc already zeroed it
+    rgba[o] = r;
+    rgba[o + 1] = g;
+    rgba[o + 2] = b;
+    rgba[o + 3] = alpha;
+  }
+
+  await sharp(rgba, { raw: { width, height, channels: 4 } })
+    .trim({ threshold: 2 })
+    // Displayed at a few dozen pixels tall; a 1024px master is far more than
+    // any screen asks for and costs half a megabyte to carry.
+    .resize({ width: 512, withoutEnlargement: true })
+    .png({ compressionLevel: 9 })
+    .toFile(out);
+}
+
+/**
  * iOS only shows a launch image when a media query matches the device
  * exactly, so the list is CSS pixels plus pixel ratio. Shared with the app,
  * which renders the matching <link> tags — a size generated here with no tag
@@ -88,6 +135,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (const size of [16, 32, 192, 512]) await icon(size, path.join(ROOT, `public/icons/icon-${size}.png`));
   await icon(180, path.join(ROOT, "public/icons/apple-icon-180.png"));
   await maskable(512, path.join(ROOT, "public/icons/maskable-512.png"));
+
+  // Used by the app's own header and the sign-in page.
+  await transparentMark(path.join(ROOT, "public/brand/mark.png"));
 
   for (const { w, h, r } of APPLE_SPLASH) {
     await splash(w * r, h * r, path.join(ROOT, `public/splash/${w * r}x${h * r}.png`));

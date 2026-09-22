@@ -50,11 +50,29 @@ function isStandalone() {
   );
 }
 
-function detectIos() {
+/**
+ * Enough about where the page is running to explain installation honestly.
+ *
+ * The in-app browsers matter more than they look: a shared link opened from
+ * Instagram, Facebook, TikTok or WhatsApp lands in a webview that cannot add
+ * anything to the home screen at all, and a large share of arrivals from a
+ * shared song come through one. The only useful thing to say there is how to
+ * get out of it.
+ */
+export type InstallContext = {
+  ios: boolean;
+  android: boolean;
+  /** A webview inside another app, where installing is impossible. */
+  inApp: boolean;
+  standalone: boolean;
+};
+
+function detectContext(): InstallContext {
   const ua = navigator.userAgent;
-  const iOS = /iphone|ipod|ipad/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const inAppBrowser = /FBAN|FBAV|Instagram|Line\/|TikTok|Snapchat|GSA\//i.test(ua);
-  return iOS && !inAppBrowser;
+  const ios = /iphone|ipod|ipad/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const android = /android/i.test(ua);
+  const inApp = /FBAN|FBAV|Instagram|Line\/|TikTok|Snapchat|GSA\/|WhatsApp|Twitter|Pinterest/i.test(ua);
+  return { ios, android, inApp, standalone: isStandalone() };
 }
 
 export function isInstallDismissed() {
@@ -85,16 +103,16 @@ export function useInstallAvailability() {
   );
   // Platform checks need the browser; resolved after mount to keep the
   // server render and first client render identical.
-  const [platform, setPlatform] = useState<{ ios: boolean; standalone: boolean } | null>(null);
+  const [context, setContext] = useState<InstallContext | null>(null);
   useEffect(() => {
-    const id = requestAnimationFrame(() => setPlatform({ ios: detectIos(), standalone: isStandalone() }));
+    const id = requestAnimationFrame(() => setContext(detectContext()));
     return () => cancelAnimationFrame(id);
   }, []);
 
   let method: InstallMethod = null;
-  if (platform && !platform.standalone) {
+  if (context && !context.standalone && !context.inApp) {
     if (hasPrompt) method = "prompt";
-    else if (platform.ios) method = "ios";
+    else if (context.ios) method = "ios";
   }
 
   async function promptInstall() {
@@ -106,5 +124,5 @@ export function useInstallAvailability() {
     notify();
   }
 
-  return { method, promptInstall };
+  return { method, promptInstall, context };
 }

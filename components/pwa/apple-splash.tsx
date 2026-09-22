@@ -13,6 +13,11 @@ import splashSizes from "@/lib/apple-splash.json";
 export function AppleSplash() {
   return (
     <>
+      {/* Next emits only the newer `mobile-web-app-capable`. iOS before 16.4
+          reads nothing but the Apple-prefixed one, and without it an
+          installed icon opens inside Safari's chrome instead of standalone.
+          Harmless on versions that no longer need it. */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
       {splashSizes.map(({ w, h, r }) => (
         <link
           key={`${w}x${h}@${r}`}

@@ -75,15 +75,22 @@ export function UserMenu() {
             <Music4 className="h-4 w-4" /> Song requests
           </Link>
         </DropdownMenuItem>
-        {/* Only where the browser can actually do it in one tap. iOS has no
-            install API — it needs the Share-menu steps, which don't belong
-            in a dropdown — so those listeners get the card on the library
-            page and the nudge instead. */}
-        {method === "prompt" && (
+        {/* One tap where the browser offers a real install dialog; everywhere
+            else this goes to the page that explains the steps for the device
+            in hand. iOS has no install API, and a dropdown is no place for
+            Share-menu instructions — but it used to mean iPhone listeners
+            got no entry here at all. */}
+        {method === "prompt" ? (
           <DropdownMenuItem onSelect={() => void promptInstall()}>
             <ArrowDownToLine className="h-4 w-4" /> Install app
           </DropdownMenuItem>
-        )}
+        ) : method === "ios" ? (
+          <DropdownMenuItem asChild>
+            <Link href="/install">
+              <ArrowDownToLine className="h-4 w-4" /> Get the app
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link href="/account">
             <Settings className="h-4 w-4" /> Account

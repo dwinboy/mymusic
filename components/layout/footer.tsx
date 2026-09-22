@@ -17,6 +17,16 @@ export function Footer() {
           take two lines and the copyright joins the end of the second,
           instead of claiming a third line of its own. */}
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-1.5">
+        {/* First, and the only one not a legal page: installing is the thing
+            we actually want someone to find here, and until this existed the
+            only mention of it anywhere outside Library was a prompt that
+            waited for thirty seconds of playback. */}
+        <Link
+          href="/install"
+          className="text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"
+        >
+          Get the app
+        </Link>
         {LEGAL_PAGES.map((page) => (
           <Link
             key={page.href}

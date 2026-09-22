@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,29 @@ import { cn } from "@/lib/utils";
 const LISTENED_BEFORE_ASKING_SECONDS = 30;
 
 /**
+ * Or this many pages, for someone who is reading rather than playing.
+ *
+ * Playback alone was the only trigger, which meant a visitor who browsed the
+ * catalogue for ten minutes without pressing play was never told the app
+ * existed — and on iPhone, where there is no install button in the browser
+ * chrome either, that was every entry point gone but the Library page. Four
+ * is high enough that a shared link opened once and closed never reaches it.
+ */
+const PAGES_BEFORE_ASKING = 4;
+const PAGES_KEY = "vibebanger:pages-this-visit";
+
+function countPage(): number {
+  try {
+    const next = Number(sessionStorage.getItem(PAGES_KEY) ?? "0") + 1;
+    sessionStorage.setItem(PAGES_KEY, String(next));
+    return next;
+  } catch {
+    // Private mode: fall back to playback as the only trigger.
+    return 0;
+  }
+}
+
+/**
  * A one-off install suggestion that appears only after someone has been
  * listening for a while — never on arrival from a shared link, when they
  * haven't heard anything yet. Dismissing it quiets it for 30 days.
@@ -21,6 +45,7 @@ export function InstallNudge() {
   const { method, promptInstall } = useInstallAvailability();
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const hasTrack = usePlayerStore((s) => !!s.currentTrack());
+  const pathname = usePathname();
   const [state, setState] = useState<"waiting" | "shown" | "closed">("waiting");
   // Counted across tracks: many songs here are shorter clips, so time within
   // a single track isn't a reliable signal.
@@ -37,6 +62,17 @@ export function InstallNudge() {
     }, 1000);
     return () => clearInterval(timer);
   }, [state, isPlaying, method]);
+
+  // The other way in: enough pages to show they're actually looking around.
+  // Never on the install page itself, which is already the answer.
+  useEffect(() => {
+    if (state !== "waiting" || !method || pathname === "/install") return;
+    if (countPage() < PAGES_BEFORE_ASKING) return;
+    // After the page has settled rather than the moment it lands — arriving
+    // on top of a screen that is still drawing reads as an interruption.
+    const timer = setTimeout(() => setState(isInstallDismissed() ? "closed" : "shown"), 1500);
+    return () => clearTimeout(timer);
+  }, [state, method, pathname]);
 
   if (state !== "shown" || !method) return null;
 

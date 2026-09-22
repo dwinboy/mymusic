@@ -302,3 +302,20 @@ html:has(.embed-root) body::before {
     box-shadow: 0 14px 36px -16px color-mix(in srgb, var(--color-accent) 55%, transparent);
   }
 }
+
+/* The sign-in panel's photograph.
+ *
+ * A background image rather than an <img>: the panel is hidden below md, but
+ * a hidden <img> is still fetched, so every phone was downloading a picture
+ * it would never see. Declared inside the media query, the URL is never even
+ * resolved on a narrow screen. */
+@media (min-width: 768px) {
+  .auth-photo {
+    background-image: url("/brand/auth-listener.jpg");
+    background-size: cover;
+    /* Weighted above centre: cover crops a landscape frame hard in a tall
+       panel, and the face is what should survive it. */
+    background-position: 50% 32%;
+    background-repeat: no-repeat;
+  }
+}

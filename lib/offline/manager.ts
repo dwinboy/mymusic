@@ -3,6 +3,7 @@ import { putOfflineTrack, removeOfflineTrack, getOfflineTrack } from "./db";
 import { cacheAudioResponse, removeCachedAudio } from "./audio-cache";
 import { warmOfflinePages } from "./warm";
 import { ensurePersistentStorage } from "./persistence";
+import { readStoredQuality } from "@/lib/audio/quality";
 
 export type DownloadStatus = "idle" | "downloading" | "downloaded" | "failed";
 
@@ -22,7 +23,13 @@ export async function downloadTrackForOffline(
   // plays, it just isn't safe from an automatic clear-out.
   void ensurePersistentStorage();
 
-  const response = await fetch(track.audioUrl);
+  // Save the encode this listener would be played, not always the standard
+  // one. Someone on High was downloading the 160k stream while the player
+  // went on asking for the 320k file — which was never cached, so their
+  // downloads didn't play offline at all.
+  const source = preferredSource(track);
+
+  const response = await fetch(source);
   if (!response.ok || !response.body) {
     throw new Error("Couldn't fetch this track's audio.");
   }
@@ -53,10 +60,10 @@ export async function downloadTrackForOffline(
     },
   });
 
-  await cacheAudioResponse(track.audioUrl, cachedResponse);
+  await cacheAudioResponse(source, cachedResponse);
 
   const cover = await fetchCover(track.coverUrl);
-  const record = { track, byteSize: blob.size, downloadedAt: Date.now() };
+  const record = { track, byteSize: blob.size, downloadedAt: Date.now(), sourceUrl: source };
   try {
     await putOfflineTrack({ ...record, coverBytes: cover?.bytes, coverType: cover?.type });
   } catch {
@@ -87,8 +94,19 @@ async function fetchCover(url: string | null): Promise<{ bytes: ArrayBuffer; typ
   }
 }
 
+/** The encode to save: whichever one this listener's quality setting plays. */
+function preferredSource(track: PlayerTrack): string {
+  return readStoredQuality() === "high" && track.highQualityUrl ? track.highQualityUrl : track.audioUrl;
+}
+
 export async function removeOfflineDownload(track: Pick<PlayerTrack, "id" | "audioUrl">): Promise<void> {
-  await removeCachedAudio(track.audioUrl);
+  // Whichever encode was saved, plus the other one in case the quality
+  // setting changed between downloading and removing — deleting a key that
+  // isn't there costs nothing, and leaving audio behind costs the device.
+  const record = await getOfflineTrack(track.id);
+  for (const url of new Set([record?.sourceUrl, record?.track.audioUrl, record?.track.highQualityUrl, track.audioUrl])) {
+    if (url) await removeCachedAudio(url);
+  }
   await removeOfflineTrack(track.id);
 }
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { PlayerTrack } from "@/lib/types";
+import { QUALITY_STORAGE_KEY } from "@/lib/audio/quality";
 
 export type RepeatMode = "off" | "all" | "one";
 
@@ -289,7 +290,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setAudioQuality: (quality) => {
     set({ audioQuality: quality });
     try {
-      window.localStorage.setItem("vibebanger:quality", quality);
+      window.localStorage.setItem(QUALITY_STORAGE_KEY, quality);
     } catch {
       // Non-critical preference.
     }

@@ -20,6 +20,8 @@ export interface OfflineTrackRecord {
   coverBlob?: Blob;
   /** The artwork's media type, which the bytes alone don't carry. */
   coverType?: string;
+  /** Which encode was saved — standard or high, depending on the setting then. */
+  sourceUrl?: string;
 }
 
 interface VibeBangerOfflineDB extends DBSchema {

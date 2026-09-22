@@ -119,6 +119,32 @@ function collectBuildFiles(text, into) {
 // only and always returns the full cached response, so without this an
 // offline seek would silently fail (or force a full re-fetch) — slice the
 // cached blob ourselves and answer with a real 206 Partial Content.
+/**
+ * The same track, saved as a different encode.
+ *
+ * A download saves whichever encode the quality setting asked for at the
+ * time. Change that setting afterwards and the player asks for the other
+ * file, which was never cached — so a download that was working stopped
+ * playing offline. Both encodes live under the track's own id
+ * (music/streaming/<id>/… and music/downloads/<id>/…), so when the exact
+ * URL isn't cached we serve whatever we do have for that track. Slightly
+ * wrong bitrate beats silence, and it repairs downloads already sitting on
+ * people's devices without asking them to fetch anything again.
+ */
+function trackIdFromAudioUrl(url) {
+  const match = url.pathname.match(/\/music\/(?:streaming|downloads)\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
+async function matchOtherEncoding(audioCache, request) {
+  const wanted = trackIdFromAudioUrl(new URL(request.url));
+  if (!wanted) return undefined;
+  for (const key of await audioCache.keys()) {
+    if (trackIdFromAudioUrl(new URL(key.url)) === wanted) return audioCache.match(key);
+  }
+  return undefined;
+}
+
 async function serveCachedAudio(request, cached) {
   const rangeHeader = request.headers.get("range");
   if (!rangeHeader) return cached;
@@ -178,7 +204,7 @@ async function handleFetch(event, request) {
   // written into this cache, so a lookup here is always intentional.
   // Checked first and independent of origin, unlike everything below.
   const audioCache = await caches.open(AUDIO_CACHE);
-  const cachedAudio = await audioCache.match(request);
+  const cachedAudio = (await audioCache.match(request)) || (await matchOtherEncoding(audioCache, request));
   if (cachedAudio) return serveCachedAudio(request, cachedAudio);
 
   const url = new URL(request.url);

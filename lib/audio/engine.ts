@@ -9,6 +9,7 @@ import { PlayTracker } from "./play-tracker";
 import { loadSession, saveSession } from "./session";
 import type { AudioQuality } from "@/lib/stores/player-store";
 import type { PlayerTrack } from "@/lib/types";
+import { QUALITY_STORAGE_KEY } from "@/lib/audio/quality";
 
 /**
  * Which file to stream. "High" is per-track: most tracks have a 320k encode,
@@ -94,7 +95,7 @@ class AudioEngine {
     try {
       const savedVolume = window.localStorage.getItem("vibebanger:volume");
       const savedCrossfade = window.localStorage.getItem("vibebanger:crossfade");
-      const savedQuality = window.localStorage.getItem("vibebanger:quality");
+      const savedQuality = window.localStorage.getItem(QUALITY_STORAGE_KEY);
       usePlayerStore.setState({
         ...(savedVolume !== null ? { volume: Math.min(1, Math.max(0, Number(savedVolume))) } : {}),
         ...(savedCrossfade !== null ? { crossfadeSeconds: Math.min(12, Math.max(0, Number(savedCrossfade) || 0)) } : {}),

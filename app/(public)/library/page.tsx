@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Heart, ListMusic, History, Disc3, Users } from "lucide-react";
+import { Heart, ListMusic, History, Disc3, Users, BarChart3, ChevronRight } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { toPlayerTrack } from "@/lib/mappers";
@@ -151,7 +151,28 @@ export default async function LibraryPage({
           {historyTracks.length === 0 ? (
             <EmptyState icon={History} title="No listening history yet" description="Tracks you play will show up here." />
           ) : (
-            <LibraryTracks tracks={historyTracks} recentLabel="Recently played" />
+            <>
+              {/* The history was only ever a list. What it adds up to — hours
+                  listened, who you actually played most — is the part worth
+                  seeing, and it lives one tap away rather than on top of the
+                  list someone came here to read. */}
+              <Link
+                href="/library/listening"
+                className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:border-border-strong hover:bg-surface-hover"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+                  <BarChart3 className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-foreground">Your listening</span>
+                  <span className="block text-xs text-foreground-muted">
+                    Hours listened, and the songs and artists you came back to.
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-foreground-subtle" />
+              </Link>
+              <LibraryTracks tracks={historyTracks} recentLabel="Recently played" />
+            </>
           )}
         </TabsContent>
 

@@ -21,39 +21,56 @@ const MASTER = path.join(ROOT, "public/brand/logo.png");
 // the app's own near-black chrome the difference is imperceptible.
 const CANVAS = "#000000";
 
-/** Square icon: the logo edge to edge on the canvas colour. */
+/**
+ * How much of an icon's width the mark is given.
+ *
+ * The master frames the mark with room to spare — it reaches 73% of the
+ * width and only 50% of the height, so a quarter of the square was empty
+ * black above and below it and the icon read small on a home screen beside
+ * apps whose marks fill theirs. Composited from the trimmed artwork instead,
+ * the width is the only thing to set: the mark is half again as wide as it
+ * is tall, so width is always what runs out first.
+ *
+ * 0.88 for an ordinary icon — iOS rounds the corners of these and the
+ * corners are empty either way. 0.64 for a maskable one, which Android may
+ * crop to a circle 80% across: a rectangle this wide only stays inside that
+ * circle up to about 0.66, and the last two points are the margin for a
+ * launcher that crops harder than the spec.
+ */
+const ICON_MARK_WIDTH = 0.88;
+const MASKABLE_MARK_WIDTH = 0.64;
+
+/** Square icon: the mark as large as it goes, on the canvas colour. */
 async function icon(size, out) {
-  const buffer = await sharp(MASTER).resize(size, size, { fit: "cover" }).png().toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 4, background: CANVAS } })
-    .composite([{ input: buffer }])
-    .png()
-    .toFile(out);
+  await markOnCanvas(size, size, Math.round(size * ICON_MARK_WIDTH), out);
 }
 
 /**
  * Maskable icon: Android crops these to whatever shape the launcher uses, so
- * the mark sits inside the 80% safe zone and only background gets trimmed.
+ * the mark sits inside the safe zone and only background gets trimmed.
  */
 async function maskable(size, out) {
-  const inner = Math.round(size * 0.6);
-  const logo = await sharp(MASTER).resize(inner, inner, { fit: "contain", background: CANVAS }).png().toBuffer();
-  const offset = Math.round((size - inner) / 2);
-  await sharp({ create: { width: size, height: size, channels: 4, background: CANVAS } })
-    .composite([{ input: logo, top: offset, left: offset }])
-    .png()
+  await markOnCanvas(size, size, Math.round(size * MASKABLE_MARK_WIDTH), out);
+}
+
+/** The trimmed mark, centred at the given width, on a flat black square. */
+async function markOnCanvas(width, height, markWidth, out, png = {}) {
+  const mark = await sharp(await trimmedMark()).resize({ width: markWidth }).png().toBuffer();
+  await sharp({ create: { width, height, channels: 4, background: CANVAS } })
+    .composite([{ input: mark, gravity: "centre" }])
+    .png({ compressionLevel: 9, ...png })
     .toFile(out);
 }
 
-/** iOS launch image: the mark centred on the canvas colour, at device pixels. */
+/**
+ * iOS launch image: the mark centred on the canvas colour, at device pixels.
+ * 0.42 of the short edge against the old 0.38 of a frame that was itself
+ * mostly padding, so the mark lands noticeably larger than it did.
+ */
 async function splash(width, height, out) {
-  const mark = Math.round(Math.min(width, height) * 0.38);
-  const logo = await sharp(MASTER).resize(mark, mark, { fit: "contain", background: CANVAS }).png().toBuffer();
-  await sharp({ create: { width, height, channels: 4, background: CANVAS } })
-    .composite([{ input: logo, gravity: "centre" }])
-    // A mark on flat colour quantises without visible loss, and a launch
-    // image is fetched before anything else is on screen.
-    .png({ palette: true, quality: 90, compressionLevel: 9 })
-    .toFile(out);
+  // A mark on flat colour quantises without visible loss, and a launch image
+  // is fetched before anything else is on screen.
+  await markOnCanvas(width, height, Math.round(Math.min(width, height) * 0.42), out, { palette: true, quality: 90 });
 }
 
 /**
@@ -79,23 +96,38 @@ async function splash(width, height, out) {
  */
 const GLOW_NOISE_FLOOR = 14;
 
+/**
+ * The mark alone, at the master's own resolution — every icon, launch image
+ * and the web mark is composed from this one buffer, so none of them can
+ * frame it differently by accident. Computed once.
+ */
+let trimmedPromise = null;
+function trimmedMark() {
+  trimmedPromise ??= (async () => {
+    const { data, info } = await sharp(MASTER).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { width, height, channels } = info;
+    const rgba = Buffer.alloc(width * height * 4);
+
+    for (let i = 0, o = 0; i < data.length; i += channels, o += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const alpha = Math.max(r, g, b);
+      if (alpha < GLOW_NOISE_FLOOR) continue; // Buffer.alloc already zeroed it
+      rgba[o] = r;
+      rgba[o + 1] = g;
+      rgba[o + 2] = b;
+      rgba[o + 3] = alpha;
+    }
+
+    return sharp(rgba, { raw: { width, height, channels: 4 } })
+      .trim({ threshold: 2 })
+      .png()
+      .toBuffer();
+  })();
+  return trimmedPromise;
+}
+
 async function transparentMark(out) {
-  const { data, info } = await sharp(MASTER).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  const { width, height, channels } = info;
-  const rgba = Buffer.alloc(width * height * 4);
-
-  for (let i = 0, o = 0; i < data.length; i += channels, o += 4) {
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-    const alpha = Math.max(r, g, b);
-    if (alpha < GLOW_NOISE_FLOOR) continue; // Buffer.alloc already zeroed it
-    rgba[o] = r;
-    rgba[o + 1] = g;
-    rgba[o + 2] = b;
-    rgba[o + 3] = alpha;
-  }
-
-  await sharp(rgba, { raw: { width, height, channels: 4 } })
-    .trim({ threshold: 2 })
+  await sharp(await trimmedMark())
     // Displayed at a few dozen pixels tall; a 1024px master is far more than
     // any screen asks for and costs half a megabyte to carry.
     .resize({ width: 512, withoutEnlargement: true })

@@ -11,6 +11,10 @@
 // v3: dropped "/" from the shell (a stale homepage offline, full of tracks that
 // can't play) in favour of the offline page pointing to Downloads.
 const CACHE_VERSION = "v3";
+// Not versioned: everything in it is content-hashed, so a name can never
+// hold stale content and a new build simply adds new names.
+const STATIC_CACHE = "vibebanger-static-v1";
+const STATIC_MAX_ENTRIES = 500;
 const SHELL_CACHE = `vibebanger-shell-${CACHE_VERSION}`;
 const AUDIO_CACHE = "vibebanger-audio-v1";
 const PAGES_CACHE_PREFIX = "vibebanger-offline-pages-";
@@ -131,6 +135,19 @@ function collectBuildFiles(text, into) {
  * wrong bitrate beats silence, and it repairs downloads already sitting on
  * people's devices without asking them to fetch anything again.
  */
+/**
+ * Keeps the build-file cache bounded. Entries come back in insertion order,
+ * so the oldest go first — which after a few deploys is exactly the files
+ * belonging to builds nobody is running any more.
+ */
+async function trimStatic(cache) {
+  const keys = await cache.keys();
+  if (keys.length <= STATIC_MAX_ENTRIES) return;
+  for (const key of keys.slice(0, keys.length - STATIC_MAX_ENTRIES)) {
+    await cache.delete(key);
+  }
+}
+
 function trackIdFromAudioUrl(url) {
   const match = url.pathname.match(/\/music\/(?:streaming|downloads)\/([^/]+)\//);
   return match ? match[1] : null;
@@ -234,12 +251,34 @@ async function handleFetch(event, request) {
     }
   }
 
-  // Build files: served from an offline snapshot when present (they're
-  // content-hashed, so a cached copy is never stale), otherwise the network,
-  // whose HTTP cache already keeps them.
+  // Build files: content-hashed, so a cached copy can never be stale.
+  //
+  // Kept here rather than left to the HTTP cache because a deploy removes the
+  // running app's files from the server. Without a copy of its own, the first
+  // navigation that needed a piece it hadn't already loaded would fail, and
+  // the browser would recover with a full page reload — which on a phone
+  // means whatever was playing stops, and iOS will not start audio again
+  // without a tap. Nothing should stop the music except the person listening.
   if (url.pathname.startsWith("/_next/static/")) {
     const snapshot = await matchOfflinePage(url.pathname);
-    return snapshot || fetch(request);
+    if (snapshot) return snapshot;
+
+    const cache = await caches.open(STATIC_CACHE);
+    const hit = await cache.match(request);
+    if (hit) return hit;
+
+    try {
+      const response = await fetch(request);
+      // Only real, readable responses: an opaque or error response cached
+      // here would break the app until someone cleared their storage.
+      if (response.ok && response.type !== "opaque") {
+        await cache.put(request, response.clone());
+        void trimStatic(cache);
+      }
+      return response;
+    } catch {
+      return new Response(null, { status: 503, statusText: "Offline" });
+    }
   }
 
   // Beyond that, only the shell's own files are cached. Page

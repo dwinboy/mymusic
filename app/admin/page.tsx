@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Music2, Disc3, Mic2, PlayCircle, Download, Plus, AlertTriangle, ShieldCheck, ArrowRight } from "lucide-react";
+import { Music2, Disc3, Mic2, PlayCircle, Download, Plus, AlertTriangle, ShieldCheck, ArrowRight, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { formatCompactNumber, formatReleaseDate } from "@/lib/utils";
@@ -12,6 +12,7 @@ export default async function AdminDashboardPage() {
     totalTracks,
     totalAlbums,
     totalArtists,
+    totalUsers,
     totalPlays,
     totalDownloads,
     recentUploads,
@@ -22,6 +23,7 @@ export default async function AdminDashboardPage() {
       db.track.count(),
       db.album.count(),
       db.artist.count(),
+      db.user.count(),
       db.listeningHistory.count(),
       db.download.count(),
       db.track.findMany({
@@ -49,6 +51,7 @@ export default async function AdminDashboardPage() {
     .filter((t): t is NonNullable<typeof t> => !!t);
 
   const stats = [
+    { label: "Total Users", value: totalUsers, icon: Users },
     { label: "Total Tracks", value: totalTracks, icon: Music2 },
     { label: "Total Albums", value: totalAlbums, icon: Disc3 },
     { label: "Total Artists", value: totalArtists, icon: Mic2 },
@@ -100,7 +103,7 @@ export default async function AdminDashboardPage() {
         </Link>
       )}
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((stat) => (
           <div key={stat.label} className="rounded-xl border border-border bg-surface p-4">
             <stat.icon className="h-4 w-4 text-foreground-subtle" />

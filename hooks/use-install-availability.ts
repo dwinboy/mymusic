@@ -30,11 +30,51 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferred = event as BeforeInstallPromptEvent;
+    // Chrome only fires this when it currently judges the site cleanly
+    // (re-)installable — which is a fresher, stronger signal than whatever
+    // "not now" click set the dismissal flag, however long ago. Without
+    // this, someone who dismissed the nudge once, installed anyway later
+    // (from the account menu, say), then uninstalled and came back, could
+    // sit for up to 30 days with Chrome ready to offer a real install
+    // dialog while every affordance that checks the flag stayed quiet —
+    // which reads exactly like "the install button didn't come back."
+    clearInstallDismissed();
     notify();
   });
   window.addEventListener("appinstalled", () => {
     deferred = null;
+    recordInstall();
     notify();
+  });
+}
+
+/**
+ * Told to the server once per install, so the analytics page can answer "how
+ * many people installed the app" from something firmer than a guess. Guarded
+ * by its own flag rather than trusting `appinstalled` to fire exactly once —
+ * it has been known to refire after certain OS-level app updates, and this
+ * is a count, not an audit log, so a rare double-fire double-counting one
+ * install is worth avoiding outright rather than reconciling later.
+ */
+function recordInstall() {
+  const key = "vibebanger:install-recorded";
+  try {
+    if (window.localStorage.getItem(key)) return;
+    window.localStorage.setItem(key, "1");
+  } catch {
+    // Storage unavailable — record it anyway; the worst case is an
+    // undercount from a browser that can't remember it already did this,
+    // not a double count.
+  }
+  const ctx = detectContext();
+  const platform = ctx.android ? "android" : ctx.ios ? "ios" : "desktop";
+  fetch("/api/events/install", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ platform }),
+    keepalive: true,
+  }).catch(() => {
+    // Best effort: a missed count is not worth retrying for.
   });
 }
 
@@ -90,6 +130,14 @@ export function isInstallDismissed() {
 export function dismissInstall() {
   try {
     window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+  } catch {
+    // Non-critical preference.
+  }
+}
+
+function clearInstallDismissed() {
+  try {
+    window.localStorage.removeItem(DISMISSED_KEY);
   } catch {
     // Non-critical preference.
   }

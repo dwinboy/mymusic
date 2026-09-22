@@ -184,6 +184,22 @@ export function PublishFlow({
   );
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const draftIdRef = useRef<string | null>(initialTrack?.id ?? null);
+  // True once "processing" has run long enough that a bare spinner stops
+  // being reassuring — whether that's a fresh upload taking a while or a
+  // draft reopened after processing never finished last time. Decoupled
+  // from whichever fetch is or isn't still in flight: a stalled connection
+  // this depends on for its only feedback is exactly the failure mode this
+  // exists to catch, so it runs off a plain timer instead.
+  // Every read of this is gated on uploadPhase === "processing" already, so
+  // a stale `true` from a previous run is never shown — nothing here needs
+  // to reset it, only arm a fresh timer each time processing (re)starts.
+  const [processingIsSlow, setProcessingIsSlow] = useState(false);
+  useEffect(() => {
+    if (uploadPhase !== "processing") return;
+    const timer = setTimeout(() => setProcessingIsSlow(true), 25_000);
+    return () => clearTimeout(timer);
+  }, [uploadPhase, track?.id]);
 
   // --- artwork
   const [coverPublicId, setCoverPublicId] = useState(initialTrack?.coverImagePublicId ?? null);
@@ -328,6 +344,7 @@ export function PublishFlow({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't start the upload.");
       draftId = data.track.id as string;
+      draftIdRef.current = draftId;
 
       if (data.upload.mode === "r2") {
         await xhrPut(data.upload.uploadUrl, picked, setUploadProgress);
@@ -364,10 +381,15 @@ export function PublishFlow({
   }
 
   async function retryProcessing() {
-    if (!track) return;
+    // track is only set once a previous attempt finished and called
+    // reload() — a first attempt that hung never gets that far, so this
+    // has to work off the id from the moment the draft was created, not
+    // wait for track to exist.
+    const id = track?.id ?? draftIdRef.current;
+    if (!id) return;
     setUploadPhase("processing");
-    const res = await fetch(`/api/creator/tracks/${track.id}/process`, { method: "POST" });
-    await reload(track.id);
+    const res = await fetch(`/api/creator/tracks/${id}/process`, { method: "POST" });
+    await reload(id);
     setUploadPhase(res.ok ? "ready" : "failed");
   }
 
@@ -709,12 +731,17 @@ export function PublishFlow({
                     <p className="truncate font-medium text-foreground">{file?.name ?? track?.title}</p>
                     <p className="text-sm text-foreground-muted">
                       {uploadPhase === "uploading" && `Uploading · ${uploadProgress}%`}
-                      {uploadPhase === "processing" && "Processing — creating streaming and download versions"}
+                      {uploadPhase === "processing" &&
+                        (processingIsSlow
+                          ? "Still working — longer tracks can take a couple of minutes"
+                          : "Processing — creating streaming and download versions")}
                       {uploadPhase === "failed" && (track?.processingError ?? "Processing failed")}
                       {uploadPhase === "ready" && "Ready"}
                     </p>
                   </div>
-                  {uploadPhase === "processing" && <Loader2 className="h-5 w-5 animate-spin text-foreground-subtle" />}
+                  {uploadPhase === "processing" && !processingIsSlow && (
+                    <Loader2 className="h-5 w-5 animate-spin text-foreground-subtle" />
+                  )}
                   {uploadPhase === "failed" && (
                     <Button size="sm" variant="secondary" onClick={retryProcessing}>
                       <RotateCw className="h-4 w-4" /> Retry
@@ -722,6 +749,22 @@ export function PublishFlow({
                   )}
                 </div>
                 {uploadPhase === "uploading" && <Progress value={uploadProgress} className="mt-4" />}
+                {uploadPhase === "processing" && processingIsSlow && (
+                  // Not a dead end: retrying is always safe (it re-encodes from
+                  // the original, already-uploaded file, whatever became of
+                  // the attempt in flight), and this is the only way out for
+                  // someone who reopened a draft that got stuck last time —
+                  // nothing here was ever retried automatically before.
+                  <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+                    <p className="text-xs text-foreground-subtle">
+                      Still going after a while usually means the connection dropped, not that anything broke — the
+                      file you uploaded is safe either way.
+                    </p>
+                    <Button size="sm" variant="secondary" className="shrink-0" onClick={retryProcessing}>
+                      <RotateCw className="h-4 w-4" /> Try again
+                    </Button>
+                  </div>
+                )}
                 {uploadPhase === "ready" && track && (
                   <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-5 sm:grid-cols-4">
                     {[

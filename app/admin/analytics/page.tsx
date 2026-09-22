@@ -3,25 +3,40 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatCompactNumber, formatReleaseDate } from "@/lib/utils";
 import { EmptyState } from "@/components/states/empty-state";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Smartphone, Download as DownloadIcon } from "lucide-react";
 
 export const metadata = { title: "Analytics" };
 
+// Kept outside the component body: a Server Component's render must be
+// pure, and the date arithmetic for a rolling window isn't — the same
+// reason lib/listening-stats.ts resolves its own window internally rather
+// than taking a Date from the page that renders it.
+function daysAgo(days: number): Date {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
 export default async function AdminAnalyticsPage() {
-  const [mostPlayedGroups, mostDownloaded, recentHistory] = await Promise.all([
-    db.listeningHistory.groupBy({
-      by: ["trackId"],
-      _count: { trackId: true },
-      orderBy: { _count: { trackId: "desc" } },
-      take: 10,
-    }),
-    db.track.findMany({ orderBy: { downloadCount: "desc" }, take: 10, include: { artist: true } }),
-    db.listeningHistory.findMany({
-      orderBy: { playedAt: "desc" },
-      take: 15,
-      include: { track: { include: { artist: true } }, user: true },
-    }),
-  ]);
+  const [mostPlayedGroups, mostDownloaded, recentHistory, totalInstalls, recentInstalls, installsByPlatform] =
+    await Promise.all([
+      db.listeningHistory.groupBy({
+        by: ["trackId"],
+        _count: { trackId: true },
+        orderBy: { _count: { trackId: "desc" } },
+        take: 10,
+      }),
+      db.track.findMany({ orderBy: { downloadCount: "desc" }, take: 10, include: { artist: true } }),
+      db.listeningHistory.findMany({
+        orderBy: { playedAt: "desc" },
+        take: 15,
+        include: { track: { include: { artist: true } }, user: true },
+      }),
+      db.pwaInstall.count(),
+      db.pwaInstall.count({ where: { createdAt: { gte: daysAgo(30) } } }),
+      db.pwaInstall.groupBy({ by: ["platform"], _count: { platform: true } }),
+    ]);
+
+  const byPlatform = Object.fromEntries(installsByPlatform.map((g) => [g.platform, g._count.platform]));
+  const PLATFORM_LABEL: Record<string, string> = { android: "Android", ios: "iOS", desktop: "Desktop", other: "Other" };
 
   const mostPlayedIds = mostPlayedGroups.map((g) => g.trackId);
   const mostPlayedTracksRaw = mostPlayedIds.length
@@ -37,6 +52,37 @@ export default async function AdminAnalyticsPage() {
       <p className="mt-1 text-sm text-foreground-muted">
         Live listening activity recorded from real playback sessions.
       </p>
+
+      <section className="mt-8">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground-subtle">
+          <Smartphone className="h-3.5 w-3.5" /> App Installs
+        </h2>
+        {totalInstalls === 0 ? (
+          <EmptyState icon={DownloadIcon} title="No installs recorded yet" description="Counted the moment someone finishes adding the app to their home screen." />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="rounded-xl border border-border bg-surface p-4">
+              <DownloadIcon className="h-4 w-4 text-foreground-subtle" />
+              <p className="mt-3 text-2xl font-semibold text-foreground">{formatCompactNumber(totalInstalls)}</p>
+              <p className="text-xs text-foreground-muted">All-time installs</p>
+            </div>
+            <div className="rounded-xl border border-border bg-surface p-4">
+              <DownloadIcon className="h-4 w-4 text-foreground-subtle" />
+              <p className="mt-3 text-2xl font-semibold text-foreground">{formatCompactNumber(recentInstalls)}</p>
+              <p className="text-xs text-foreground-muted">Last 30 days</p>
+            </div>
+            {(["android", "ios", "desktop", "other"] as const)
+              .filter((key) => byPlatform[key] > 0)
+              .map((key) => (
+                <div key={key} className="rounded-xl border border-border bg-surface p-4">
+                  <Smartphone className="h-4 w-4 text-foreground-subtle" />
+                  <p className="mt-3 text-2xl font-semibold text-foreground">{formatCompactNumber(byPlatform[key])}</p>
+                  <p className="text-xs text-foreground-muted">{PLATFORM_LABEL[key]}</p>
+                </div>
+              ))}
+          </div>
+        )}
+      </section>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <div>

@@ -40,6 +40,7 @@ model User {
   savedAlbums         SavedAlbum[]
   songRequests        SongRequest[]
   songRequestMessages SongRequestMessage[]
+  pwaInstalls         PwaInstall[]
 
   @@map("users")
 }
@@ -696,4 +697,25 @@ model SongRequestMessage {
 
   @@index([requestId, createdAt])
   @@map("song_request_messages")
+}
+
+/// One tap of "Add to Home Screen" completing, wherever it happened —
+/// the browser's own one-tap dialog, the iOS Share-sheet steps, or a
+/// desktop install. The only question this exists to answer is "how many
+/// people installed the app," so it stays this small: no session, no
+/// device fingerprint, just a count with a platform split and, when the
+/// person was signed in, who.
+model PwaInstall {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// "android" | "ios" | "desktop" | "other" — never free text from the
+  /// client, so this always groups cleanly.
+  platform String
+
+  @@index([createdAt])
+  @@map("pwa_installs")
 }

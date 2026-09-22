@@ -835,9 +835,29 @@ export function PublishFlow({
               <Input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)} className="sm:w-56" />
             </Field>
             <Collapsible title="Lyrics & credits">
-              <Field label="Lyrics" hint="Timed lyrics supported">
-                <p className="mb-1.5 text-xs text-foreground-subtle">{"Paste LRC — lines like [00:12.30]Words — and the player follows along."}</p>
+              <Field label="Lyrics" hint="Optional">
                 <Textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} rows={6} />
+                {/* This used to read "paste LRC — lines like [00:12.30]Words",
+                    which is a format, not an instruction anyone was going to
+                    follow: not one track ever arrived with timings. The tool
+                    does it by tapping along instead. */}
+                {initialTrack?.id && (
+                  <p className="mt-2 text-xs text-foreground-subtle">
+                    {lyrics.trim() ? (
+                      <>
+                        <Link
+                          href={`/creator/tracks/${initialTrack.id}/lyrics`}
+                          className="font-medium text-accent underline underline-offset-2"
+                        >
+                          Tap them into time
+                        </Link>{" "}
+                        and they&apos;ll follow the song for listeners, who can tap any line to jump to it.
+                      </>
+                    ) : (
+                      <>Write the lyrics here, save, and you can then tap them into time with the song.</>
+                    )}
+                  </p>
+                )}
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Composer">

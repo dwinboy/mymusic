@@ -50,7 +50,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const strField = (key: string, allowEmpty = false) => {
     const v = formData.get(key);
     if (typeof v !== "string") return;
-    data[key] = v.trim().length > 0 ? v.trim() : allowEmpty ? null : undefined;
+    // multipart/form-data gives multi-line values CRLF endings they were not
+    // written with; lyrics are read back line by line, so store one shape.
+    const value = v.replace(/\r\n?/g, "\n").trim();
+    data[key] = value.length > 0 ? value : allowEmpty ? null : undefined;
   };
 
   if (formData.has("title")) {

@@ -46,7 +46,11 @@ export async function PATCH(request: Request, { params }: Params) {
   const data: Record<string, unknown> = {};
   const text = (key: string, max: number) => {
     if (!form.has(key)) return;
-    const value = String(form.get(key) ?? "").trim();
+    // multipart/form-data encodes text fields with CRLF line endings, so
+    // anything multi-line arrives with carriage returns it was not written
+    // with. Normalising here keeps one shape in the column — lyrics in
+    // particular are split by line on the way in and out.
+    const value = String(form.get(key) ?? "").replace(/\r\n?/g, "\n").trim();
     data[key] = value ? value.slice(0, max) : null;
   };
 

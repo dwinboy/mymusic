@@ -82,3 +82,46 @@ export function activeLineIndex(lines: LyricLine[], currentTime: number): number
   }
   return active;
 }
+
+/** `[mm:ss.xx]`, the shape parseLyrics reads back. */
+export function formatLrcTime(seconds: number): string {
+  // Centiseconds first, so rounding 12.997 carries into the next second
+  // rather than producing "12.100".
+  const total = Math.max(0, Math.round(seconds * 100));
+  const cs = total % 100;
+  const whole = (total - cs) / 100;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(Math.floor(whole / 60))}:${pad(whole % 60)}.${pad(cs)}`;
+}
+
+export interface TimingLine {
+  text: string;
+  /** Seconds, or null when this line hasn't been timed yet. */
+  time: number | null;
+}
+
+/**
+ * Lyrics broken into the lines a creator times one by one, carrying whatever
+ * timings are already there so an existing LRC can be adjusted rather than
+ * redone. Blank lines survive as blank so the verses keep their shape.
+ */
+export function splitForTiming(raw: string | null | undefined): TimingLine[] {
+  const lines = (raw ?? "").split(/\r?\n/).map((rawLine) => {
+    const [stamp] = [...rawLine.matchAll(TIMESTAMP)];
+    const text = rawLine.replace(TIMESTAMP, "").trim();
+    if (!stamp) return { text, time: null };
+    const [, minutes, seconds, fraction] = stamp;
+    return { text, time: Number(minutes) * 60 + Number(seconds) + (fraction ? Number(`0.${fraction}`) : 0) };
+  });
+
+  // A trailing newline shouldn't become a line to time.
+  while (lines.length > 0 && lines[lines.length - 1].text === "") lines.pop();
+  return lines;
+}
+
+/** Back to the text column, timestamps and all. Blank lines stay blank. */
+export function toLrc(lines: TimingLine[]): string {
+  return lines
+    .map((line) => (line.text === "" || line.time === null ? line.text : `[${formatLrcTime(line.time)}]${line.text}`))
+    .join("\n");
+}

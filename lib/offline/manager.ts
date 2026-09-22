@@ -54,7 +54,18 @@ export async function downloadTrackForOffline(
   });
 
   await cacheAudioResponse(track.audioUrl, cachedResponse);
-  await putOfflineTrack({ track, byteSize: blob.size, downloadedAt: Date.now(), coverBlob: await fetchCover(track.coverUrl) });
+
+  const cover = await fetchCover(track.coverUrl);
+  const record = { track, byteSize: blob.size, downloadedAt: Date.now() };
+  try {
+    await putOfflineTrack({ ...record, coverBytes: cover?.bytes, coverType: cover?.type });
+  } catch {
+    // The audio is already cached and playable by this point, so a record
+    // that won't store is not a reason to call the download a failure. Try
+    // once more with nothing but the metadata — artwork is the only part
+    // that has ever been refused, and a download without it still plays.
+    await putOfflineTrack(record);
+  }
   // Make sure there's a page to play it from when the connection is gone.
   void warmOfflinePages({ force: true }).catch(() => {});
 
@@ -62,11 +73,15 @@ export async function downloadTrackForOffline(
 }
 
 /** Best effort: a download without artwork still plays. */
-async function fetchCover(url: string | null): Promise<Blob | undefined> {
+async function fetchCover(url: string | null): Promise<{ bytes: ArrayBuffer; type: string } | undefined> {
   if (!url) return undefined;
   try {
     const response = await fetch(url);
-    return response.ok ? await response.blob() : undefined;
+    if (!response.ok) return undefined;
+    return {
+      bytes: await response.arrayBuffer(),
+      type: response.headers.get("content-type") || "image/jpeg",
+    };
   } catch {
     return undefined;
   }

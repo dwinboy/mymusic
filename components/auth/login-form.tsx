@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { safeCallbackUrl } from "@/lib/safe-callback";
 
 export function LoginForm() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("callbackUrl") || "/");
+    router.push(safeCallbackUrl(searchParams.get("callbackUrl")));
     router.refresh();
   }
 

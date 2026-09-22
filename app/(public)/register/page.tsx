@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthSwitchLink } from "@/components/auth/auth-switch-link";
 import { RegisterForm } from "@/components/auth/register-form";
 
 export const metadata: Metadata = {
@@ -15,13 +16,13 @@ export default function RegisterPage() {
       footer={
         <>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-foreground hover:underline">
-            Log in
-          </Link>
+          <AuthSwitchLink href="/login">Log in</AuthSwitchLink>
         </>
       }
     >
-      <RegisterForm />
+      <Suspense>
+        <RegisterForm />
+      </Suspense>
     </AuthShell>
   );
 }

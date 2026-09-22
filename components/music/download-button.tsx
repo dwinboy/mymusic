@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { Download, Check, Loader2, AlertCircle } from "lucide-react";
 import { useOfflineTrack } from "@/hooks/use-offline-track";
+import { openDownloadGate } from "@/hooks/use-download-gate";
 import { cn } from "@/lib/utils";
 import type { PlayerTrack } from "@/lib/types";
 
@@ -38,15 +39,22 @@ export function DownloadButton({
       return;
     }
 
+    // Saving music is for people with an account. The button stays visible
+    // and keeps its ordinary look — hiding it would leave a signed-out
+    // listener with no idea the app can do this at all — and explains
+    // itself when pressed instead of failing quietly.
+    if (!session?.user) {
+      openDownloadGate(track.title);
+      return;
+    }
+
     await download();
 
-    if (session?.user) {
-      fetch("/api/downloads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackId: track.id }),
-      }).catch(() => {});
-    }
+    fetch("/api/downloads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackId: track.id }),
+    }).catch(() => {});
   }
 
   const label =

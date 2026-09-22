@@ -10,9 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSession } from "next-auth/react";
 import { usePlayerStore } from "@/lib/stores/player-store";
 import { useToast } from "@/hooks/use-toast";
 import { useOfflineTrack } from "@/hooks/use-offline-track";
+import { openDownloadGate } from "@/hooks/use-download-gate";
 import { AddToPlaylistDialog } from "@/components/music/add-to-playlist-dialog";
 import type { PlayerTrack } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -32,6 +34,7 @@ export function TrackMenu({
   const addToQueue = usePlayerStore((s) => s.addToQueue);
   const playNext = usePlayerStore((s) => s.playNext);
   const { toast } = useToast();
+  const { data: session } = useSession();
   const { status: downloadStatus, download } = useOfflineTrack(track);
 
   return (
@@ -106,17 +109,34 @@ export function TrackMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={() => {
+                // Same gate as the download button, same words: saving music
+                // needs an account, and the menu item says so rather than
+                // disappearing for signed-out listeners.
+                if (!session?.user) {
+                  openDownloadGate(track.title);
+                  return;
+                }
                 // The menu closes as soon as this is chosen, so the download
                 // reports itself in a toast — and reports failure honestly.
                 // It used to announce success either way.
                 const progressToast = toast({ title: `Downloading ${track.title}`, description: "0%" });
-                void download((percent) => progressToast.update({ description: `${percent}%` })).then((saved) =>
+                void download((percent) => progressToast.update({ description: `${percent}%` })).then((saved) => {
                   progressToast.update(
                     saved
                       ? { title: "Saved to this device", description: "Plays with no connection." }
                       : { title: "Couldn't download that", description: "Check your connection and try again.", variant: "danger" }
-                  )
-                );
+                  );
+                  // Recorded the same way the download button records it, so
+                  // a creator's download count doesn't depend on which of the
+                  // two a listener happened to use.
+                  if (saved) {
+                    fetch("/api/downloads", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ trackId: track.id }),
+                    }).catch(() => {});
+                  }
+                });
               }}
             >
               <Download className="h-4 w-4" /> Download

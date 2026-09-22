@@ -5,8 +5,21 @@ export interface OfflineTrackRecord {
   track: PlayerTrack;
   byteSize: number;
   downloadedAt: number;
-  /** The artwork, kept so downloads don't show blank covers without a connection. */
+  /**
+   * The artwork, kept so downloads don't show blank covers without a
+   * connection.
+   *
+   * Bytes rather than a Blob: WebKit refuses to store a Blob in IndexedDB and
+   * aborts the whole transaction to say so — with a null error, so it arrives
+   * as an unexplained failure. That took every download on iPhone with it,
+   * artwork and audio alike, even though the audio had already been cached.
+   * ArrayBuffers store fine everywhere; the Blob is rebuilt on the way out.
+   */
+  coverBytes?: ArrayBuffer;
+  /** What downloads saved before the move to bytes. Read, never written. */
   coverBlob?: Blob;
+  /** The artwork's media type, which the bytes alone don't carry. */
+  coverType?: string;
 }
 
 interface VibeBangerOfflineDB extends DBSchema {

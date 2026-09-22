@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/toaster";
+import { DownloadGateDialog } from "@/components/music/download-gate-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getSiteSettings, DEFAULT_SETTINGS } from "@/lib/settings";
 import { UpdateBanner } from "@/components/pwa/update-banner";
@@ -76,6 +77,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <TooltipProvider delayDuration={200}>
             {children}
             <Toaster />
+            <DownloadGateDialog />
             <UpdateBanner buildId={getBuildId()} />
           </TooltipProvider>
         </Providers>

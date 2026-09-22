@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, MoreHorizontal } from "lucide-react";
+import { Pencil, Trash2, MoreHorizontal, Globe, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-export function PlaylistOwnerMenu({ playlistId, currentTitle }: { playlistId: string; currentTitle: string }) {
+export function PlaylistOwnerMenu({
+  playlistId,
+  currentTitle,
+  isPublic,
+}: {
+  playlistId: string;
+  currentTitle: string;
+  isPublic: boolean;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [renameOpen, setRenameOpen] = useState(false);
@@ -33,6 +41,23 @@ export function PlaylistOwnerMenu({ playlistId, currentTitle }: { playlistId: st
       setRenameOpen(false);
       router.refresh();
     }
+  }
+
+  async function setVisibility(next: boolean) {
+    const res = await fetch(`/api/playlists/${playlistId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPublic: next }),
+    });
+    if (!res.ok) {
+      toast({ title: "That didn't work.", variant: "danger" });
+      return;
+    }
+    toast({
+      title: next ? "Anyone with the link can now listen" : "The link no longer works",
+      description: next ? undefined : "Only you can open this playlist again.",
+    });
+    router.refresh();
   }
 
   async function handleDelete() {
@@ -56,6 +81,12 @@ export function PlaylistOwnerMenu({ playlistId, currentTitle }: { playlistId: st
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setRenameOpen(true)}>
             <Pencil className="h-4 w-4" /> Rename
+          </DropdownMenuItem>
+          {/* The share button turns this on; this is the way back off, and
+              the only place that says which state the playlist is in. */}
+          <DropdownMenuItem onSelect={() => void setVisibility(!isPublic)}>
+            {isPublic ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+            {isPublic ? "Stop sharing the link" : "Share with a link"}
           </DropdownMenuItem>
           <DropdownMenuItem destructive onSelect={handleDelete}>
             <Trash2 className="h-4 w-4" /> Delete playlist

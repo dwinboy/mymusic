@@ -166,6 +166,70 @@ async function render(element: React.ReactElement, size: { width: number; height
 const CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800";
 
 /** 1200×630 link preview. */
+/**
+ * The link preview for a shared playlist.
+ *
+ * A playlist has no artwork of its own, so the first song's cover carries the
+ * card — which is also what the playlist page itself leads with, so the link
+ * and the page look like the same thing.
+ */
+export async function playlistPreviewCard(
+  playlist: { title: string; trackCount: number; ownerName: string },
+  artworkUrl: string | null
+) {
+  const mark = await loadMark();
+  const width = 1200;
+  const height = 630;
+  const artwork = await loadArtwork(artworkUrl, 470, { width, height });
+  const title = clampTitle(playlist.title, 70);
+  const titleSize = title.length > 40 ? 50 : title.length > 22 ? 60 : 72;
+  const songs = `${playlist.trackCount} ${playlist.trackCount === 1 ? "song" : "songs"}`;
+
+  return render(
+    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: CANVAS, fontFamily: "Jakarta" }}>
+      <Backdrop
+        artwork={artwork}
+        width={width}
+        height={height}
+        overlay="linear-gradient(90deg, rgba(10,10,11,0.25) 0%, rgba(10,10,11,0.55) 45%, rgba(10,10,11,0.85) 100%)"
+      />
+      <div style={{ display: "flex", alignItems: "center", width: "100%", height: "100%", padding: "80px", position: "relative" }}>
+        <Cover artwork={artwork} size={470} radius={28} />
+        <div style={{ display: "flex", flexDirection: "column", marginLeft: 60, flex: 1, height: 470, justifyContent: "space-between" }}>
+          <Brand size={24} mark={mark} />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: 4, color: ACCENT, textTransform: "uppercase", display: "flex" }}>Playlist</div>
+            <div style={{ fontSize: titleSize, fontWeight: 700, color: "#fafaf9", lineHeight: 1.08, marginTop: 14, letterSpacing: -1, display: "flex" }}>{title}</div>
+            <div style={{ fontSize: 34, fontWeight: 500, color: "rgba(250,250,249,0.72)", marginTop: 16, display: "flex" }}>
+              {songs} · by {playlist.ownerName}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                background: ACCENT,
+                color: "#1a1305",
+                borderRadius: 999,
+                padding: "16px 30px 16px 24px",
+                fontSize: 28,
+                fontWeight: 700,
+              }}
+            >
+              <PlayGlyph size={26} />
+              Listen now
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    { width, height },
+    CACHE
+  );
+}
+
 export async function songPreviewCard(track: ShareImageTrack, artworkUrl: string | null) {
   const mark = await loadMark();
   const width = 1200;

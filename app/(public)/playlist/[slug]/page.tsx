@@ -8,7 +8,7 @@ import { toPlayerTrack } from "@/lib/mappers";
 import { getLikedTrackIds } from "@/lib/favorites";
 import { PlayButton } from "@/components/player/play-button";
 import { ShufflePlayButton } from "@/components/music/shuffle-play-button";
-import { ShareMenu } from "@/components/music/share-menu";
+import { PlaylistShare } from "@/components/playlist/playlist-share";
 import { PlaylistOwnerMenu } from "@/components/playlist/playlist-owner-menu";
 import { PlaylistTrackList } from "@/components/playlist/playlist-track-list";
 import { EmptyState } from "@/components/states/empty-state";
@@ -30,7 +30,10 @@ export async function generateMetadata({
       title: playlist.title,
       description: playlist.description || undefined,
       type: "music.playlist",
-      images: playlist.coverUrl ? [{ url: playlist.coverUrl }] : undefined,
+      // No `images` here on purpose: declaring the key at all — even as
+      // undefined — stops Next merging the generated card from
+      // opengraph-image.tsx, and most playlists have no cover of their own,
+      // so the link previewed as nothing at all.
     },
   };
 }
@@ -86,8 +89,16 @@ export default async function PlaylistPage({ params }: { params: Promise<{ slug:
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {playerTracks[0] && <PlayButton track={playerTracks[0]} queue={playerTracks} size="lg" />}
             <ShufflePlayButton tracks={playerTracks} />
-            <ShareMenu url={shareUrl} title={playlist.title} text={`${playlist.title} — a playlist on Vibe Banger`} size="lg" className="rounded-full border border-border-strong p-2.5" />
-            {isOwner && <PlaylistOwnerMenu playlistId={playlist.id} currentTitle={playlist.title} />}
+            <PlaylistShare
+              playlistId={playlist.id}
+              isPublic={playlist.isPublic}
+              isOwner={isOwner}
+              url={shareUrl}
+              title={playlist.title}
+            />
+            {isOwner && (
+              <PlaylistOwnerMenu playlistId={playlist.id} currentTitle={playlist.title} isPublic={playlist.isPublic} />
+            )}
           </div>
         </div>
       </div>

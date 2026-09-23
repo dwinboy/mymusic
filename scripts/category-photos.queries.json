@@ -1,14 +1,13 @@
 {
   "GENRE|afrobeat": [
-    "drums percussion",
-    "african dancer",
-    "drummer playing outdoor",
-    "conga drums music"
+    "drums night performance",
+    "percussion dark stage",
+    "african drummer night"
   ],
   "GENRE|ambient": [
-    "misty forest morning fog",
-    "minimal landscape horizon",
-    "clouds soft light sky"
+    "night fog dark landscape",
+    "dark misty mountains",
+    "starry night sky"
   ],
   "GENRE|electronic": [
     "neon lights night club",
@@ -31,9 +30,9 @@
     "sheet music piano"
   ],
   "GENRE|hip-hop": [
-    "graffiti wall urban",
-    "city street night basketball",
-    "microphone studio dark"
+    "night city street urban",
+    "urban night graffiti",
+    "microphone dark stage"
   ],
   "GENRE|randb": [
     "microphone studio warm light",
@@ -51,9 +50,9 @@
     "guitarist live concert"
   ],
   "GENRE|reggae": [
-    "beach palm sunset caribbean",
-    "dreadlocks portrait music",
-    "tropical colors wall"
+    "beach fire night",
+    "dusk palm silhouette",
+    "night street music"
   ],
   "GENRE|soul": [
     "vinyl record player warm",
@@ -66,14 +65,14 @@
     "colorful flags festival"
   ],
   "GENRE|lo-fi": [
-    "cassette tape",
-    "turntable headphones",
-    "record shop"
+    "rain window night city",
+    "desk lamp warm night",
+    "cassette tape dark"
   ],
   "GENRE|highlife": [
-    "guitar player outdoors africa",
-    "street musicians band",
-    "festival dancing crowd"
+    "night street party lights",
+    "band playing night stage",
+    "guitar night performance"
   ],
   "MOOD|calm": [
     "calm lake reflection morning",
@@ -81,14 +80,14 @@
     "empty beach soft waves"
   ],
   "MOOD|dreamy": [
-    "pastel clouds sunset",
-    "soft focus flowers light",
-    "stars night sky dreamy"
+    "night stars sky",
+    "fog night lights",
+    "dusk purple sky"
   ],
   "MOOD|happy": [
-    "friends laughing outdoors",
-    "sunflowers bright sun",
-    "balloons colorful sky"
+    "sunset friends silhouette",
+    "golden hour laughter",
+    "warm evening celebration"
   ],
   "MOOD|romantic": [
     "couple sunset silhouette",
@@ -96,9 +95,9 @@
     "roses soft light"
   ],
   "MOOD|dark": [
-    "dark forest night moody",
-    "storm clouds dramatic",
-    "rain city night dark"
+    "dark forest night",
+    "storm clouds night dark",
+    "shadow silhouette dark"
   ],
   "MOOD|epic": [
     "mountain peak clouds vast",
@@ -106,9 +105,9 @@
     "waves crashing cliffs"
   ],
   "MOOD|chill": [
-    "hammock palm trees",
-    "pool float summer",
-    "beach umbrella sand"
+    "night city lights calm",
+    "dim room evening lamp",
+    "sunset silhouette calm"
   ],
   "MOOD|motivational": [
     "runner sunrise silhouette",
@@ -116,9 +115,9 @@
     "training determination gym"
   ],
   "MOOD|peaceful": [
-    "zen stones water",
-    "quiet forest path light",
-    "meadow morning dew"
+    "calm lake evening",
+    "still water dusk",
+    "quiet night landscape"
   ],
   "MOOD|melancholic": [
     "rain window droplets",
@@ -136,14 +135,15 @@
     "vintage car summer road"
   ],
   "MOOD|uplifting": [
-    "sunrise over hills warm",
-    "arms raised sunrise",
-    "light rays through clouds"
+    "sunrise silhouette hill",
+    "golden hour silhouette",
+    "warm sunset field"
   ],
   "ACTIVITY|sleep": [
-    "empty bed morning light",
-    "white bedding pillows",
-    "bedroom window curtains"
+    "moon night sky",
+    "stars night sky",
+    "dark bedroom",
+    "night clouds moon"
   ],
   "ACTIVITY|deep-sleep": [
     "dark bedroom night calm",
@@ -156,9 +156,9 @@
     "warm blanket sofa"
   ],
   "ACTIVITY|rain-and-nature": [
-    "rain leaves close up",
-    "forest rain drops green",
-    "waterfall forest mist"
+    "rain window night",
+    "rain dark forest",
+    "wet street night rain"
   ],
   "ACTIVITY|long-sleep-sessions": [
     "full moon clouds",
@@ -166,29 +166,29 @@
     "starry sky mountains"
   ],
   "ACTIVITY|study": [
-    "desk books notebook study",
-    "library books shelves",
-    "student writing notes"
+    "night desk books lamp",
+    "library evening dark",
+    "study lamp night"
   ],
   "ACTIVITY|deep-focus": [
-    "laptop desk minimal workspace",
-    "coffee notebook desk quiet",
-    "workspace window light"
+    "desk lamp night work",
+    "dark office night lamp",
+    "night desk concentration"
   ],
   "ACTIVITY|lo-fi-study": [
-    "headphones desk study night",
-    "notebook coffee lamp",
-    "study desk plants"
+    "desk lamp night study",
+    "notebook warm lamp dark",
+    "late night studying desk"
   ],
   "ACTIVITY|exam-preparation": [
-    "notes highlighter studying",
-    "library study desk",
-    "stack of books study"
+    "night study desk lamp",
+    "books dark desk lamp",
+    "late night revision"
   ],
   "ACTIVITY|focus": [
-    "minimal desk laptop clean",
-    "pen notebook writing",
-    "office window morning"
+    "night desk lamp work",
+    "dim workspace evening",
+    "dark desk notebook lamp"
   ],
   "ACTIVITY|work": [
     "office desk laptop coffee",
@@ -206,29 +206,31 @@
     "fitness training rope"
   ],
   "ACTIVITY|running": [
-    "runner road morning",
-    "running shoes pavement",
-    "trail running forest"
+    "running night city",
+    "runner sunset silhouette",
+    "night street running"
   ],
   "ACTIVITY|meditation": [
-    "meditation sunrise silhouette",
-    "lotus pose beach",
-    "incense calm room"
+    "candle flame dark",
+    "zen stones dark",
+    "silhouette sunset lake",
+    "dark room candle"
   ],
   "ACTIVITY|reading": [
-    "reading book armchair",
-    "open book coffee",
-    "bookshelf reading nook"
+    "reading lamp night",
+    "book candlelight dark",
+    "night reading chair"
   ],
   "ACTIVITY|yoga": [
-    "yoga pose mat sunrise",
-    "yoga studio stretching",
-    "yoga beach silhouette"
+    "yoga sunset silhouette",
+    "yoga dark studio",
+    "stretching evening light"
   ],
   "ACTIVITY|relaxation": [
-    "hammock trees relax",
-    "bath candles relax",
-    "beach chair ocean calm"
+    "fireplace warm dark",
+    "candles dark table",
+    "night porch lights",
+    "dusk lake calm"
   ],
   "ACTIVITY|travel": [
     "airplane window clouds",
@@ -251,34 +253,34 @@
     "church aisle candles"
   ],
   "OCCASION|bride-entrance": [
-    "bride walking aisle",
-    "bride portrait veil",
-    "bride bouquet dress"
+    "bride evening candles",
+    "wedding aisle evening",
+    "bride silhouette light"
   ],
   "OCCASION|groom-entrance": [
-    "groom suit portrait",
-    "groomsmen suits",
-    "groom boutonniere"
+    "groom suit evening",
+    "man suit dark portrait",
+    "wedding evening entrance"
   ],
   "OCCASION|vows": [
-    "wedding vows hands",
-    "couple exchanging rings",
-    "wedding ceremony close"
+    "wedding rings dark table",
+    "candlelit ceremony evening",
+    "candles wedding night"
   ],
   "OCCASION|recessional": [
-    "wedding confetti exit",
-    "newlyweds sparklers",
-    "wedding celebration exit"
+    "church aisle candles",
+    "ceremony evening lights",
+    "candlelit aisle"
   ],
   "OCCASION|wedding-reception": [
-    "wedding reception table setting",
-    "reception lights tent",
-    "banquet hall celebration"
+    "reception night string lights",
+    "party evening warm lights",
+    "celebration night candles"
   ],
   "OCCASION|first-dance": [
-    "couple dancing wedding",
-    "first dance lights",
-    "dance floor couple"
+    "couple dancing night lights",
+    "dance floor evening lights",
+    "silhouette couple dancing"
   ],
   "OCCASION|dance-floor": [
     "dance floor disco lights",
@@ -286,14 +288,14 @@
     "club dancing lights"
   ],
   "OCCASION|wedding-dinner": [
-    "wedding table flowers",
-    "long table dinner outdoor",
-    "place setting flowers"
+    "dinner table candles night",
+    "candlelit dinner evening",
+    "table candles dark"
   ],
   "OCCASION|wedding-celebration": [
-    "champagne toast",
-    "cheers glasses friends",
-    "confetti wedding"
+    "sparklers night wedding",
+    "celebration night lights",
+    "party night string lights"
   ],
   "OCCASION|wedding-closing": [
     "sparklers night celebration",
@@ -301,9 +303,9 @@
     "night wedding lights"
   ],
   "OCCASION|african-wedding": [
-    "african fabric colorful",
-    "kente cloth",
-    "african woman traditional dress"
+    "dancers silhouette night",
+    "celebration night lights",
+    "drums night performance"
   ],
   "OCCASION|afrobeat-wedding": [
     "dancers traditional costume",
@@ -346,14 +348,14 @@
     "crowd cheering celebration"
   ],
   "OCCASION|ceremony": [
-    "ceremony candles hall",
-    "formal ceremony seats",
-    "ceremonial flowers hall"
+    "candles dark church",
+    "church interior dark",
+    "candle light ceremony"
   ],
   "OCCASION|memorial": [
-    "lily flowers white",
-    "candles church memorial",
-    "cemetery flowers stone"
+    "memorial candles night",
+    "candle flame dark",
+    "night vigil candles"
   ],
   "OCCASION|road-trip": [
     "road trip desert highway",

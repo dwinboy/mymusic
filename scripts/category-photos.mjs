@@ -66,14 +66,41 @@ async function candidates(query) {
     .filter((r) => (r.width ?? 0) >= 1200 && (r.height ?? 0) >= 800);
 }
 
-/** 4:3 at the width the largest tile renders, cropped on the subject. */
+/**
+ * How bright a photo may be, as Rec. 709 luma over the whole frame.
+ *
+ * Everything here is shown against near-black chrome, and half of it also
+ * stands in as cover art for tracks that have none. A daylit photo doesn't
+ * sit on that ground, it glares off it — an audit of the first set found 35
+ * of 72 above this line, topping out near-white at 204, with the "Dark" mood
+ * at 168 and "Sleep" showing a white office in full sun.
+ *
+ * The queries were partly to blame for asking after bright things, and those
+ * are rewritten. But a phrase can only steer what comes back, so the gate
+ * lives here instead: whatever any future query asks for, nothing too bright
+ * for the room it hangs in can be installed.
+ */
+const MAX_LUMA = 120;
+
+/**
+ * 4:3 at the width the largest tile renders, cropped on the subject.
+ * Returns false when the photo is too bright to use, so the caller moves on
+ * to the next candidate rather than keeping it.
+ */
 async function install(result, file) {
   const res = await fetch(result.url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`${res.status} fetching ${result.url}`);
-  await sharp(Buffer.from(await res.arrayBuffer()))
+  const buffer = await sharp(Buffer.from(await res.arrayBuffer()))
     .resize(1200, 900, { fit: "cover", position: "attention" })
     .jpeg({ quality: 70, mozjpeg: true })
-    .toFile(file);
+    .toBuffer();
+
+  // Measured after the crop, because that's the part anyone sees.
+  const [r, g, b] = (await sharp(buffer).stats()).channels;
+  if (0.2126 * r.mean + 0.7152 * g.mean + 0.0722 * b.mean > MAX_LUMA) return false;
+
+  await writeFile(file, buffer);
+  return true;
 }
 
 const queries = await readJson(QUERIES, {});
@@ -107,7 +134,7 @@ for (const key of Object.keys(queries)) {
     for (const result of await candidates(phrase)) {
       if (used.has(result.id) || rejected.has(result.id)) continue;
       try {
-        await install(result, path.join(PHOTOS_DIR, file));
+        if (!(await install(result, path.join(PHOTOS_DIR, file)))) continue; // too bright
         chosen = result;
         break;
       } catch {

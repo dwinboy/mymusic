@@ -163,10 +163,22 @@ export default async function SongPage({
                 </Link>
               </>
             )}
-            <span>·</span>
-            <span>{formatReleaseDate(track.releaseDate)}</span>
-            <span>·</span>
-            <span className="tabular">{formatDuration(track.duration)}</span>
+            {/* Both conditional, the way the album above already is. A track
+                with no release date drew a separator with nothing after it,
+                and one whose processing never recorded a duration showed a
+                flat 0:00 as though it were silent. */}
+            {track.releaseDate && (
+              <>
+                <span>·</span>
+                <span>{formatReleaseDate(track.releaseDate)}</span>
+              </>
+            )}
+            {track.duration > 0 && (
+              <>
+                <span>·</span>
+                <span className="tabular">{formatDuration(track.duration)}</span>
+              </>
+            )}
           </div>
 
           <TermLine terms={summaryTerms} className="mt-2" />

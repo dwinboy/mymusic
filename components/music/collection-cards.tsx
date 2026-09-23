@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArtworkMorphLink } from "@/components/music/artwork-morph-link";
 import Image from "next/image";
 import { Disc3, ListMusic, Mic2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,10 @@ export interface AlbumCardData {
 
 export function AlbumCard({ album, className }: { album: AlbumCardData; className?: string }) {
   return (
-    <Link href={`/album/${album.slug}`} className={cn("group w-40 shrink-0 sm:w-44", className)}>
+    // The artwork morphs into the album page's hero — the same treatment a
+    // song card has, and the same single name, since only one card claims it
+    // per navigation.
+    <ArtworkMorphLink href={`/album/${album.slug}`} className={cn("group w-40 shrink-0 sm:w-44", className)}>
       <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-surface shadow-sm transition-shadow group-hover:shadow-elevated">
         {album.cover ? (
           <Image src={album.cover} alt={album.title} fill sizes="(min-width: 640px) 220px, 45vw" className="object-cover" />
@@ -31,7 +35,7 @@ export function AlbumCard({ album, className }: { album: AlbumCardData; classNam
       </div>
       <p className="mt-2.5 truncate text-sm font-medium text-foreground group-hover:underline">{album.title}</p>
       {album.subtitle && <p className="truncate text-xs text-foreground-muted">{album.subtitle}</p>}
-    </Link>
+    </ArtworkMorphLink>
   );
 }
 

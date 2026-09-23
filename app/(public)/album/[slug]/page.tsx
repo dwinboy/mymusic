@@ -21,6 +21,8 @@ import { AlbumCard } from "@/components/music/collection-cards";
 import { MusicCard } from "@/components/music/music-card";
 import { toAlbumCard } from "@/lib/catalog-cards";
 import { ArtworkTint } from "@/components/music/artwork-tint";
+import { ViewTransition } from "react";
+import { HERO_ART } from "@/components/music/artwork-morph-link";
 
 export async function generateMetadata({
   params,
@@ -111,11 +113,14 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         }}
       />
       <div className="flex flex-col gap-8 sm:flex-row sm:items-end">
-        <div className="relative aspect-square w-full max-w-xs shrink-0 overflow-hidden rounded-xl shadow-elevated sm:w-64">
-          {heroImage && (
-            <Image src={heroImage} alt={album.title} fill sizes="256px" className="object-cover" priority />
-          )}
-        </div>
+        {/* The other half of the morph — see components/music/collection-cards.tsx. */}
+        <ViewTransition name={HERO_ART} share="morph" default="none">
+          <div className="relative aspect-square w-full max-w-xs shrink-0 overflow-hidden rounded-xl shadow-elevated sm:w-64">
+            {heroImage && (
+              <Image src={heroImage} alt={album.title} fill sizes="256px" className="object-cover" priority />
+            )}
+          </div>
+        </ViewTransition>
 
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground-subtle">Album</p>

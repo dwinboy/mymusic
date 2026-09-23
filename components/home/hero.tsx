@@ -3,7 +3,7 @@ import Image from "next/image";
 import { PlayButton } from "@/components/player/play-button";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatDuration } from "@/lib/utils";
+import { cn, formatDuration } from "@/lib/utils";
 import type { PlayerTrack } from "@/lib/types";
 import type { TaxonomyKind } from "@/lib/generated/prisma/client";
 import { TermChips, TermLine } from "@/components/discovery/term-links";
@@ -49,6 +49,10 @@ export function Hero({
   startAt?: number;
 }) {
   const songHref = `/song/${track.slug}`;
+
+  // A single item can't balance a wide hero; see the column below.
+
+  const showMetaColumn = meta.length >= 2;
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border shadow-elevated">
@@ -107,10 +111,12 @@ export function Hero({
               <Link href={`/artist/${track.artistSlug}`} className="truncate transition-colors hover:text-foreground hover:underline">
                 {track.artistName}
               </Link>
-              <span aria-hidden className="text-foreground-subtle md:hidden">
+              <span aria-hidden className={cn("text-foreground-subtle", showMetaColumn && "md:hidden")}>
                 ·
               </span>
-              <span className="shrink-0 tabular-nums md:hidden">{formatDuration(track.duration)}</span>
+              <span className={cn("shrink-0 tabular-nums", showMetaColumn && "md:hidden")}>
+                {formatDuration(track.duration)}
+              </span>
               {track.isExplicit && (
                 <Badge variant="outline" className="shrink-0 px-1 py-0 text-[9px]">
                   E
@@ -140,8 +146,13 @@ export function Hero({
 
         {/* Set against the right edge so the hero reads as one composition on
             a wide screen instead of a column of text beside empty space.
-            Hidden on narrow screens, where there is no space to balance. */}
-        {meta.length > 0 && (
+            Hidden on narrow screens, where there is no space to balance —
+            and below two items, where there is nothing to balance with: a
+            lone "Length 3:28" marooned against the far edge of a 1440px
+            hero looks like a layout that lost something, which is exactly
+            what a track with no release date used to produce. Then the
+            length goes inline instead, where it already sits on a phone. */}
+        {showMetaColumn && (
           <dl className="hidden shrink-0 flex-col items-end gap-4 text-right lg:flex">
             {meta.map((item) => (
               <div key={item.label}>

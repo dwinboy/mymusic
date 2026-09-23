@@ -18,6 +18,7 @@ import { StartRadioButton } from "@/components/music/start-radio-button";
 import { AddToPlaylistDialog } from "@/components/music/add-to-playlist-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ArtworkTint } from "@/components/music/artwork-tint";
 import { SectionHeader } from "@/components/music/section-header";
 import { HorizontalScroller } from "@/components/music/horizontal-scroller";
 import { MusicCard } from "@/components/music/music-card";
@@ -113,7 +114,8 @@ export default async function SongPage({
   const heroImage = resolveTrackCoverUrl(track, "large");
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
+    <div className="relative isolate mx-auto max-w-5xl px-4 py-8 sm:px-8">
+      <ArtworkTint src={heroImage} />
       <JsonLd
         data={{
           "@context": "https://schema.org",

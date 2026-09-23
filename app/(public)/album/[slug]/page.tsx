@@ -20,6 +20,7 @@ import { HorizontalScroller } from "@/components/music/horizontal-scroller";
 import { AlbumCard } from "@/components/music/collection-cards";
 import { MusicCard } from "@/components/music/music-card";
 import { toAlbumCard } from "@/lib/catalog-cards";
+import { ArtworkTint } from "@/components/music/artwork-tint";
 
 export async function generateMetadata({
   params,
@@ -95,7 +96,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   const heroImage = resolveAlbumCoverUrl(album, "large");
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
+    <div className="relative isolate mx-auto max-w-5xl px-4 py-8 sm:px-8">
+      <ArtworkTint src={heroImage} />
       <JsonLd
         data={{
           "@context": "https://schema.org",
